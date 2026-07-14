@@ -62,10 +62,16 @@ lokal `git pull` nicht vergessen, bevor hier weitergearbeitet wird!
   öffnen, GitHub verbinden, Repo auswählen — Claude arbeitet in Anthropic-Cloud-Sandboxes
   und pusht Ergebnisse ins Repo. PC kann aus bleiben. Ergebnis sofort via GitHub Pages
   am iPhone testbar: `https://gitty-den.github.io/elementra/`
-- **B) PC anlassen + Fernzugriff**
-  Tailscale auf PC + iPad, dann per SSH-App (z. B. Termius) `claude` im Terminal starten.
-  Funktioniert, aber PC muss laufen (Strom, Updates, Sperrbildschirm beachten).
+- **B) Remote Control (offizielles Claude-Code-Feature)** — eingerichtet 14.07.2026
+  Steuert eine LOKAL laufende Session vom iPad/iPhone (Claude-App → „Code") oder
+  claude.ai/code. PC muss anbleiben; dafür voller Zugriff auf lokale Dateien/Tools.
+  Start: `C:\005-Kellerwohnung\remote-control.cmd` doppelklicken (Server-Modus,
+  Leertaste = QR-Code) oder `/remote-control` in einer laufenden Session tippen.
+  Einmalige Voraussetzung: `claude auth login` im Terminal (Browser-Anmeldung).
+  CLI: v2.1.209, global via npm installiert. Kein SSH/Tailscale nötig.
 - **C) Server mieten** — für dieses Projekt unnötig (statisches Spiel, kein Backend).
+
+Faustregel: PC aus → Variante A (Cloud). PC an → Variante B (lokal, mächtiger).
 
 ## Konnektoren / Dienste
 
