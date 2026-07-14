@@ -1,0 +1,66 @@
+{
+  "multipliers": {
+    "advantage": 1.5,
+    "disadvantage": 0.75,
+    "neutral": 1.0
+  },
+  "elements": [
+    {
+      "id": "fire",
+      "name": "Feuer",
+      "tier": 1,
+      "strongVs": "nature",
+      "weakVs": "water",
+      "color": "#e8552d"
+    },
+    {
+      "id": "nature",
+      "name": "Natur",
+      "tier": 1,
+      "strongVs": "water",
+      "weakVs": "fire",
+      "color": "#4caf50"
+    },
+    {
+      "id": "water",
+      "name": "Wasser",
+      "tier": 1,
+      "strongVs": "fire",
+      "weakVs": "nature",
+      "color": "#2f80ed"
+    },
+    {
+      "id": "steam",
+      "name": "Dampf",
+      "tier": 2,
+      "components": [
+        "fire",
+        "water"
+      ],
+      "neutral": true,
+      "color": "#b0bec5"
+    },
+    {
+      "id": "ash",
+      "name": "Asche",
+      "tier": 2,
+      "components": [
+        "fire",
+        "nature"
+      ],
+      "neutral": true,
+      "color": "#8d6e63"
+    },
+    {
+      "id": "frost",
+      "name": "Frost",
+      "tier": 2,
+      "components": [
+        "nature",
+        "water"
+      ],
+      "neutral": true,
+      "color": "#81d4fa"
+    }
+  ]
+}

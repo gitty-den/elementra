@@ -1,0 +1,205 @@
+{
+  "rules": {
+    "elemental": {
+      "description": "Gleicher Archetyp, zwei verschiedene Basis-Elemente auf Max-Level -> Hybrid (Tier 2).",
+      "combos": [
+        {
+          "elements": [
+            "fire",
+            "water"
+          ],
+          "result": "steam"
+        },
+        {
+          "elements": [
+            "fire",
+            "nature"
+          ],
+          "result": "ash"
+        },
+        {
+          "elements": [
+            "nature",
+            "water"
+          ],
+          "result": "frost"
+        }
+      ]
+    },
+    "archetype": {
+      "description": "OPTIONAL / POST-MVP: gleiches Element, zwei verschiedene Archetypen -> Chimäre.",
+      "enabled": false
+    }
+  },
+  "hybridsAreNeutral": true,
+  "recipes": [
+    {
+      "inputs": [
+        "fire_drache",
+        "water_drache"
+      ],
+      "output": "steam_drache",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "fire_drache",
+        "nature_drache"
+      ],
+      "output": "ash_drache",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "nature_drache",
+        "water_drache"
+      ],
+      "output": "frost_drache",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "fire_golem",
+        "water_golem"
+      ],
+      "output": "steam_golem",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "fire_golem",
+        "nature_golem"
+      ],
+      "output": "ash_golem",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "nature_golem",
+        "water_golem"
+      ],
+      "output": "frost_golem",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "fire_greif",
+        "water_greif"
+      ],
+      "output": "steam_greif",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "fire_greif",
+        "nature_greif"
+      ],
+      "output": "ash_greif",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "nature_greif",
+        "water_greif"
+      ],
+      "output": "frost_greif",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "fire_wolf",
+        "water_wolf"
+      ],
+      "output": "steam_wolf",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "fire_wolf",
+        "nature_wolf"
+      ],
+      "output": "ash_wolf",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "nature_wolf",
+        "water_wolf"
+      ],
+      "output": "frost_wolf",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "fire_wyrm",
+        "water_wyrm"
+      ],
+      "output": "steam_wyrm",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "fire_wyrm",
+        "nature_wyrm"
+      ],
+      "output": "ash_wyrm",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "nature_wyrm",
+        "water_wyrm"
+      ],
+      "output": "frost_wyrm",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "fire_geist",
+        "water_geist"
+      ],
+      "output": "steam_geist",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "fire_geist",
+        "nature_geist"
+      ],
+      "output": "ash_geist",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "nature_geist",
+        "water_geist"
+      ],
+      "output": "frost_geist",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "fire_phoenix",
+        "water_phoenix"
+      ],
+      "output": "steam_phoenix",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "fire_phoenix",
+        "nature_phoenix"
+      ],
+      "output": "ash_phoenix",
+      "requiresMaxLevel": true
+    },
+    {
+      "inputs": [
+        "nature_phoenix",
+        "water_phoenix"
+      ],
+      "output": "frost_phoenix",
+      "requiresMaxLevel": true
+    }
+  ]
+}

@@ -1,0 +1,74 @@
+# MASTERPLAN — Elementra
+
+Kreaturen-Sammel-Autobattler: sammeln → leveln → fusionieren → Kampagne besiegen.
+Datengrundlage: `data/*.json` (42 Kreaturen, 3+3 Elemente, 21 Fusions-Rezepte, siehe `data/DATA_SCHEMA.md`).
+
+## Vision
+
+Mobile-Game (iOS + Android, App Store / Play Store). Kernloop: Echtzeit-Autobattler
+3 vs 3 mit Tap-Ultis, Element-Kreislauf 🔥→🌿→💧→🔥, Hybride durch Fusion.
+Stil: dunkel-episch mit Element-Glow.
+
+## Phasen
+
+### Phase 1 — Spielbarer Prototyp ✅ (13.07.2026)
+
+- [x] Echtzeit-Kampf-Engine (Passive, Ultis, Status-Effekte, Sudden Death)
+- [x] Kampagne mit 10 Stages, Sterne, Gold, Kreaturen-Unlocks
+- [x] Sammlung + Level-System (Gold, Max-Level 5)
+- [x] Fusion inkl. Animation (Demo: Glutdrache + Tiefendrache = Dampf-Drache)
+- [x] Prozedurale SVG-Kreaturen (alle 42), WebAudio-Sound, Speicherstand (localStorage)
+- [x] Balancing per Simulation verifiziert (S1–S10 durchspielbar)
+
+### Phase 2 — Content & Tiefe
+
+- [ ] Nutzer-Feedback zum Prototyp einarbeiten (Kampfgefühl, Tempo, Schwierigkeit)
+- [ ] Kreaturen-Namen der Hybride finalisieren (aktuell Platzhalter „Dampf-Drache" etc.)
+- [ ] Mehr Kampagnen-Kapitel; Chimären-Fusion (`fusions.json` Regel `archetype`, aktuell `enabled: false`)
+- [ ] Idle-/Tages-Belohnungen, Erfolge
+- [ ] Team-Positionen (Front/Backline ausbauen — Engine kennt `enemyBackline` schon)
+
+### Phase 3 — Aufs iPhone (ohne Store, ohne Server)
+
+- [ ] GitHub-Repo anlegen, GitHub Pages aktivieren → Spiel unter `https://<user>.github.io/elementra/`
+- [ ] PWA-Manifest + Service-Worker (offline spielbar, „Zum Home-Bildschirm" = App-Gefühl)
+- [ ] Auf iPhone 13 / iPad Air real testen (Safari)
+
+### Phase 4 — Stores
+
+- [ ] **Capacitor**-Wrapper (Web-Code bleibt 1:1; Node ist seit 07/2026 installiert)
+- [ ] Android: Play Console (25 $ einmalig), Build lokal oder GitHub Actions
+- [ ] iOS: Apple Developer Program (99 $/Jahr). Kein Mac nötig: iOS-Build über
+      GitHub Actions (macOS-Runner) oder Codemagic; Test-Verteilung per TestFlight
+- [ ] Store-Assets: Icons, Screenshots, Datenschutzerklärung
+- [ ] Monetarisierung entscheiden (Premium vs. F2P; beeinflusst Store-Prüfung)
+
+### Phase 5 — Später / optional
+
+- [ ] Backend erst, wenn nötig (Cloud-Save, PvP, Events) — bis dahin bewusst serverlos
+- [ ] Analytics/Crash-Reporting (z. B. Sentry) erst ab Beta
+
+## Remote-Arbeit vom iPad (Anweisung an Claude von unterwegs)
+
+**Empfehlung: Variante A — kein PC, kein Mietserver nötig.**
+
+- **A) Claude Code Web (claude.ai/code) + GitHub** ⭐
+  Projekt in ein GitHub-Repo pushen. Auf dem iPad im Browser/Claude-App claude.ai/code
+  öffnen, Repo verbinden — Claude arbeitet in Anthropic-Cloud-Sandboxes und pusht
+  Ergebnisse ins Repo. PC kann aus bleiben. Ergebnis sofort via GitHub Pages am iPhone testbar.
+- **B) PC anlassen + Fernzugriff**
+  Tailscale auf PC + iPad, dann per SSH-App (z. B. Termius) `claude` im Terminal starten.
+  Funktioniert, aber PC muss laufen (Strom, Updates, Sperrbildschirm beachten).
+- **C) Server mieten** — für dieses Projekt unnötig (statisches Spiel, kein Backend).
+
+## Konnektoren / Dienste
+
+| Dienst | Wozu | Status |
+|---|---|---|
+| GitHub (`gh` CLI) | Repo, Pages-Hosting, Actions-Builds, Basis für Variante A | vorhanden, Repo fehlt noch |
+| Apple Developer | iOS-Signierung + App Store (99 $/Jahr) | erst Phase 4 |
+| Google Play Console | Android-Store (25 $ einmalig) | erst Phase 4 |
+| Codemagic (Alternative) | iOS-Cloud-Builds ohne Mac | optional, Phase 4 |
+| Sentry o. ä. | Crash-Reports | optional, Phase 5 |
+
+Kein weiterer MCP-Konnektor nötig; Prototyp läuft komplett lokal.

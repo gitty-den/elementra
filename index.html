@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0b0e1a">
+  <title>Elementra — Sammle. Fusioniere. Herrsche.</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="topbar">
+    <div class="logo">ELEMEN<span>TRA</span></div>
+    <div class="topbar-right">
+      <div class="gold-pill">🪙 <span id="gold-display">0</span></div>
+      <button id="btn-settings" title="Einstellungen">⚙️</button>
+    </div>
+  </header>
+
+  <main id="screen"></main>
+
+  <nav id="nav">
+    <button data-screen="map"><span class="nav-ico">🗺️</span>Kampagne</button>
+    <button data-screen="collection"><span class="nav-ico">📖</span>Sammlung</button>
+    <button data-screen="fusion"><span class="nav-ico">🔮</span>Fusion</button>
+  </nav>
+
+  <div id="overlay"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/state.js"></script>
+  <script src="js/svg.js"></script>
+  <script src="js/sfx.js"></script>
+  <script src="js/stages.js"></script>
+  <script src="js/battle.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
