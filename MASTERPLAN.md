@@ -30,9 +30,14 @@ Stil: dunkel-episch mit Element-Glow.
 
 ### Phase 3 — Aufs iPhone (ohne Store, ohne Server)
 
-- [ ] GitHub-Repo anlegen, GitHub Pages aktivieren → Spiel unter `https://<user>.github.io/elementra/`
+- [x] GitHub-Repo: `https://github.com/gitty-den/elementra` (public, 14.07.2026)
+- [x] GitHub Pages aktiv → Spiel unter `https://gitty-den.github.io/elementra/`
 - [ ] PWA-Manifest + Service-Worker (offline spielbar, „Zum Home-Bildschirm" = App-Gefühl)
 - [ ] Auf iPhone 13 / iPad Air real testen (Safari)
+
+**Arbeitsablauf ab jetzt:** Lokale Änderungen → `git push` → Pages aktualisiert sich
+automatisch (~1 min). Remote-Sessions von claude.ai/code pushen ins selbe Repo →
+lokal `git pull` nicht vergessen, bevor hier weitergearbeitet wird!
 
 ### Phase 4 — Stores
 
@@ -52,10 +57,11 @@ Stil: dunkel-episch mit Element-Glow.
 
 **Empfehlung: Variante A — kein PC, kein Mietserver nötig.**
 
-- **A) Claude Code Web (claude.ai/code) + GitHub** ⭐
-  Projekt in ein GitHub-Repo pushen. Auf dem iPad im Browser/Claude-App claude.ai/code
-  öffnen, Repo verbinden — Claude arbeitet in Anthropic-Cloud-Sandboxes und pusht
-  Ergebnisse ins Repo. PC kann aus bleiben. Ergebnis sofort via GitHub Pages am iPhone testbar.
+- **A) Claude Code Web (claude.ai/code) + GitHub** ⭐ — AKTIV seit 14.07.2026
+  Repo: `gitty-den/elementra`. Auf dem iPad im Browser/Claude-App claude.ai/code
+  öffnen, GitHub verbinden, Repo auswählen — Claude arbeitet in Anthropic-Cloud-Sandboxes
+  und pusht Ergebnisse ins Repo. PC kann aus bleiben. Ergebnis sofort via GitHub Pages
+  am iPhone testbar: `https://gitty-den.github.io/elementra/`
 - **B) PC anlassen + Fernzugriff**
   Tailscale auf PC + iPad, dann per SSH-App (z. B. Termius) `claude` im Terminal starten.
   Funktioniert, aber PC muss laufen (Strom, Updates, Sperrbildschirm beachten).
