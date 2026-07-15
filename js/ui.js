@@ -52,7 +52,7 @@ function creatureCardHTML(cid, level, opts = {}) {
   const lvlTxt = level >= MAX_LEVEL ? 'MAX' : 'Lv ' + level;
   return `
     <div class="ccard rarity-${c.rarity} ${opts.cls || ''}" data-cid="${cid}">
-      <div class="ccard-art">${creatureSVG(c)}</div>
+      <div class="ccard-art">${creatureArt(c)}</div>
       <div class="ccard-el">${ElementIcons[c.element]}</div>
       ${level ? `<div class="ccard-lvl ${level >= MAX_LEVEL ? 'max' : ''}">${lvlTxt}</div>` : ''}
       <div class="ccard-name" style="--rar:${r.color}">${c.name}</div>
@@ -63,13 +63,13 @@ function silhouetteCardHTML(cid) {
   const c = Creatures[cid];
   return `
     <div class="ccard unknown" data-cid="${cid}">
-      <div class="ccard-art silhouette">${creatureSVG(c, { noAura: true })}</div>
+      <div class="ccard-art silhouette">${creatureArt(c, { noAura: true })}</div>
       <div class="ccard-name">???</div>
     </div>`;
 }
 
 function starsHTML(n) {
-  return [1, 2, 3].map(i => `<span class="star ${i <= n ? 'on' : ''}">★</span>`).join('');
+  return [1, 2, 3].map(i => `<span class="star ${i <= n ? 'on' : ''}">${iconArt('star')}</span>`).join('');
 }
 
 // ---------- Screen: Kampagnen-Weltkarte ----------
@@ -87,17 +87,10 @@ function renderMap(root) {
     x: i % 2 === 0 ? 26 : 62,
     y: height - 120 - i * MAP_NODE_SPACING,
   }));
-  // Geschwungener Pfad durch alle Knoten (viewBox-Breite 390)
+  // Gepixelter Pfad durch alle Knoten (Referenzbreite 390)
   const pts = pos.map(p => ({ x: p.x * 3.9 + 16, y: p.y + 36 }));
-  let d = `M ${pts[0].x} ${pts[0].y}`;
-  for (let i = 1; i < pts.length; i++) {
-    const my = (pts[i - 1].y + pts[i].y) / 2;
-    d += ` C ${pts[i - 1].x} ${my}, ${pts[i].x} ${my}, ${pts[i].x} ${pts[i].y}`;
-  }
-  world.innerHTML = `<svg class="map-trail" viewBox="0 0 390 ${height}" preserveAspectRatio="none">
-    <path d="${d}" fill="none" stroke="rgba(124,108,255,0.10)" stroke-width="28" stroke-linecap="round"/>
-    <path d="${d}" fill="none" stroke="rgba(177,138,255,0.5)" stroke-width="4" stroke-dasharray="2 11" stroke-linecap="round"/>
-  </svg>`;
+  world.innerHTML = `<img class="map-trail pixel-sprite" src="${mapTrailURI(pts, 390, height)}" alt="" draggable="false">`;
+  world.style.backgroundImage = `url(${starTileURI()})`;
 
   const current = highestClearedStage() + 1;
   STAGES.forEach((stage, i) => {
@@ -107,10 +100,10 @@ function renderMap(root) {
     node.style.left = pos[i].x + '%';
     node.style.top = pos[i].y + 'px';
     node.innerHTML = `
-      <div class="node-medal"><span>${unlocked ? stage.id : '🔒'}</span></div>
+      <div class="node-medal"><span>${unlocked ? stage.id : iconArt('lock', 16)}</span></div>
       <div class="node-stars">${starsHTML(cleared)}</div>
       <div class="node-label">${stage.name}</div>
-      ${stage.unlockCreature && !Save.stages[stage.id] && unlocked ? '<div class="node-egg">🥚</div>' : ''}`;
+      ${stage.unlockCreature && !Save.stages[stage.id] && unlocked ? `<div class="node-egg">${iconArt('egg', 18)}</div>` : ''}`;
     if (unlocked) node.onclick = () => { Sfx.click(); openTeamSelect(stage); };
     world.appendChild(node);
   });
@@ -124,32 +117,62 @@ function renderMap(root) {
 
 function openTeamSelect(stage) {
   let picked = Save.team.filter(id => Save.collection[id]).slice(0, 3);
+  let selSlot = -1; // markierter Slot für Positions-Tausch
   const render = () => {
     const owned = ownedIds().sort((a, b) =>
       Creatures[b].tier - Creatures[a].tier || Creatures[a].name.localeCompare(Creatures[b].name));
+    const slots = [0, 1, 2].map(i => {
+      const c = picked[i] ? Creatures[picked[i]] : null;
+      return `
+        <div class="ts-slot ${c ? 'filled' : ''} ${selSlot === i ? 'sel' : ''} ${i === 0 ? 'front' : ''}" data-slot="${i}">
+          <div class="ts-slot-tag">${i === 0 ? '🛡 Vorne' : (i + 1) + '. Reihe'}</div>
+          ${c
+            ? `<div class="ts-slot-art">${creatureArt(c, { noAura: true })}</div><div class="ts-slot-name">${c.name}</div>`
+            : '<div class="ts-slot-empty">＋</div>'}
+        </div>`;
+    }).join('');
     const ov = showOverlay(`
       <div class="ts-head">
         <h2>Stage ${stage.id} — ${stage.name}</h2>
         <div class="ts-desc">${stage.desc}</div>
-        <div class="ts-enemies">Gegner: ${stage.enemies.map(e =>
-          `<span class="mini-foe">${creatureSVG(Creatures[e.id], { noAura: true })}<i>Lv${e.level}</i></span>`).join('')}
+        <div class="ts-enemies">Gegner: ${stage.enemies.map((e, i) =>
+          `<span class="mini-foe ${i === 0 ? 'front' : ''}">${creatureArt(Creatures[e.id], { noAura: true })}<i>Lv${e.level}</i>${i === 0 ? '<b>Vorne</b>' : ''}</span>`).join('')}
         </div>
-        <div class="ts-reward">Belohnung: 🪙 ${stage.gold}${stage.unlockCreature && !Save.stages[stage.id] ? ' + neue Kreatur 🥚' : ''}</div>
+        <div class="ts-reward">Belohnung: ${iconArt('coin')} ${stage.gold}${stage.unlockCreature && !Save.stages[stage.id] ? ' + neue Kreatur ' + iconArt('egg') : ''}</div>
       </div>
       <div class="ts-label">Wähle dein Team (${picked.length}/3)</div>
+      <div class="ts-slots">${slots}</div>
+      <div class="ts-slot-hint">Die vorderste Kreatur wird zuerst angegriffen — Slots antippen zum Tauschen.</div>
       <div class="ts-grid">
         ${owned.map(id => creatureCardHTML(id, Save.collection[id].level,
           { cls: picked.includes(id) ? 'picked' : '' })).join('')}
       </div>
       <div class="ov-actions">
         <button class="btn btn-ghost" id="ts-cancel">Zurück</button>
-        <button class="btn btn-primary" id="ts-start" ${picked.length === 3 ? '' : 'disabled'}>Kampf starten ⚔️</button>
+        <button class="btn btn-primary" id="ts-start" ${picked.length === 3 ? '' : 'disabled'}>Kampf starten ${iconArt('sword')}</button>
       </div>`);
+    ov.querySelectorAll('.ts-slot').forEach(slotEl => slotEl.onclick = () => {
+      const i = +slotEl.dataset.slot;
+      if (selSlot === -1) {
+        if (!picked[i]) return;          // leerer Slot ohne Auswahl: nichts zu tun
+        selSlot = i;
+      } else if (selSlot === i) {
+        picked.splice(i, 1);             // zweiter Tap auf gleichen Slot = entfernen
+        selSlot = -1;
+      } else {
+        if (picked[i]) [picked[selSlot], picked[i]] = [picked[i], picked[selSlot]];
+        else picked.push(picked.splice(selSlot, 1)[0]); // in leeren Slot = ans Ende
+        selSlot = -1;
+      }
+      Sfx.click();
+      render();
+    });
     ov.querySelectorAll('.ts-grid .ccard').forEach(card => card.onclick = () => {
       Sfx.click();
       const id = card.dataset.cid;
       if (picked.includes(id)) picked = picked.filter(x => x !== id);
       else if (picked.length < 3) picked.push(id);
+      selSlot = -1;
       render();
     });
     ov.querySelector('#ts-cancel').onclick = () => { Sfx.click(); closeOverlay(); };
@@ -175,18 +198,19 @@ function beginBattle(stage, teamIds) {
   const allyDefs = teamIds.map(id => ({ id, level: Save.collection[id].level }));
   const battle = createBattle(allyDefs, stage.enemies);
   B = { battle, stage, raf: null, speed: 1, unitEls: {}, endShown: false };
+  Music.play('battle');
 
   document.body.classList.add('in-battle');
   const s = $('#screen');
   s.innerHTML = `
     <div class="battle-screen">
-      <div class="battle-bg">${sceneSVG(stage.theme)}</div>
+      <div class="battle-bg">${sceneArt(stage.theme)}</div>
       <div class="battle-top">
         <button class="btn btn-ghost btn-sm" id="bt-flee">✕</button>
         <div class="battle-stage-name">${stage.name}</div>
         <div class="battle-ctrl">
           <button class="btn btn-ghost btn-sm" id="bt-speed">1×</button>
-          <button class="btn btn-ghost btn-sm" id="bt-auto">⚡ Auto</button>
+          <button class="btn btn-ghost btn-sm" id="bt-auto">${iconArt('bolt')} Auto</button>
         </div>
       </div>
       <div class="arena" id="arena"></div>
@@ -237,12 +261,13 @@ function debugBattleStep(ms) {
 
 function buildUnitEl(u) {
   const p = SLOT_POS[u.side][u.slot] || SLOT_POS[u.side][0];
-  const card = el('div', `unit ${u.side}`);
+  const card = el('div', `unit ${u.side} arch-${u.c.archetype}`);
   card.id = u.uid;
   card.style.left = p.x + '%';
   card.style.top = p.y + '%';
   card.style.zIndex = 10 + Math.round(p.y);
   card.style.setProperty('--bob-delay', (u.slot * 0.4 + (u.side === 'enemy' ? 0.25 : 0)).toFixed(2) + 's');
+  card.style.setProperty('--dir', u.side === 'enemy' ? -1 : 1); // Rotationsrichtung der Angriffs-Animation
   card.innerHTML = `
     <div class="unit-bars">
       <div class="unit-tag">${ElementIcons[u.c.element]} ${u.c.name} <b>${u.level}</b></div>
@@ -252,7 +277,7 @@ function buildUnitEl(u) {
     <div class="unit-body">
       <div class="unit-ring"></div>
       <div class="unit-shadow"></div>
-      <div class="unit-art">${creatureSVG(u.c)}</div>
+      <div class="unit-art">${creatureArt(u.c)}</div>
       <div class="fx-layer"></div>
     </div>`;
   if (u.side === 'ally') {
@@ -338,16 +363,26 @@ function onBattleEvent(type, d) {
           const imp = el('span', 'impact');
           card.querySelector('.fx-layer').appendChild(imp);
           setTimeout(() => imp.remove(), 400);
+          // Element-Funken des Angreifers spritzen am Ziel
+          if (d.source) {
+            const pal = PixelPalettes[d.source.c.element];
+            spawnParticles(d.target, d.source.c.archetype === 'golem' ? '#8d8877' : pal.l,
+              d.kind === 'ulti' ? 12 : 7);
+          }
         }
       }
       break;
     }
-    case 'heal': floatText(d.target, '+' + d.amount, 'healtxt'); Sfx.heal(); break;
+    case 'heal':
+      floatText(d.target, '+' + d.amount, 'healtxt');
+      spawnParticles(d.target, '#7dedb2', 7);
+      Sfx.heal();
+      break;
     case 'absorb': floatText(d.target, '🛡 ' + d.amount, 'absorb'); break;
     case 'shieldGain': floatText(d.target, '🛡 Schild', 'absorb'); break;
     case 'poison': floatText(d.target, '☠ ×' + d.stacks, 'poison'); break;
     case 'ulti': {
-      const p = ElementPalettes[d.unit.c.element];
+      const p = { glow: PixelPalettes[d.unit.c.element].g };
       spawnParticles(d.unit, p.glow, 18);
       const scr = document.querySelector('.battle-screen');
       if (scr) {
@@ -364,7 +399,10 @@ function onBattleEvent(type, d) {
       Sfx.ulti();
       break;
     }
-    case 'die': Sfx.die(); break;
+    case 'die':
+      spawnParticles(d.unit, PixelPalettes[d.unit.c.element].d, 16);
+      Sfx.die();
+      break;
     case 'revive': {
       floatText(d.unit, '✨ Wiedergeburt!', 'healtxt');
       spawnParticles(d.unit, '#ffd54f', 20);
@@ -383,6 +421,7 @@ function endBattleUI() {
   if (B && B.raf) cancelAnimationFrame(B.raf);
   document.body.classList.remove('in-battle');
   B = null;
+  Music.play('map');
 }
 
 function showBattleResult(winner) {
@@ -401,7 +440,7 @@ function showBattleResult(winner) {
       <div class="result victory">
         <h1>Sieg!</h1>
         <div class="result-stars">${starsHTML(alive)}</div>
-        <div class="result-gold">+ 🪙 ${rewards.gold}</div>
+        <div class="result-gold">+ ${iconArt('coin')} ${rewards.gold}</div>
         ${unlockHTML}
         <div class="ov-actions">
           <button class="btn btn-ghost" id="res-again">Nochmal</button>
@@ -461,7 +500,7 @@ function openCreatureDetail(cid) {
     const elName = Elements[c.element].name;
     const ov = showOverlay(`
       <div class="detail">
-        <div class="detail-art rarity-${c.rarity}">${creatureSVG(c)}</div>
+        <div class="detail-art rarity-${c.rarity}">${creatureArt(c)}</div>
         <h2>${c.name}</h2>
         <div class="detail-tags">
           <span class="tag" style="--rar:${r.color}">${r.name}</span>
@@ -484,7 +523,7 @@ function openCreatureDetail(cid) {
           ${isMax
             ? '<button class="btn btn-max" disabled>✦ Bereit zur Fusion</button>'
             : `<button class="btn btn-primary" id="det-lvl" ${canLevelUp(cid) ? '' : 'disabled'}>
-                 Level-Up (🪙 ${cost})</button>`}
+                 Level-Up (${iconArt('coin')} ${cost})</button>`}
         </div>
       </div>`);
     ov.querySelector('#det-close').onclick = () => { Sfx.click(); closeOverlay(); showScreen('collection'); };
@@ -498,31 +537,50 @@ function openCreatureDetail(cid) {
 
 // ---------- Screen: Fusion ----------
 
+// Level-Fortschritt als 5 Pixel-Pips statt Text („Lv 3/5").
+function levelPipsHTML(level) {
+  return `<div class="lvl-pips">${[1, 2, 3, 4, 5].map(i =>
+    `<span class="pip ${i <= level ? 'on' : ''}"></span>`).join('')}</div>`;
+}
+
+// Fundort einer Kreatur (Stage-Freischaltung) für Teaser-Rezepte.
+function creatureSourceHTML(id) {
+  const stage = STAGES.find(s => s.unlockCreature === id);
+  return stage ? `${iconArt('map', 12)} Stage ${stage.id}` : iconArt('orb', 12);
+}
+
 function renderFusion(root) {
   const wrap = el('div', 'fusion-screen');
   wrap.appendChild(el('div', 'screen-title', 'Fusion'));
-  wrap.appendChild(el('p', 'fusion-intro',
-    'Zwei Kreaturen des gleichen Archetyps mit verschiedenen Basis-Elementen auf ' +
-    `<b>Max-Level (${MAX_LEVEL})</b> verschmelzen zu einem mächtigen Hybrid — neutral gegen alle Elemente.`));
 
-  const recipes = availableRecipes();
-  if (!recipes.length) {
-    wrap.appendChild(el('div', 'fusion-empty',
-      '🔮 Noch kein Rezept verfügbar.<br>Sammle zwei Kreaturen des gleichen Archetyps mit ' +
-      'unterschiedlichen Elementen — z. B. den <b>Tiefendrachen</b> aus Stage 7 zu deinem Glutdrachen.'));
-  }
-  recipes.forEach(recipe => {
-    const ready = recipeReady(recipe);
+  // Visuelle Legende statt Erklärtext: Element + Element = Hybrid-Element.
+  const combos = [['fire', 'water', 'steam'], ['fire', 'nature', 'ash'], ['nature', 'water', 'frost']];
+  wrap.appendChild(el('div', 'fusion-legend', combos.map(([a, b, out]) => `
+    <div class="fl-chip">${iconArt(a, 16)}<b>+</b>${iconArt(b, 16)}<b>=</b>${iconArt(out, 16)}</div>`).join('')));
+
+  // Echte Rezepte (beide Zutaten im Besitz) zuerst, danach Teaser (eine Zutat fehlt).
+  const owned = availableRecipes();
+  const teasers = FUSIONS_DATA.recipes.filter(r =>
+    !owned.includes(r) && !Save.collection[r.output] &&
+    r.inputs.some(id => Save.collection[id]));
+  const shown = [...owned, ...teasers.slice(0, Math.max(0, 4 - owned.length))];
+
+  shown.forEach(recipe => {
+    const isTeaser = !owned.includes(recipe);
+    const ready = !isTeaser && recipeReady(recipe);
     const done = !!Save.collection[recipe.output];
     const row = el('div', `fusion-row ${ready ? 'ready' : ''} ${done ? 'done' : ''}`);
     const inputHTML = recipe.inputs.map(id => {
       const entry = Save.collection[id];
       const lvl = entry ? entry.level : 0;
       const ok = entry && lvl >= MAX_LEVEL;
-      return `<div class="fusion-input ${ok ? 'ok' : ''}">
-        ${creatureCardHTML(id, lvl)}
-        <div class="fusion-req">${done ? '—' : ok ? '✓ bereit' : `Lv ${lvl}/${MAX_LEVEL}`}</div>
-      </div>`;
+      const card = entry ? creatureCardHTML(id, lvl) : silhouetteCardHTML(id);
+      const req = done ? '—'
+        : !entry ? `<span class="fusion-src">${creatureSourceHTML(id)}</span>`
+        : ok ? `<span class="fusion-ok">✓</span>`
+        : levelPipsHTML(lvl);
+      return `<div class="fusion-input ${ok ? 'ok' : ''}">${card}
+        <div class="fusion-req">${req}</div></div>`;
     }).join('<div class="fusion-plus">+</div>');
     row.innerHTML = `
       ${inputHTML}
@@ -530,15 +588,31 @@ function renderFusion(root) {
       <div class="fusion-output">
         ${done ? creatureCardHTML(recipe.output, Save.collection[recipe.output].level)
                : silhouetteCardHTML(recipe.output)}
-        ${done ? '<div class="fusion-req">✓ fusioniert</div>'
+        ${done ? '<div class="fusion-req"><span class="fusion-ok">✓</span></div>'
+               : isTeaser ? ''
                : `<button class="btn btn-primary btn-sm btn-fuse" ${ready ? '' : 'disabled'}>Fusionieren</button>`}
       </div>`;
-    if (!done) {
+    if (!done && !isTeaser) {
       const btn = row.querySelector('.btn-fuse');
       btn.onclick = () => { Sfx.click(); playFusion(recipe); };
     }
     wrap.appendChild(row);
   });
+
+  if (!shown.length) {
+    // Gar keine Zutat im Besitz: ein Beispiel-Rezept als Bild zeigen.
+    const demo = FUSIONS_DATA.recipes[0];
+    if (demo) {
+      const row = el('div', 'fusion-row teaser');
+      row.innerHTML = demo.inputs.map(id => `
+        <div class="fusion-input">${silhouetteCardHTML(id)}
+          <div class="fusion-req"><span class="fusion-src">${creatureSourceHTML(id)}</span></div>
+        </div>`).join('<div class="fusion-plus">+</div>') + `
+        <div class="fusion-arrow">➜</div>
+        <div class="fusion-output">${silhouetteCardHTML(demo.output)}</div>`;
+      wrap.appendChild(row);
+    }
+  }
   root.appendChild(wrap);
 }
 
@@ -548,10 +622,10 @@ function playFusion(recipe) {
   const ov = showOverlay(`
     <div class="fusion-anim">
       <div class="fa-stage">
-        <div class="fa-card fa-left">${creatureSVG(a)}</div>
+        <div class="fa-card fa-left">${creatureArt(a)}</div>
         <div class="fa-core"></div>
-        <div class="fa-card fa-right">${creatureSVG(b)}</div>
-        <div class="fa-result">${creatureSVG(out)}</div>
+        <div class="fa-card fa-right">${creatureArt(b)}</div>
+        <div class="fa-result">${creatureArt(out)}</div>
       </div>
       <div class="fa-label">Fusion…</div>
     </div>`, 'fusion-ov');
@@ -574,9 +648,9 @@ function playFusion(recipe) {
 function showTitle() {
   const t = el('div', 'title-screen');
   t.innerHTML = `
-    <div class="title-bg">${sceneSVG('storm')}</div>
+    <div class="title-bg">${sceneArt('storm')}</div>
     <div class="title-content">
-      <div class="title-emblem">${emblemSVG()}</div>
+      <div class="title-emblem">${emblemArt()}</div>
       <div class="title-logo">ELEMENTRA</div>
       <div class="title-tag">Sammle. Fusioniere. Herrsche.</div>
       <div class="title-cta">— Tippen zum Starten —</div>
@@ -584,6 +658,7 @@ function showTitle() {
   document.body.appendChild(t);
   t.onclick = () => {
     Sfx.ulti(); // entsperrt zugleich den AudioContext (erste Interaktion)
+    Music.play('map');
     t.classList.add('gone');
     setTimeout(() => t.remove(), 650);
   };
@@ -596,6 +671,9 @@ function openSettings() {
     <div class="settings">
       <h2>Einstellungen</h2>
       <button class="btn btn-ghost" id="set-sfx">Sound: ${Save.settings.sfx ? 'an 🔊' : 'aus 🔇'}</button>
+      <button class="btn btn-ghost" id="set-music">Musik: ${Music.enabled ? 'an 🎵' : 'aus 🔇'}</button>
+      <button class="btn btn-ghost" id="set-pixeltest">🎨 Sprite-Galerie</button>
+      <button class="btn btn-ghost" id="set-logo"><span class="btn-ico">${emblemArt()}</span> Logo wählen</button>
       <button class="btn btn-danger" id="set-reset">Spielstand zurücksetzen</button>
       <div class="settings-info">Elementra — Prototyp v0.1</div>
       <div class="ov-actions">
@@ -608,6 +686,13 @@ function openSettings() {
     e.target.textContent = 'Sound: ' + (Save.settings.sfx ? 'an 🔊' : 'aus 🔇');
     Sfx.click();
   };
+  ov.querySelector('#set-music').onclick = e => {
+    Music.toggle();
+    e.target.textContent = 'Musik: ' + (Music.enabled ? 'an 🎵' : 'aus 🔇');
+    Sfx.click();
+  };
+  ov.querySelector('#set-pixeltest').onclick = () => { Sfx.click(); openPixelTest(); };
+  ov.querySelector('#set-logo').onclick = () => { Sfx.click(); openLogoChooser(); };
   ov.querySelector('#set-reset').onclick = () => {
     if (confirm('Wirklich den kompletten Spielstand löschen?')) {
       resetSave();
@@ -616,4 +701,58 @@ function openSettings() {
     }
   };
   ov.querySelector('#set-close').onclick = () => { Sfx.click(); closeOverlay(); };
+}
+
+// ---------- Sprite-Galerie (alle 42 Pixel-Sprites, Debug/Design-Review) ----------
+
+function openPixelTest() {
+  const byElement = {};
+  Object.values(Creatures).forEach(c => (byElement[c.element] = byElement[c.element] || []).push(c));
+  const sections = Object.keys(byElement).map(elId => `
+    <div class="pt-row">
+      <div class="pt-name" style="--rar:${Elements[elId].color}">${ElementIcons[elId] || ''} ${Elements[elId].name}</div>
+      <div class="pt-gallery">
+        ${byElement[elId].map(c => `
+          <div class="pt-gcell"><div class="pt-art">${creatureArt(c)}</div><span>${c.name}</span></div>`).join('')}
+      </div>
+    </div>`).join('');
+  showOverlay(`
+    <div class="pixel-test">
+      <h2>🎨 Sprite-Galerie</h2>
+      <div class="pt-hint">Alle 42 Kreaturen: 7 Archetypen × 6 Element-Paletten,
+        prozedural aus Char-Maps (js/pixel.js).</div>
+      ${sections}
+      <div class="ov-actions">
+        <button class="btn btn-primary" id="pt-close">Schließen</button>
+      </div>
+    </div>`);
+  $('#pt-close').onclick = () => { Sfx.click(); closeOverlay(); };
+}
+
+// ---------- Logo-Auswahl (4 Emblem-Varianten, Wahl landet in Save.settings.emblem) ----------
+
+function openLogoChooser() {
+  const current = Save.settings.emblem || 'ring';
+  const cells = Object.keys(EmblemVariants).map(key => `
+    <div class="logo-cell ${key === current ? 'sel' : ''}" data-key="${key}">
+      <div class="pt-art">${emblemArt(key)}</div>
+      <span>${EmblemVariants[key].name}</span>
+    </div>`).join('');
+  const ov = showOverlay(`
+    <div class="logo-chooser">
+      <h2>Logo wählen</h2>
+      <div class="pt-hint">Wird Titel-Emblem und später App-Icon. Antippen zum Festlegen.</div>
+      <div class="logo-grid">${cells}</div>
+      <div class="ov-actions">
+        <button class="btn btn-primary" id="lg-close">Fertig</button>
+      </div>
+    </div>`);
+  ov.querySelectorAll('.logo-cell').forEach(cell => cell.onclick = () => {
+    Sfx.click();
+    Save.settings.emblem = cell.dataset.key;
+    persist();
+    ov.querySelectorAll('.logo-cell').forEach(c =>
+      c.classList.toggle('sel', c.dataset.key === cell.dataset.key));
+  });
+  ov.querySelector('#lg-close').onclick = () => { Sfx.click(); closeOverlay(); openSettings(); };
 }

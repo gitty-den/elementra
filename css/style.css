@@ -347,7 +347,56 @@ body.in-battle #screen { overflow: hidden; }
 .ts-enemies .mini-foe i { position: absolute; bottom: -4px; right: -3px; font-style: normal; font-size: 0.6rem; color: var(--text-dim); }
 .ts-reward { color: var(--gold); font-size: 0.82rem; font-weight: 800; margin-top: 6px; }
 .ts-label { margin: 14px 0 8px; font-weight: 800; color: var(--accent2); letter-spacing: 0.5px; }
+
+/* Team-Slots: Position 1 = Front, wird zuerst angegriffen */
+.ts-slots { display: flex; gap: 10px; margin: 12px 0 4px; }
+.ts-slot {
+  flex: 1; min-height: 88px; position: relative; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 12px 4px 6px; border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.28));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -3px 8px rgba(0, 0, 0, 0.45);
+}
+.ts-slot.filled { border-style: solid; border-color: rgba(255, 255, 255, 0.22); }
+.ts-slot.front { border-color: rgba(255, 200, 80, 0.45); }
+.ts-slot.sel {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(255, 200, 80, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+.ts-slot-tag {
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
+  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase;
+  color: var(--text-dim); background: var(--panel, #1a1830); padding: 1px 7px;
+  border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12); white-space: nowrap;
+}
+.ts-slot.front .ts-slot-tag { color: var(--gold); border-color: rgba(255, 200, 80, 0.4); }
+.ts-slot-art { width: 46px; height: 46px; }
+.ts-slot-art svg { width: 100%; height: 100%; }
+.ts-slot-name { font-size: 0.62rem; font-weight: 700; margin-top: 2px; text-align: center; }
+.ts-slot-empty { font-size: 1.4rem; color: var(--text-dim); opacity: 0.5; }
+.ts-slot-hint { font-size: 0.68rem; color: var(--text-dim); margin-bottom: 10px; }
+.ts-enemies .mini-foe.front b {
+  position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+  font-size: 0.5rem; font-weight: 800; color: var(--gold); letter-spacing: 0.5px;
+  text-transform: uppercase; white-space: nowrap;
+}
 .ts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; }
+
+/* Sprite-Galerie (⚙ → alle 42 Pixel-Sprites) */
+.pixel-test h2 { margin-bottom: 4px; }
+.pt-hint { color: var(--text-dim); font-size: 0.72rem; margin-bottom: 12px; }
+.pt-row { margin-bottom: 14px; }
+.pt-name { font-weight: 800; color: var(--rar, #fff); margin-bottom: 6px; letter-spacing: 0.5px; }
+.pt-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 8px; }
+.pt-gcell { text-align: center; }
+.pt-gcell span { display: block; font-size: 0.55rem; color: var(--text-dim); margin-top: 2px; }
+.pt-art {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  padding: 5px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.1);
+  background: radial-gradient(ellipse at 50% 35%, #232848 0%, #12152b 70%);
+  box-shadow: inset 0 -8px 18px rgba(0, 0, 0, 0.5);
+}
 
 /* Kreaturen-Detail */
 .detail { text-align: center; }
@@ -661,3 +710,189 @@ body.in-battle #screen { overflow: hidden; }
   #screen { max-width: 640px; margin: 0 auto; width: 100%; }
   #topbar, #nav { padding-left: calc((100vw - 640px) / 2); padding-right: calc((100vw - 640px) / 2); }
 }
+
+/* ===== Pixel-Look (Design-Pivot 15.07.2026): Pixel-Sprites + kantiges Retro-UI ===== */
+
+.pixel-sprite { image-rendering: pixelated; width: 100%; height: 100%; object-fit: contain; }
+.ccard-art.silhouette img { filter: brightness(0) invert(0.22); opacity: 0.85; }
+.unit.enemy .unit-art img { transform: scaleX(-1); }
+.detail-art img { width: 100%; height: auto; }
+
+/* Kantige Ecken + harte Stufen-Schatten statt weichem Web-Look */
+.btn {
+  border-radius: 4px; border-width: 2px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18), inset 0 -3px 0 rgba(0, 0, 0, 0.4),
+              0 3px 0 rgba(0, 0, 0, 0.5);
+}
+.btn:active {
+  transform: translateY(2px); filter: brightness(1.1);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+              0 1px 0 rgba(0, 0, 0, 0.5);
+}
+.btn-sm { border-radius: 3px; }
+.btn-primary {
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -3px 0 rgba(20, 8, 70, 0.6),
+              0 3px 0 rgba(20, 8, 70, 0.8);
+}
+.ccard { border-radius: 4px; }
+.overlay-box { border-radius: 6px; border-width: 2px; }
+.ts-slot { border-radius: 4px; }
+.ts-slot-tag { border-radius: 3px; }
+.gold-pill { border-radius: 4px; }
+#nav button { border-radius: 4px; }
+.bar, .fill { border-radius: 1px; }
+.unit-tag b { border-radius: 2px; }
+.settings-info { letter-spacing: 0.4px; }
+
+/* ===== Pixel-Typografie + Pixel-Assets (alles Pixelart, 15.07.2026) ===== */
+
+@font-face {
+  font-family: 'Press Start 2P';
+  src: url('../fonts/press-start-2p-latin.woff2') format('woff2');
+  font-display: swap;
+}
+@font-face {
+  font-family: 'VT323';
+  src: url('../fonts/vt323-latin.woff2') format('woff2');
+  font-display: swap;
+}
+
+/* VT323 ist schmal/klein — Grundgröße anheben, damit alle rem-Größen mitwachsen */
+:root { font-size: 19px; }
+body { font-family: 'VT323', 'Courier New', monospace; letter-spacing: 0.3px; }
+
+/* Headline-/Button-Schrift: Press Start 2P (kompakt gesetzt, Buchstaben sind breit) */
+h1, h2, .btn, .logo, .screen-title, .title-logo, .title-cta, .title-tag,
+#nav button, .battle-stage-name, .node-medal span, .ts-label, .result h1 {
+  font-family: 'Press Start 2P', monospace;
+}
+h1 { font-size: 1.05rem; line-height: 1.5; }
+h2 { font-size: 0.72rem; line-height: 1.6; }
+.btn { font-size: 0.55rem; letter-spacing: 0; padding: 13px 18px; line-height: 1.4; }
+.btn-sm { font-size: 0.45rem; padding: 9px 11px; }
+.logo { font-size: 0.8rem; letter-spacing: 1px; }
+.screen-title { font-size: 0.85rem; letter-spacing: 1px; }
+.title-logo { font-size: 1.35rem; letter-spacing: 3px; padding-left: 3px; }
+.title-tag { font-size: 0.42rem; letter-spacing: 1.5px; }
+.title-cta { font-size: 0.5rem; letter-spacing: 1px; }
+#nav button { font-size: 0.42rem; letter-spacing: 0.5px; }
+.battle-stage-name { font-size: 0.55rem; }
+.node-medal span { font-size: 0.62rem; }
+.ts-label { font-size: 0.55rem; }
+.result h1 { font-size: 1.3rem; }
+.gold-pill { font-size: 0.85rem; }
+.ts-slot-tag { font-size: 0.62rem; letter-spacing: 0.5px; }
+
+/* Pixel-Icons: skalieren mit der Schriftgröße */
+.px-ico { width: 1em; height: 1em; vertical-align: -0.12em; display: inline-block; }
+.star:not(.on) .px-ico { filter: grayscale(1) brightness(0.5); opacity: 0.55; }
+.node-stars .star { font-size: 0.7rem; }
+
+/* Gepixelte Szenen-Hintergründe (Kampf + Titel) */
+.scene-art { object-fit: cover; }
+.title-emblem img { width: 100%; height: auto; }
+
+/* Karten-Hintergrund: gekachelter Pixel-Sternenhimmel */
+.map-world { image-rendering: pixelated; }
+
+/* Scanlines statt SVG-Korn (Retro-CRT-Feel, reines CSS) */
+body::after {
+  background-image: repeating-linear-gradient(
+    0deg, rgba(0, 0, 8, 0.55) 0px, rgba(0, 0, 8, 0.55) 1px, transparent 1px, transparent 3px);
+  opacity: 0.14;
+}
+
+/* ===== Archetyp-Angriffsanimationen (--tx/--ty = Vektor zum Ziel, --dir = Blickrichtung) ===== */
+
+.unit.attacking.arch-wolf .unit-body { animation: atkDash 0.3s cubic-bezier(0.2, 0, 0.3, 1); }
+@keyframes atkDash {
+  0% { transform: translate(0, 0); }
+  30% { transform: translate(calc(var(--tx, 0px) * 1.12), calc(var(--ty, 0px) * 1.12)) scale(1.05); }
+  55% { transform: translate(calc(var(--tx, 0px) * 0.85), calc(var(--ty, 0px) * 0.85)); }
+  100% { transform: translate(0, 0); }
+}
+
+.unit.attacking.arch-drache .unit-body { animation: atkBite 0.42s cubic-bezier(0.3, 0, 0.4, 1); }
+@keyframes atkBite {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(calc(var(--tx, 0px) * -0.12), calc(var(--ty, 0px) * -0.12)) rotate(calc(var(--dir, 1) * -6deg)); }
+  55% { transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(calc(var(--dir, 1) * 10deg)) scale(1.12); }
+  100% { transform: translate(0, 0); }
+}
+
+.unit.attacking.arch-golem .unit-body { animation: atkStomp 0.5s cubic-bezier(0.4, 0, 0.5, 1); }
+@keyframes atkStomp {
+  0% { transform: translate(0, 0); }
+  30% { transform: translate(calc(var(--tx, 0px) * 0.45), calc(var(--ty, 0px) * 0.45 - 34px)); }
+  55% { transform: translate(var(--tx, 0px), calc(var(--ty, 0px) + 4px)) scale(1.15, 0.85); }
+  70% { transform: translate(calc(var(--tx, 0px) * 0.9), var(--ty, 0px)) scale(0.95, 1.05); }
+  100% { transform: translate(0, 0); }
+}
+
+.unit.attacking.arch-geist .unit-body { animation: atkPhase 0.46s ease-in-out; }
+@keyframes atkPhase {
+  0% { transform: translate(0, 0); opacity: 1; }
+  30% { transform: translate(calc(var(--tx, 0px) * 0.4), calc(var(--ty, 0px) * 0.4)) scale(0.8); opacity: 0.15; }
+  55% { transform: translate(var(--tx, 0px), var(--ty, 0px)) scale(1.15); opacity: 1; }
+  75% { transform: translate(calc(var(--tx, 0px) * 0.5), calc(var(--ty, 0px) * 0.5)) scale(0.9); opacity: 0.4; }
+  100% { transform: translate(0, 0); opacity: 1; }
+}
+
+.unit.attacking.arch-wyrm .unit-body { animation: atkWhip 0.42s cubic-bezier(0.35, 0, 0.3, 1); }
+@keyframes atkWhip {
+  0% { transform: translate(0, 0); }
+  30% { transform: translate(calc(var(--tx, 0px) * -0.18), 6px) rotate(calc(var(--dir, 1) * -14deg)); }
+  60% { transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(calc(var(--dir, 1) * 12deg)) scale(1.1, 0.95); }
+  100% { transform: translate(0, 0); }
+}
+
+.unit.attacking.arch-phoenix .unit-body { animation: atkSwoop 0.48s cubic-bezier(0.3, 0, 0.35, 1); }
+@keyframes atkSwoop {
+  0% { transform: translate(0, 0); }
+  30% { transform: translate(calc(var(--tx, 0px) * 0.35), calc(var(--ty, 0px) * 0.35 - 26px)) rotate(calc(var(--dir, 1) * -10deg)); }
+  60% { transform: translate(var(--tx, 0px), var(--ty, 0px)) rotate(calc(var(--dir, 1) * 8deg)) scale(1.08); }
+  100% { transform: translate(0, 0); }
+}
+
+.unit.attacking.arch-greif .unit-body { animation: atkDive 0.44s cubic-bezier(0.35, 0, 0.4, 1); }
+@keyframes atkDive {
+  0% { transform: translate(0, 0); }
+  28% { transform: translate(0, -22px) rotate(calc(var(--dir, 1) * -8deg)); }
+  58% { transform: translate(var(--tx, 0px), calc(var(--ty, 0px) + 3px)) rotate(calc(var(--dir, 1) * 14deg)) scale(1.1); }
+  100% { transform: translate(0, 0); }
+}
+
+/* Partikel als harte Pixel-Quadrate, stufige Flugbahn */
+.particle {
+  width: 5px; height: 5px; border-radius: 0; box-shadow: none;
+  animation: particleFly 0.8s steps(7, end) forwards;
+}
+
+/* ===== Fusion: visuelle Legende, Level-Pips, Fundort ===== */
+
+.fusion-legend { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+.fl-chip {
+  display: flex; align-items: center; gap: 5px; padding: 6px 10px;
+  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 4px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+.fl-chip b { color: var(--text-dim); font-size: 0.8rem; }
+
+.lvl-pips { display: inline-flex; gap: 3px; }
+.lvl-pips .pip {
+  width: 7px; height: 7px; background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+.lvl-pips .pip.on { background: var(--gold); box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.35); }
+.fusion-ok { color: var(--hp); font-weight: 900; }
+.fusion-src { display: inline-flex; align-items: center; gap: 4px; color: var(--text-dim); }
+.fusion-row.teaser { opacity: 0.9; }
+
+/* Logo-Auswahl */
+.logo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.logo-cell { text-align: center; cursor: pointer; }
+.logo-cell .pt-art { padding: 14px; border-width: 2px; }
+.logo-cell.sel .pt-art { border-color: var(--gold); box-shadow: 0 0 12px rgba(255, 201, 77, 0.4), inset 0 -8px 18px rgba(0, 0, 0, 0.5); }
+.logo-cell span { display: block; font-size: 0.68rem; color: var(--text-dim); margin-top: 4px; font-weight: 700; }
+.logo-cell.sel span { color: var(--gold); }
+.btn-ico { width: 18px; height: 18px; display: inline-block; vertical-align: -3px; }

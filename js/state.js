@@ -59,7 +59,7 @@ function defaultSave() {
     },
     team: ['fire_drache', 'nature_golem', 'water_geist'],
     stages: {},            // stageId -> Sterne (1–3)
-    settings: { sfx: true },
+    settings: { sfx: true, music: true },
   };
 }
 

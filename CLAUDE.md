@@ -7,7 +7,7 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 
 - **Kein Build-Schritt, kein Framework.** Spiel muss per `file://` UND Preview-Server laufen.
 - **Kein `import`/`export`** — klassische Script-Tags, Reihenfolge in `index.html` ist bindend
-  (data → state → svg → sfx → stages → battle → ui → main).
+  (data → state → svg → pixel → sfx → music → stages → battle → ui → main).
 - **`data/*.json` ist die Quelle der Wahrheit** (kommt aus der Design-ZIP, Stats laut
   `data/DATA_SCHEMA.md` Platzhalter fürs Balancing). `js/data.js` wird daraus GENERIERT
   (JSON-Inhalt 1:1 in `const`-Deklarationen, wegen file://-CORS kein fetch). Nach jeder
@@ -21,7 +21,23 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   ```
 - PowerShell-Skripte: reines ASCII (PowerShell 5.1 liest UTF-8 ohne BOM als ANSI).
 - Zielgerät: iPhone 13, Hochformat, Safari. Touch zuerst; Desktop nur Dev-Fallback.
-- Grafik: ausschließlich prozedurales SVG (`js/svg.js`), keine Bild-Assets.
+- Grafik: **ALLES ist Pixelart — NIE wieder Vektor/SVG/Emoji für Sichtbares erzeugen.**
+  Jedes neue visuelle Element (Kreatur, Icon, Hintergrund, Emblem, Effekt) wird direkt
+  als Pixelart in `js/pixel.js` gebaut: Char-Maps oder Low-Res-Canvas → dataURI →
+  `<img class="pixel-sprite">` (image-rendering: pixelated). Renderer: `creatureArt()`
+  (7 Archetyp-Maps × 6 Element-Paletten = alle 42, ⚙ → „Sprite-Galerie"), `iconArt(name)`
+  (Pixel-Icons statt Emoji), `sceneArt(theme)` (Kampf/Titel-Hintergründe), `emblemArt()`
+  (4 Varianten in `EmblemVariants`, Auswahl ⚙ → „Logo wählen" → `Save.settings.emblem`),
+  `mapTrailURI()`/`starTileURI()` (Kampagnen-Karte). `js/svg.js` ist KOMPLETT obsolet
+  (nur noch `SceneThemes`-Farbtabelle wird daraus gelesen). Char-Map-Zeilenlänge exakt
+  16 (symmetric) bzw. 32 bzw. Icon-Breite; Fehler = Magenta-Pixel + console.warn.
+- Kampf-Feedback: Angriffs-Animation je Archetyp (CSS `atkDash/atkBite/atkStomp/atkPhase/
+  atkWhip/atkSwoop/atkDive`, Richtungs-Flip via `--dir` am `.unit`), Pixel-Partikel bei
+  Treffer/Heilung/Tod/Ulti (`spawnParticles`, Farben aus `PixelPalettes`). Fusion-Screen
+  ist visuell (Element-Legende, Level-Pips, Fundort-Tags, Teaser-Rezepte) — keine Textwände.
+- Schrift: Pixel-Fonts aus `fonts/` (OFL-Lizenz, lokal, offline-fähig): „Press Start 2P"
+  für Headlines/Buttons, „VT323" für Fließtext (Grundgröße 19px). Keine System-/Webfonts.
+  UI-Look: kantige Ecken, harte Stufen-Schatten, CSS-Scanlines (style.css „Pixel-Look" + „Pixel-Typografie").
 - Testen: Preview-Server `elementra` (`..\.claude\launch.json`, Port 8124) oder `index.html` doppelklicken.
 
 ## Architektur
@@ -30,8 +46,10 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 |---|---|
 | `js/data.js` | GENERIERT — Rohdaten aus `data/*.json` als Globals `TYPES_DATA`, `CREATURES_DATA`, `FUSIONS_DATA` |
 | `js/state.js` | Lookups (`Elements`, `Creatures`, `Abilities`), Save (localStorage `elementra_save_v1`), Level-Logik (`MAX_LEVEL` 5, +10 %/Level, Kosten 30·Level), Fusion (`fuse`, `recipeReady`), Stage-Fortschritt |
-| `js/svg.js` | `creatureSVG(creature)` — 7 Archetyp-Silhouetten × Element-Paletten = alle 42 Kreaturen; Hybride bekommen Dual-Gradient aus Komponenten-Farben. Außerdem `sceneSVG(theme)` (Arena-Hintergründe, Themes in `SceneThemes`) und `emblemSVG()` (Titel-Logo) |
+| `js/svg.js` | KOMPLETT obsolet — nur die Farbtabelle `SceneThemes` wird noch von `sceneArt` (pixel.js) gelesen. Keine SVG-Funktion mehr aufrufen |
+| `js/pixel.js` | **Standard-Kreaturen-Renderer**: `creatureArt(c, {noAura})` — `PixelArchetypes` (7 Char-Maps) × `PixelPalettes` (6 Elemente), 32×32-Canvas → dataURI, Cache. Tippfehler-Pixel erscheinen magenta |
 | `js/sfx.js` | WebAudio-Synth (`Sfx.hit/ulti/win/...`), kein Audio-Asset, entsperrt bei erster Interaktion |
+| `js/music.js` | Generative Musik (WebAudio, Lookahead-Scheduler): Themes `map`/`battle`, `Music.play(theme)`, Toggle in ⚙. Hooks: Titel-Tap, `beginBattle`, `endBattleUI` |
 | `js/stages.js` | 10 Kampagnen-Stages: Gegner, Gold, First-Clear-Bonus, Kreaturen-Unlocks, `theme` (Arena-Hintergrund) |
 | `js/battle.js` | Engine: `createBattle`, `updateBattle(battle, dtMs)`, `castActive`. Events via `battle.on((type, data) => …)`: attack, damage, heal, absorb, shieldGain, poison, ulti, die, revive, energyFull, end |
 | `js/ui.js` | Screens (map/collection/fusion), Kampf-UI (rAF-Loop), Overlays, Titelscreen (`showTitle`), `debugBattleStep(ms)` |

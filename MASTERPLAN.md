@@ -5,9 +5,44 @@ Datengrundlage: `data/*.json` (42 Kreaturen, 3+3 Elemente, 21 Fusions-Rezepte, s
 
 ## Vision
 
-Mobile-Game (iOS + Android, App Store / Play Store). Kernloop: Echtzeit-Autobattler
-3 vs 3 mit Tap-Ultis, Element-Kreislauf 🔥→🌿→💧→🔥, Hybride durch Fusion.
+Mobile-Game (iOS + Android, App Store / Play Store). Kernloop: Autobattler
+3 vs 3, Element-Kreislauf 🔥→🌿→💧→🔥, Hybride durch Fusion.
 Stil: dunkel-episch mit Element-Glow.
+
+## Design-Pivot (Interview 15.07.2026)
+
+1. **Art: Pixelart im GBA-Pokémon-Stil** (klar, ikonisch, lesbar) statt prozeduralem
+   SVG — dunkel-epische Stimmung bleibt (Referenz: Castlevania GBA).
+   - [x] 15.07.: Stil-Test mit 3 Startern — Nutzer-Urteil: „sehr gut", prozedural weiter.
+   - [x] 15.07.: **Alle 42 Kreaturen umgestellt** (7 Archetyp-Char-Maps × 6 Element-
+         Paletten in `js/pixel.js`), `creatureArt()` ersetzt `creatureSVG` überall;
+         Sammlung/Team-Select/Kampf/Fusion/Silhouetten laufen auf Pixel-Sprites.
+         ⚙ → „Sprite-Galerie" zeigt die komplette Matrix.
+   - [x] 15.07.: UI auf Pixel-Look gezogen (kantige Ecken, harte Stufen-Schatten,
+         Abschnitt „Pixel-Look" in style.css).
+   - [x] 15.07. (Session 2): **Regel „ALLES Pixelart, kein SVG"** — Szenen, UI-Icons,
+         Karten-Pfad, Titel-Emblem gepixelt; Fusion-Screen visuell statt Text (Legende
+         aus Element-Icons, Level-Pips, Fundort-Tags, Teaser-Rezepte); Angriffs-
+         Animation je Archetyp + Pixel-Partikel (Treffer/Heilung/Tod/Ulti);
+         4 Logo-Varianten (⚙ → „Logo wählen") — **finale Logo-Wahl durch Nutzer offen**.
+   - [ ] Optionaler Qualitäts-Upgrade-Pfad später per KI-Generator (**PixelLab**
+         mit Aseprite-Plugin, **Sprite-AI** ab 5 $/Monat mit Free-Tier, **Retro
+         Diffusion**). Prompt-Rezept pro Kreatur:
+         „32x32 pixel art game sprite, GBA style, [creature: fire dragon standing
+         upright], dark epic fantasy, black outline, limited palette (5 shades of
+         [orange/red]), transparent background, single character, front view,
+         no anti-aliasing" — je Element Farbwort tauschen, je Archetyp die
+         Beschreibung; danach in Aseprite/Piskel auf exakt 32×32 bringen und
+         als Sprite-Sheet ins Repo. Loader-Umbau übernimmt Claude.
+2. **Kampfgefühl: Super Auto Pets / TFT** — Vorbereitung IST das Spiel: Aufstellung
+   (Front/Backline), Element-Synergien, später Items. Kampf läuft vollautomatisch;
+   Tap-Ulti wird zurückgebaut (Auto-Ulti Standard).
+3. **Progression:** Sammeln/Komplettieren + Idle-/Tages-Belohnungen + feste Kampagne
+   mit Ende. Kein Roguelite, kein Gacha.
+4. **Musik:** ✅ 15.07.: generative WebAudio-Musik (`js/music.js`, Themes map/battle,
+   Toggle in ⚙) — lizenzfrei, kein Asset. Später optional echte Tracks (Suno/OpenGameArt,
+   Lizenz vor Store-Release prüfen).
+5. Reihenfolge: erst 2 (Kern-Gameplay), dann 1 (Art), dann neuer Content.
 
 ## Phasen
 
@@ -27,6 +62,8 @@ Stil: dunkel-episch mit Element-Glow.
 - [ ] Mehr Kampagnen-Kapitel; Chimären-Fusion (`fusions.json` Regel `archetype`, aktuell `enabled: false`)
 - [ ] Idle-/Tages-Belohnungen, Erfolge
 - [ ] Team-Positionen (Front/Backline ausbauen — Engine kennt `enemyBackline` schon)
+  - [x] 15.07.: Positionen im Team-Select sichtbar (Slot 1 = „Vorne", wird zuerst
+        angegriffen), per Tap tauschbar/entfernbar; vorderster Gegner markiert
 
 ### Phase 3 — Aufs iPhone (ohne Store, ohne Server)
 
