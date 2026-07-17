@@ -13,4 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
   settingsBtn.onclick = () => { Sfx.click(); openSettings(); };
   showScreen('map');
   showTitle();
+
+  // PWA: Service Worker nur über http(s) — file:// wirft SecurityError
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    navigator.serviceWorker.register('sw.js').catch((err) => console.warn('SW-Registrierung fehlgeschlagen:', err));
+  }
 });

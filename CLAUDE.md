@@ -39,6 +39,11 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   für Headlines/Buttons, „VT323" für Fließtext (Grundgröße 19px). Keine System-/Webfonts.
   UI-Look: kantige Ecken, harte Stufen-Schatten, CSS-Scanlines (style.css „Pixel-Look" + „Pixel-Typografie").
 - Testen: Preview-Server `elementra` (`..\.claude\launch.json`, Port 8124) oder `index.html` doppelklicken.
+- **PWA:** `manifest.webmanifest` + `sw.js` (Offline-Cache, stale-while-revalidate —
+  Deploy-Updates greifen erst beim ZWEITEN App-Start). **Jede neue Datei (JS/CSS/Font/
+  Icon) in `sw.js` ASSETS eintragen**, sonst offline kaputt. SW registriert nur über
+  http(s), nicht file:// (Guard in main.js). App-Icons in `icons/` sind aus dem
+  Emblem gepixelt (192/512/180, Hintergrund #0b0e1a) — bei Emblem-Änderung neu erzeugen.
 
 ## Architektur
 

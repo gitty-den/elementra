@@ -69,8 +69,13 @@ Stil: dunkel-episch mit Element-Glow.
 
 - [x] GitHub-Repo: `https://github.com/gitty-den/elementra` (public, 14.07.2026)
 - [x] GitHub Pages aktiv → Spiel unter `https://gitty-den.github.io/elementra/`
-- [ ] PWA-Manifest + Service-Worker (offline spielbar, „Zum Home-Bildschirm" = App-Gefühl)
-- [ ] Auf iPhone 13 / iPad Air real testen (Safari)
+- [x] 17.07.: PWA-Manifest + Service-Worker (offline spielbar, „Zum Home-Bildschirm" = App-Gefühl).
+      `manifest.webmanifest` + `sw.js` (stale-while-revalidate: Update greift beim ZWEITEN
+      Start; neue Dateien in `sw.js` ASSETS eintragen). App-Icons gepixelt aus dem
+      Element-Ring-Emblem (`icons/`, 192/512/180). Fonts-Fix: `fonts/` lag eine Ebene
+      über dem Repo und fehlte darin — Pixel-Fonts luden nie; jetzt im Repo.
+- [ ] Auf iPhone 13 / iPad Air real testen: Safari → Teilen → „Zum Home-Bildschirm" —
+      startet dann randlos wie eine App, auch offline
 
 **Arbeitsablauf ab jetzt:** Lokale Änderungen → `git push` → Pages aktualisiert sich
 automatisch (~1 min). Remote-Sessions von claude.ai/code pushen ins selbe Repo →
