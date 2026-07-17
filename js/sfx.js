@@ -3,7 +3,8 @@
 
 const Sfx = {
   ctx: null,
-  get enabled() { return Save.settings.sfx; },
+  get volume() { const v = Save.settings.sfxVol; return typeof v === 'number' ? v : 1; },
+  get enabled() { return this.volume > 0; },
   ensure() {
     if (!this.ctx) {
       const AC = window.AudioContext || window.webkitAudioContext;
@@ -22,7 +23,7 @@ const Sfx = {
     osc.type = type;
     osc.frequency.setValueAtTime(freq, t0);
     if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
-    g.gain.setValueAtTime(vol, t0);
+    g.gain.setValueAtTime(vol * this.volume, t0);
     g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
     osc.connect(g).connect(ctx.destination);
     osc.start(t0);

@@ -569,6 +569,16 @@ const PixelIcons = {
     '.lllllllllll', '.lllllllllll', '..llllllllll', '...lll......', '....ll......',
     '.....l......', '............',
   ] },
+  sound: { pal: { m: '#8a8fa8', l: '#eef2ff', g: '#4db8ff' }, rows: [
+    '............', '.....l......', '....ll..g...', '.mmlll...g..', '.mmlll.g.g..',
+    '.mmlll.g.g..', '.mmlll.g.g..', '.mmlll.g.g..', '.mmlll...g..', '....ll..g...',
+    '.....l......', '............',
+  ] },
+  music: { pal: { m: '#c0c6dd', l: '#eef2ff' }, rows: [
+    '............', '....mmmmmm..', '....mllllm..', '....m....m..', '....m....m..',
+    '....m....m..', '....m....m..', '..mmm..mmm..', '.mmmm.mmmm..', '.mmmm.mmmm..',
+    '..mm...mm...', '............',
+  ] },
 };
 
 // ===================== Lagerfeuer (Hauptmenü-Szene, 2 Flacker-Frames) =====================
@@ -735,7 +745,8 @@ function sceneArt(themeName) {
 }
 
 // ===================== Titel-Emblem: 4 Varianten, Auswahl in ⚙ → Logo =====================
-// Save.settings.emblem wählt die Variante (Default 'ring'); dient später auch als App-Icon-Basis.
+// Logo fest: 'ring' (Element-Ring, Nutzer-Entscheidung 17.07.2026) — auch App-Icon-Basis.
+// Die übrigen Varianten bleiben als Assets erhalten (emblemArt('kristall') etc. für Debug).
 
 function _emblemRing(ctx, s) {
   const cx = s / 2, cy = s / 2, R = 19;
@@ -852,7 +863,7 @@ function emblemURI(key) {
 }
 
 function emblemArt(variant) {
-  const key = variant || (typeof Save !== 'undefined' && Save.settings.emblem) || 'ring';
+  const key = variant || 'ring';
   return `<img class="pixel-sprite" src="${emblemURI(EmblemVariants[key] ? key : 'ring')}" alt="Elementra" draggable="false">`;
 }
 

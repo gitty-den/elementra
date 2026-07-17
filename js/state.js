@@ -103,7 +103,7 @@ function defaultSave() {
     },
     team: ['fire_drache', 'nature_golem', 'water_geist'],
     stages: {},            // stageId -> Sterne (1–3)
-    settings: { sfx: true, music: true },
+    settings: { sfxVol: 1, musicVol: 1 }, // Regler 0–1 statt An/Aus (17.07.2026)
   };
 }
 
@@ -123,6 +123,10 @@ function loadSave() {
       const spare = Object.keys(s.collection).filter(id => !s.team.includes(id));
       while (s.team.length < 3 && spare.length) s.team.push(spare.shift());
       if (!Object.keys(s.collection).length) return defaultSave();
+      // Migration: Lautstärke-Regler statt An/Aus; Logo fest auf Element-Ring.
+      if (typeof s.settings.sfxVol !== 'number') s.settings.sfxVol = s.settings.sfx === false ? 0 : 1;
+      if (typeof s.settings.musicVol !== 'number') s.settings.musicVol = s.settings.music === false ? 0 : 1;
+      delete s.settings.sfx; delete s.settings.music; delete s.settings.emblem;
       return s;
     }
   } catch (e) { console.warn('Speicherstand unlesbar, starte neu.', e); }

@@ -43,9 +43,9 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   Jedes neue visuelle Element (Kreatur, Icon, Hintergrund, Emblem, Effekt) wird direkt
   als Pixelart in `js/pixel.js` gebaut: Char-Maps oder Low-Res-Canvas → dataURI →
   `<img class="pixel-sprite">` (image-rendering: pixelated). Renderer: `creatureArt()`
-  (7 Archetyp-Maps × 6 Element-Paletten = alle 42, ⚙ → „Sprite-Galerie"), `iconArt(name)`
+  (Archetyp-Maps × 6 Element-Paletten; Galerie nur noch per Konsole `openPixelTest()`), `iconArt(name)`
   (Pixel-Icons statt Emoji), `sceneArt(theme)` (Kampf/Titel-Hintergründe), `emblemArt()`
-  (4 Varianten in `EmblemVariants`, Auswahl ⚙ → „Logo wählen" → `Save.settings.emblem`),
+  (Logo FEST auf 'ring' — Element-Ring; übrige `EmblemVariants` nur noch Debug-Assets),
   `mapTrailURI()`/`starTileURI()` (Kampagnen-Karte). `js/svg.js` ist KOMPLETT obsolet
   (nur noch `SceneThemes`-Farbtabelle wird daraus gelesen). Char-Map-Zeilenlänge exakt
   16 (symmetric) bzw. 32 bzw. Icon-Breite; Fehler = Magenta-Pixel + console.warn.
@@ -82,10 +82,16 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 
 - **Hauptmenü** (`renderMenu`): Emblem + Logo über Lager-Szene; erste Interaktion
   (pointerdown, main.js) entsperrt AudioContext und startet die Musik.
-- **Kampagne = Weltkarte, HORIZONTAL scrollend** (seit 17.07.): Zickzack-Pfad links→rechts,
-  Stage 1 links, aktuelle Stage pulsiert gold und wird beim Öffnen zentriert.
-  Medaillons zeigen **Theme-Icons statt Nummern** (`MapThemeIcon`/`MapThemeGlow` in ui.js),
-  keine Text-Labels auf der Map — Details erst im Team-Select. Kein Listen-Layout!
+- **Kampagne = Weltkarte, VERTIKAL scrollend** (Stage 1 unten; horizontale Variante
+  wurde vom Nutzer verworfen). Scrollbars sind app-weit unsichtbar. Medaillons zeigen
+  **Theme-Icons statt Nummern** (`MapThemeIcon`/`MapThemeGlow` in ui.js), keine
+  Text-Labels auf der Map — Details erst im Team-Select. Kein Listen-Layout!
+- **Overlays rahmenlos** (Feedback 17.07.): eine Fläche, keine Box-in-Box-Optik —
+  innere Container ohne Border, Hervorhebung über Glow/Schatten.
+- Kampf-Steuerung (Tempo/Auto) unten am Rand; **Ulti-Ready = goldene blinkende
+  Sprite-Umrandung** (`ultiBlink`, Drop-Shadow-Kette), kein Bodenring, kein Hint-Text.
+- Einstellungen: **Lautstärke-Regler** `Save.settings.sfxVol`/`musicVol` (0–1,
+  `Music.setVolume`), Logo fest 'ring'.
 - **Kampf = Arena-Szene**: `sceneSVG(stage.theme)` als Hintergrund, Einheiten absolut
   positioniert über `SLOT_POS` (Prozent-Koordinaten in ui.js), Gegner per `scaleX(-1)`
   gespiegelt. Idle-Bobbing, gerichteter Ausfallschritt (Vektor per getBoundingClientRect

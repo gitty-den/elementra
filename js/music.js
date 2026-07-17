@@ -11,7 +11,8 @@ const Music = {
   nextTime: 0,
   noiseBuf: null,
 
-  get enabled() { return Save.settings.music !== false; }, // alte Saves: an
+  get volume() { const v = Save.settings.musicVol; return typeof v === 'number' ? v : 1; },
+  get enabled() { return this.volume > 0; },
 
   // A-Moll, dunkel: Akkorde als [Grundton, Terz/Quinte...] in Hz.
   MAP_CHORDS: [
@@ -37,7 +38,7 @@ const Music = {
     if (!ctx) return;
     this.bus = ctx.createGain();
     this.bus.gain.value = 0.0001;
-    this.bus.gain.setTargetAtTime(1, ctx.currentTime, 0.4); // sanft rein
+    this.bus.gain.setTargetAtTime(this.volume, ctx.currentTime, 0.4); // sanft rein
     this.bus.connect(ctx.destination);
     this.step = 0;
     this.nextTime = ctx.currentTime + 0.05;
@@ -57,11 +58,13 @@ const Music = {
 
   stop() { this.stopPlayback(); this.theme = null; },
 
-  toggle() {
-    Save.settings.music = this.enabled ? false : true;
+  // Lautstärke-Regler (0–1): 0 stoppt, >0 startet bzw. zieht den Bus live nach.
+  setVolume(v) {
+    Save.settings.musicVol = Math.max(0, Math.min(1, v));
     persist();
-    if (this.enabled) this.play(this.theme || 'map', true);
-    else this.stopPlayback();
+    if (this.volume <= 0) { this.stopPlayback(); return; }
+    if (!this.timer) this.play(this.theme || 'map', true);
+    else if (this.bus && Sfx.ctx) this.bus.gain.setTargetAtTime(this.volume, Sfx.ctx.currentTime, 0.1);
   },
 
   pump() {

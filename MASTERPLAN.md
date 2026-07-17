@@ -78,6 +78,12 @@ Stil: dunkel-episch mit Element-Glow.
       Sammlung, Fusions-Gegner ab S14 (erste Fusions-Pflicht), All-Fusion-Finale
       S20; per Headless-Sim balanciert. Offen für Kapitel 3: nature_wyrm,
       water_greif, nature_geist als Unlocks.
+- [x] 17.07.: **Feedback-Runde 3:** Map wieder vertikal (Scrollbars app-weit
+      unsichtbar), Overlays rahmenlos (kein Box-in-Box), Kampf: Tempo/Auto größer
+      unten am Rand + Hint-Text entfernt, Ulti-Ready = goldene blinkende
+      Sprite-Umrandung statt Bodenring, Einstellungen mit Lautstärke-Reglern
+      (Sound/Musik 0–100 %), Sprite-Galerie/Logo-Wahl entfernt — Logo fest:
+      Element-Ring.
 - [ ] Mehr Kampagnen-Kapitel (Stages 21+, weitere Fusions-Rezepte für die 9 offenen Paare)
 - [ ] Idle-/Tages-Belohnungen, Erfolge
 - [ ] Team-Positionen (Front/Backline ausbauen — Engine kennt `enemyBackline` schon)

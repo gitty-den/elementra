@@ -175,20 +175,20 @@ body.in-battle #screen { overflow: hidden; }
 }
 @keyframes ctaPulse { 50% { opacity: 0.35; } }
 
-/* ---------- Kampagnen-Weltkarte (horizontal seit 17.07.2026) ---------- */
+/* ---------- Kampagnen-Weltkarte (vertikal, Scrollbar unsichtbar) ---------- */
 
-.map-screen {
-  height: 100%; overflow-x: auto; overflow-y: hidden;
-  display: flex; align-items: center;
-  -webkit-overflow-scrolling: touch;
-}
+.map-screen { min-height: 100%; }
 .map-world {
-  position: relative; flex: 0 0 auto;
+  position: relative;
   background:
-    radial-gradient(500px 300px at 15% 25%, rgba(76, 175, 80, 0.1), transparent 70%),
-    radial-gradient(500px 320px at 45% 70%, rgba(47, 128, 237, 0.1), transparent 70%),
-    radial-gradient(500px 300px at 80% 30%, rgba(124, 108, 255, 0.12), transparent 70%);
+    radial-gradient(500px 300px at 75% 15%, rgba(124, 108, 255, 0.12), transparent 70%),
+    radial-gradient(500px 320px at 20% 55%, rgba(47, 128, 237, 0.1), transparent 70%),
+    radial-gradient(500px 300px at 70% 90%, rgba(76, 175, 80, 0.1), transparent 70%);
 }
+
+/* Unsichtbare Scrollbars überall (App-Gefühl, kein Web-Look) */
+#screen, .map-screen, .overlay-box { scrollbar-width: none; }
+#screen::-webkit-scrollbar, .map-screen::-webkit-scrollbar, .overlay-box::-webkit-scrollbar { display: none; }
 .map-trail { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 .map-node {
@@ -302,14 +302,15 @@ body.in-battle #screen { overflow: hidden; }
   backdrop-filter: blur(9px);
   animation: fadeIn 0.22s ease;
 }
+/* Rahmenlos (Feedback 17.07.): eine Fläche, keine Box-in-Box-Optik */
 .overlay-box {
   width: min(94vw, 520px); max-height: 88vh; overflow-y: auto;
   background:
     radial-gradient(140% 60% at 50% 0%, rgba(124, 108, 255, 0.14), transparent 55%),
     linear-gradient(180deg, #1b2144, #0d1126);
-  border: 1px solid var(--panel-border);
-  border-radius: 20px; padding: 20px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 20px; padding: 22px 20px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7);
   animation: popIn 0.28s cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 @keyframes fadeIn { from { opacity: 0; } }
@@ -333,17 +334,11 @@ body.in-battle #screen { overflow: hidden; }
 .ts-slot {
   flex: 1; min-height: 88px; position: relative; cursor: pointer;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 12px 4px 6px; border-radius: 12px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.28));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), inset 0 -3px 8px rgba(0, 0, 0, 0.45);
+  padding: 12px 4px 6px; border-radius: 4px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.3));
 }
-.ts-slot.filled { border-style: solid; border-color: rgba(255, 255, 255, 0.22); }
-.ts-slot.front { border-color: rgba(255, 200, 80, 0.45); }
-.ts-slot.sel {
-  border-color: var(--gold);
-  box-shadow: 0 0 12px rgba(255, 200, 80, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.07);
-}
+.ts-slot.front { box-shadow: inset 0 0 0 1px rgba(255, 200, 80, 0.35); }
+.ts-slot.sel { box-shadow: 0 0 12px rgba(255, 200, 80, 0.45), inset 0 0 0 1px var(--gold); }
 .ts-slot-tag {
   position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
   font-size: 0.58rem; font-weight: 800; letter-spacing: 0.6px; text-transform: uppercase;
@@ -406,9 +401,30 @@ body.in-battle #screen { overflow: hidden; }
   font-size: 0.82rem; line-height: 1.45;
 }
 
-/* Einstellungen */
-.settings { display: flex; flex-direction: column; gap: 12px; text-align: center; }
+/* Einstellungen: Lautstärke-Regler im Pixel-Look */
+.settings { display: flex; flex-direction: column; gap: 14px; text-align: center; }
 .settings-info { color: var(--text-dim); font-size: 0.75rem; }
+.set-row { display: flex; align-items: center; gap: 14px; padding: 2px 6px; }
+.set-row .px-ico { width: 26px; height: 26px; flex: 0 0 auto; }
+input[type="range"].pixel-range {
+  flex: 1; -webkit-appearance: none; appearance: none;
+  height: 12px; border-radius: 1px;
+  background: rgba(10, 14, 28, 0.85);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+input[type="range"].pixel-range::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 24px; height: 24px; border-radius: 2px;
+  background: var(--gold); border: 2px solid #5c3d0d;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.4), inset 0 -3px 0 rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+}
+input[type="range"].pixel-range::-moz-range-thumb {
+  width: 22px; height: 22px; border-radius: 2px;
+  background: var(--gold); border: 2px solid #5c3d0d;
+  cursor: pointer;
+}
 
 /* ---------- Kampf: Arena ---------- */
 
@@ -433,12 +449,18 @@ body.in-battle #screen { overflow: hidden; }
   box-shadow: inset 0 0 140px 40px rgba(0, 0, 8, 0.6);
 }
 
-.battle-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; position: relative; z-index: 20; }
+.battle-top { display: flex; align-items: center; justify-content: center; position: relative; z-index: 20; }
+/* Tempo/Auto unten am Rand, etwas größer (Feedback 17.07.) */
+.battle-bottom {
+  position: relative; z-index: 20;
+  display: flex; gap: 14px; justify-content: center;
+  padding: 10px 0 2px;
+}
+.battle-bottom .btn { font-size: 0.55rem; padding: 13px 24px; }
 .battle-stage-name {
   font-weight: 900; letter-spacing: 2px; font-size: 0.9rem; text-transform: uppercase;
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
 }
-.battle-ctrl { display: flex; gap: 6px; }
 
 .arena { flex: 1; position: relative; z-index: 10; }
 
@@ -463,23 +485,21 @@ body.in-battle #screen { overflow: hidden; }
   background: radial-gradient(ellipse, rgba(0, 0, 10, 0.55), transparent 70%);
 }
 
-.unit-ring {
-  position: absolute; left: 50%; bottom: -1%; z-index: 0;
-  width: 88%; height: 22%;
-  transform: translateX(-50%);
-  border-radius: 50%;
-  opacity: 0;
-  transition: opacity 0.25s;
-}
-.unit.ulti-ready .unit-ring {
-  opacity: 1;
-  box-shadow: 0 0 22px 6px rgba(255, 201, 77, 0.55), inset 0 0 14px rgba(255, 201, 77, 0.6);
-  border: 2px solid rgba(255, 214, 110, 0.9);
-  animation: ringPulse 0.9s ease-in-out infinite;
-}
-@keyframes ringPulse { 50% { transform: translateX(-50%) scale(1.12); opacity: 0.7; } }
+.unit-ring { display: none; }
+/* Ulti bereit: goldene, blinkende Pixel-Umrandung direkt am Sprite (statt Bodenring) */
 .unit.ulti-ready { cursor: pointer; }
-.unit.ulti-ready .unit-art { filter: drop-shadow(0 0 14px rgba(255, 201, 77, 0.75)); }
+.unit.ulti-ready .unit-art img { animation: ultiBlink 0.7s steps(1) infinite; }
+@keyframes ultiBlink {
+  0%, 100% {
+    filter: drop-shadow(2px 0 0 #ffd54f) drop-shadow(-2px 0 0 #ffd54f)
+            drop-shadow(0 2px 0 #ffd54f) drop-shadow(0 -2px 0 #ffd54f)
+            drop-shadow(0 0 8px rgba(255, 201, 77, 0.9));
+  }
+  50% {
+    filter: drop-shadow(2px 0 0 rgba(255, 213, 79, 0.35)) drop-shadow(-2px 0 0 rgba(255, 213, 79, 0.35))
+            drop-shadow(0 2px 0 rgba(255, 213, 79, 0.35)) drop-shadow(0 -2px 0 rgba(255, 213, 79, 0.35));
+  }
+}
 
 .unit.taunting .unit-art { filter: drop-shadow(0 0 12px rgba(122, 200, 255, 0.8)); }
 
@@ -577,12 +597,6 @@ body.in-battle #screen { overflow: hidden; }
   100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.3); }
 }
 
-.battle-hint {
-  text-align: center; color: var(--text-dim); font-size: 0.7rem;
-  padding-top: 4px; position: relative; z-index: 20;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
-}
-
 #ulti-banner { position: fixed; top: 16%; left: 0; right: 0; pointer-events: none; z-index: 40; text-align: center; }
 .ulti-flash {
   display: inline-block;
@@ -619,11 +633,7 @@ body.in-battle #screen { overflow: hidden; }
 .result-stars .star { font-size: 1.8rem; }
 .result-gold { color: var(--gold); font-weight: 900; font-size: 1.2rem; margin-bottom: 6px; }
 
-.unlock-box {
-  margin: 14px auto 0; padding: 14px;
-  border: 1px dashed rgba(255, 201, 77, 0.5); border-radius: var(--radius);
-  background: rgba(255, 201, 77, 0.07);
-}
+.unlock-box { margin: 16px auto 0; }
 .unlock-label { color: var(--gold); font-weight: 900; font-size: 0.85rem; margin-bottom: 10px; letter-spacing: 0.5px; }
 .unlock-card { width: 110px; margin: 0 auto; animation: popIn 0.5s cubic-bezier(0.2, 1.6, 0.4, 1); }
 
@@ -639,11 +649,10 @@ body.in-battle #screen { overflow: hidden; }
 
 .fusion-row {
   display: flex; align-items: center; justify-content: center; gap: 6px;
-  background: var(--panel); border: 1px solid var(--panel-border);
-  border-radius: var(--radius); padding: 12px 8px; margin-bottom: 12px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 6px 18px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.22));
+  border-radius: 4px; padding: 12px 8px; margin-bottom: 12px;
 }
-.fusion-row.ready { border-color: rgba(255, 201, 77, 0.55); box-shadow: 0 0 22px rgba(255, 201, 77, 0.18), inset 0 1px 0 rgba(255,255,255,0.07); }
+.fusion-row.ready { box-shadow: 0 0 22px rgba(255, 201, 77, 0.2); }
 .fusion-row.done { opacity: 0.75; }
 .fusion-input, .fusion-output { width: 88px; text-align: center; }
 .fusion-input .ccard, .fusion-output .ccard { pointer-events: none; }
@@ -854,8 +863,7 @@ body::after {
 .fusion-legend { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
 .fl-chip {
   display: flex; align-items: center; gap: 5px; padding: 6px 10px;
-  background: var(--panel); border: 1px solid var(--panel-border); border-radius: 4px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 2px 0 rgba(0, 0, 0, 0.4);
+  background: rgba(255, 255, 255, 0.05); border-radius: 4px;
 }
 .fl-chip b { color: var(--text-dim); font-size: 0.8rem; }
 
@@ -977,11 +985,3 @@ body::after {
 .unit.attacking.arch-seraph .unit-body { animation: atkSwoop 0.48s cubic-bezier(0.3, 0, 0.35, 1); }
 .unit.attacking.arch-archon .unit-body { animation: atkPhase 0.46s ease-in-out; }
 
-/* Logo-Auswahl */
-.logo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.logo-cell { text-align: center; cursor: pointer; }
-.logo-cell .pt-art { padding: 14px; border-width: 2px; }
-.logo-cell.sel .pt-art { border-color: var(--gold); box-shadow: 0 0 12px rgba(255, 201, 77, 0.4), inset 0 -8px 18px rgba(0, 0, 0, 0.5); }
-.logo-cell span { display: block; font-size: 0.68rem; color: var(--text-dim); margin-top: 4px; font-weight: 700; }
-.logo-cell.sel span { color: var(--gold); }
-.btn-ico { width: 18px; height: 18px; display: inline-block; vertical-align: -3px; }

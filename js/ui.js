@@ -75,11 +75,11 @@ function starsHTML(n) {
 }
 
 // ---------- Screen: Kampagnen-Weltkarte ----------
-// Horizontaler Zickzack-Pfad (Stage 1 links), Medaillons mit Theme-Icons statt
-// Nummern — sprachunabhängig, Details erst im Team-Select (UI-Grundsätze 17.07.).
+// Vertikaler Zickzack-Pfad (Stage 1 unten, Weg führt nach oben), Scrollbar
+// unsichtbar. Medaillons mit Theme-Icons statt Nummern — sprachunabhängig,
+// Details erst im Team-Select (UI-Grundsätze 17.07.).
 
-const MAP_NODE_SPACING_X = 136;
-const MAP_WORLD_H = 440; // logische Höhe in px (vertikal zentriert)
+const MAP_NODE_SPACING = 128;
 
 // Theme -> Pixel-Icon auf dem Medaillon; Glow-Farbe für den Knoten.
 const MapThemeIcon = { fire: 'fire', nature: 'nature', water: 'water', storm: 'bolt', ash: 'ash', frost: 'frost' };
@@ -87,17 +87,17 @@ const MapThemeGlow = { fire: '#ff7a3c', nature: '#7dff8a', water: '#5ab8ff', sto
 
 function renderMap(root) {
   const wrap = el('div', 'map-screen');
-  const width = STAGES.length * MAP_NODE_SPACING_X + 190;
+  const height = STAGES.length * MAP_NODE_SPACING + 170;
   const world = el('div', 'map-world');
-  world.style.width = width + 'px';
-  world.style.height = MAP_WORLD_H + 'px';
+  world.style.height = height + 'px';
 
   const pos = STAGES.map((s, i) => ({
-    x: 80 + i * MAP_NODE_SPACING_X,
-    y: MAP_WORLD_H * (i % 2 === 0 ? 0.62 : 0.3),
+    x: i % 2 === 0 ? 28 : 64,                    // Prozent der Breite
+    y: height - 140 - i * MAP_NODE_SPACING,      // px, Stage 1 unten
   }));
-  const pts = pos.map(p => ({ x: p.x, y: p.y + 34 }));
-  world.innerHTML = `<img class="map-trail pixel-sprite" src="${mapTrailURI(pts, width, MAP_WORLD_H)}" alt="" draggable="false">`;
+  // Gepixelter Pfad durch die Knoten-Mittelpunkte (Referenzbreite 390)
+  const pts = pos.map(p => ({ x: p.x * 3.9, y: p.y + 36 }));
+  world.innerHTML = `<img class="map-trail pixel-sprite" src="${mapTrailURI(pts, 390, height)}" alt="" draggable="false">`;
   world.style.backgroundImage = `url(${starTileURI()})`;
 
   const current = highestClearedStage() + 1;
@@ -105,7 +105,7 @@ function renderMap(root) {
     const cleared = Save.stages[stage.id] || 0;
     const unlocked = stageUnlocked(stage.id);
     const node = el('div', `map-node ${cleared ? 'cleared' : ''} ${unlocked ? '' : 'locked'} ${stage.id === current ? 'current' : ''}`);
-    node.style.left = pos[i].x + 'px';
+    node.style.left = pos[i].x + '%';
     node.style.top = pos[i].y + 'px';
     node.style.setProperty('--theme-glow', MapThemeGlow[stage.theme] || '#b18aff');
     node.innerHTML = `
@@ -118,8 +118,7 @@ function renderMap(root) {
 
   wrap.appendChild(world);
   root.appendChild(wrap);
-  // Aktuelle Stage in die Bildmitte scrollen
-  wrap.scrollLeft = Math.max(0, 80 + (current - 1) * MAP_NODE_SPACING_X - wrap.clientWidth / 2);
+  root.scrollTop = root.scrollHeight; // Start unten bei Stage 1
 }
 
 // ---------- Team-Auswahl ----------
@@ -216,13 +215,12 @@ function beginBattle(stage, teamIds) {
       <div class="battle-bg">${sceneArt(stage.theme)}</div>
       <div class="battle-top">
         <div class="battle-stage-name">${stage.name}</div>
-        <div class="battle-ctrl">
-          <button class="btn btn-ghost btn-sm" id="bt-speed">1×</button>
-          <button class="btn btn-ghost btn-sm" id="bt-auto">${iconArt('bolt')} Auto</button>
-        </div>
       </div>
       <div class="arena" id="arena"></div>
-      <div class="battle-hint">Leuchtende Kreatur antippen = Spezialfähigkeit!</div>
+      <div class="battle-bottom">
+        <button class="btn btn-ghost" id="bt-speed">1×</button>
+        <button class="btn btn-ghost" id="bt-auto">${iconArt('bolt', 16)} Auto</button>
+      </div>
       <div id="ulti-banner"></div>
     </div>`;
 
@@ -740,33 +738,38 @@ function renderMenu(root) {
 
 // ---------- Einstellungen ----------
 
+// Lautstärke-Regler (icon-basiert, sprachunabhängig); Logo fest = Element-Ring.
 function openSettings() {
+  const pct = v => Math.round((typeof v === 'number' ? v : 1) * 100);
   const ov = showOverlay(`
     <div class="settings">
-      <h2>Einstellungen</h2>
-      <button class="btn btn-ghost" id="set-sfx">Sound: ${Save.settings.sfx ? 'an 🔊' : 'aus 🔇'}</button>
-      <button class="btn btn-ghost" id="set-music">Musik: ${Music.enabled ? 'an 🎵' : 'aus 🔇'}</button>
-      <button class="btn btn-ghost" id="set-pixeltest">🎨 Sprite-Galerie</button>
-      <button class="btn btn-ghost" id="set-logo"><span class="btn-ico">${emblemArt()}</span> Logo wählen</button>
+      <h2>${iconArt('gear', 18)}</h2>
+      <div class="set-row">${iconArt('sound', 26)}
+        <input type="range" class="pixel-range" id="set-sfx" min="0" max="100" value="${pct(Save.settings.sfxVol)}"></div>
+      <div class="set-row">${iconArt('music', 26)}
+        <input type="range" class="pixel-range" id="set-music" min="0" max="100" value="${pct(Save.settings.musicVol)}"></div>
       <button class="btn btn-danger" id="set-reset">Spielstand zurücksetzen</button>
-      <div class="settings-info">Elementra — Prototyp v0.1</div>
+      <div class="settings-info">Elementra — Prototyp v0.2</div>
       <div class="ov-actions">
         <button class="btn btn-primary" id="set-close">Schließen</button>
       </div>
     </div>`);
-  ov.querySelector('#set-sfx').onclick = e => {
-    Save.settings.sfx = !Save.settings.sfx;
+  const paintFill = input => {
+    input.style.background = `linear-gradient(to right, var(--energy) ${input.value}%, rgba(10,14,28,0.85) ${input.value}%)`;
+  };
+  const sfxSlider = ov.querySelector('#set-sfx');
+  const musicSlider = ov.querySelector('#set-music');
+  [sfxSlider, musicSlider].forEach(paintFill);
+  sfxSlider.oninput = e => {
+    Save.settings.sfxVol = +e.target.value / 100;
     persist();
-    e.target.textContent = 'Sound: ' + (Save.settings.sfx ? 'an 🔊' : 'aus 🔇');
-    Sfx.click();
+    paintFill(e.target);
   };
-  ov.querySelector('#set-music').onclick = e => {
-    Music.toggle();
-    e.target.textContent = 'Musik: ' + (Music.enabled ? 'an 🎵' : 'aus 🔇');
-    Sfx.click();
+  sfxSlider.onchange = () => Sfx.click(); // hörbares Feedback in neuer Lautstärke
+  musicSlider.oninput = e => {
+    Music.setVolume(+e.target.value / 100);
+    paintFill(e.target);
   };
-  ov.querySelector('#set-pixeltest').onclick = () => { Sfx.click(); openPixelTest(); };
-  ov.querySelector('#set-logo').onclick = () => { Sfx.click(); openLogoChooser(); };
   ov.querySelector('#set-reset').onclick = () => {
     if (confirm('Wirklich den kompletten Spielstand löschen?')) {
       resetSave();
@@ -777,7 +780,7 @@ function openSettings() {
   ov.querySelector('#set-close').onclick = () => { Sfx.click(); closeOverlay(); };
 }
 
-// ---------- Sprite-Galerie (alle 42 Pixel-Sprites, Debug/Design-Review) ----------
+// ---------- Sprite-Galerie (Debug/Design-Review, nur noch per Konsole: openPixelTest()) ----------
 
 function openPixelTest() {
   const byElement = {};
@@ -815,30 +818,5 @@ function openPixelTest() {
   $('#pt-close').onclick = () => { Sfx.click(); closeOverlay(); };
 }
 
-// ---------- Logo-Auswahl (4 Emblem-Varianten, Wahl landet in Save.settings.emblem) ----------
-
-function openLogoChooser() {
-  const current = Save.settings.emblem || 'ring';
-  const cells = Object.keys(EmblemVariants).map(key => `
-    <div class="logo-cell ${key === current ? 'sel' : ''}" data-key="${key}">
-      <div class="pt-art">${emblemArt(key)}</div>
-      <span>${EmblemVariants[key].name}</span>
-    </div>`).join('');
-  const ov = showOverlay(`
-    <div class="logo-chooser">
-      <h2>Logo wählen</h2>
-      <div class="pt-hint">Wird Titel-Emblem und später App-Icon. Antippen zum Festlegen.</div>
-      <div class="logo-grid">${cells}</div>
-      <div class="ov-actions">
-        <button class="btn btn-primary" id="lg-close">Fertig</button>
-      </div>
-    </div>`);
-  ov.querySelectorAll('.logo-cell').forEach(cell => cell.onclick = () => {
-    Sfx.click();
-    Save.settings.emblem = cell.dataset.key;
-    persist();
-    ov.querySelectorAll('.logo-cell').forEach(c =>
-      c.classList.toggle('sel', c.dataset.key === cell.dataset.key));
-  });
-  ov.querySelector('#lg-close').onclick = () => { Sfx.click(); closeOverlay(); openSettings(); };
-}
+// Logo ist fest der Element-Ring (Nutzer-Entscheidung 17.07.2026) — die frühere
+// Logo-Auswahl wurde entfernt; emblemArt() ohne Argument liefert immer 'ring'.
