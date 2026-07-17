@@ -1,205 +1,254 @@
 {
-  "rules": {
-    "elemental": {
-      "description": "Gleicher Archetyp, zwei verschiedene Basis-Elemente auf Max-Level -> Hybrid (Tier 2).",
-      "combos": [
-        {
-          "elements": [
-            "fire",
-            "water"
-          ],
-          "result": "steam"
-        },
-        {
-          "elements": [
-            "fire",
-            "nature"
-          ],
-          "result": "ash"
-        },
-        {
-          "elements": [
-            "nature",
-            "water"
-          ],
-          "result": "frost"
-        }
-      ]
+  "rule": "archetype+element",
+  "description": "Zwei Max-Level-Kreaturen VERSCHIEDENER Archetypen fusionieren zu einem Fusions-Archetyp. Element: gleich+gleich -> gleich, sonst Hybrid-Element. Hybride bleiben im Kampf neutral.",
+  "requiresMaxLevel": true,
+  "elementCombos": [
+    {
+      "elements": [
+        "fire",
+        "water"
+      ],
+      "result": "steam"
     },
-    "archetype": {
-      "description": "OPTIONAL / POST-MVP: gleiches Element, zwei verschiedene Archetypen -> Chimäre.",
-      "enabled": false
+    {
+      "elements": [
+        "fire",
+        "nature"
+      ],
+      "result": "ash"
+    },
+    {
+      "elements": [
+        "nature",
+        "water"
+      ],
+      "result": "frost"
     }
+  ],
+  "namePrefixes": {
+    "fire": "Glut",
+    "nature": "Dorn",
+    "water": "Flut",
+    "steam": "Dampf",
+    "ash": "Aschen",
+    "frost": "Frost"
   },
-  "hybridsAreNeutral": true,
-  "recipes": [
+  "fusionArchetypes": [
     {
-      "inputs": [
-        "fire_drache",
-        "water_drache"
+      "id": "koloss",
+      "name": "Koloss",
+      "pair": [
+        "drache",
+        "golem"
       ],
-      "output": "steam_drache",
-      "requiresMaxLevel": true
+      "role": "tank",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 230,
+        "atk": 20,
+        "def": 26,
+        "spd": 8
+      },
+      "passive": "koloss_passive",
+      "active": "koloss_active"
     },
     {
-      "inputs": [
-        "fire_drache",
-        "nature_drache"
+      "id": "wyvern",
+      "name": "Wyvern",
+      "pair": [
+        "drache",
+        "greif"
       ],
-      "output": "ash_drache",
-      "requiresMaxLevel": true
+      "role": "speed",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 105,
+        "atk": 26,
+        "def": 10,
+        "spd": 24
+      },
+      "passive": "wyvern_passive",
+      "active": "wyvern_active"
     },
     {
-      "inputs": [
-        "nature_drache",
-        "water_drache"
+      "id": "leviathan",
+      "name": "Leviathan",
+      "pair": [
+        "drache",
+        "wyrm"
       ],
-      "output": "frost_drache",
-      "requiresMaxLevel": true
+      "role": "dps",
+      "rarity": "legendary",
+      "baseStats": {
+        "hp": 125,
+        "atk": 27,
+        "def": 12,
+        "spd": 15
+      },
+      "passive": "leviathan_passive",
+      "active": "leviathan_active"
     },
     {
-      "inputs": [
-        "fire_golem",
-        "water_golem"
+      "id": "seraph",
+      "name": "Seraph",
+      "pair": [
+        "drache",
+        "phoenix"
       ],
-      "output": "steam_golem",
-      "requiresMaxLevel": true
+      "role": "sustain",
+      "rarity": "legendary",
+      "baseStats": {
+        "hp": 135,
+        "atk": 24,
+        "def": 14,
+        "spd": 13
+      },
+      "passive": "seraph_passive",
+      "active": "seraph_active"
     },
     {
-      "inputs": [
-        "fire_golem",
-        "nature_golem"
+      "id": "behemoth",
+      "name": "Behemoth",
+      "pair": [
+        "golem",
+        "wolf"
       ],
-      "output": "ash_golem",
-      "requiresMaxLevel": true
+      "role": "bruiser",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 190,
+        "atk": 24,
+        "def": 20,
+        "spd": 10
+      },
+      "passive": "behemoth_passive",
+      "active": "behemoth_active"
     },
     {
-      "inputs": [
-        "nature_golem",
-        "water_golem"
+      "id": "gargoyle",
+      "name": "Gargoyle",
+      "pair": [
+        "golem",
+        "geist"
       ],
-      "output": "frost_golem",
-      "requiresMaxLevel": true
+      "role": "tank",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 200,
+        "atk": 14,
+        "def": 24,
+        "spd": 9
+      },
+      "passive": "gargoyle_passive",
+      "active": "gargoyle_active"
     },
     {
-      "inputs": [
-        "fire_greif",
-        "water_greif"
+      "id": "basilisk",
+      "name": "Basilisk",
+      "pair": [
+        "golem",
+        "wyrm"
       ],
-      "output": "steam_greif",
-      "requiresMaxLevel": true
+      "role": "dot",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 150,
+        "atk": 19,
+        "def": 18,
+        "spd": 11
+      },
+      "passive": "basilisk_passive",
+      "active": "basilisk_active"
     },
     {
-      "inputs": [
-        "fire_greif",
-        "nature_greif"
+      "id": "chimaera",
+      "name": "Chimära",
+      "pair": [
+        "greif",
+        "wolf"
       ],
-      "output": "ash_greif",
-      "requiresMaxLevel": true
+      "role": "bruiser",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 140,
+        "atk": 26,
+        "def": 13,
+        "spd": 19
+      },
+      "passive": "chimaera_passive",
+      "active": "chimaera_active"
     },
     {
-      "inputs": [
-        "nature_greif",
-        "water_greif"
+      "id": "sphinx",
+      "name": "Sphinx",
+      "pair": [
+        "greif",
+        "geist"
       ],
-      "output": "frost_greif",
-      "requiresMaxLevel": true
+      "role": "support",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 115,
+        "atk": 18,
+        "def": 12,
+        "spd": 18
+      },
+      "passive": "sphinx_passive",
+      "active": "sphinx_active"
     },
     {
-      "inputs": [
-        "fire_wolf",
-        "water_wolf"
+      "id": "barghest",
+      "name": "Barghest",
+      "pair": [
+        "wolf",
+        "geist"
       ],
-      "output": "steam_wolf",
-      "requiresMaxLevel": true
+      "role": "bruiser",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 150,
+        "atk": 24,
+        "def": 14,
+        "spd": 15
+      },
+      "passive": "barghest_passive",
+      "active": "barghest_active"
     },
     {
-      "inputs": [
-        "fire_wolf",
-        "nature_wolf"
+      "id": "ouroboros",
+      "name": "Ouroboros",
+      "pair": [
+        "wyrm",
+        "phoenix"
       ],
-      "output": "ash_wolf",
-      "requiresMaxLevel": true
+      "role": "dot",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 130,
+        "atk": 20,
+        "def": 14,
+        "spd": 16
+      },
+      "passive": "ouroboros_passive",
+      "active": "ouroboros_active"
     },
     {
-      "inputs": [
-        "nature_wolf",
-        "water_wolf"
+      "id": "archon",
+      "name": "Archon",
+      "pair": [
+        "geist",
+        "phoenix"
       ],
-      "output": "frost_wolf",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "fire_wyrm",
-        "water_wyrm"
-      ],
-      "output": "steam_wyrm",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "fire_wyrm",
-        "nature_wyrm"
-      ],
-      "output": "ash_wyrm",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "nature_wyrm",
-        "water_wyrm"
-      ],
-      "output": "frost_wyrm",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "fire_geist",
-        "water_geist"
-      ],
-      "output": "steam_geist",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "fire_geist",
-        "nature_geist"
-      ],
-      "output": "ash_geist",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "nature_geist",
-        "water_geist"
-      ],
-      "output": "frost_geist",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "fire_phoenix",
-        "water_phoenix"
-      ],
-      "output": "steam_phoenix",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "fire_phoenix",
-        "nature_phoenix"
-      ],
-      "output": "ash_phoenix",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "nature_phoenix",
-        "water_phoenix"
-      ],
-      "output": "frost_phoenix",
-      "requiresMaxLevel": true
+      "role": "support",
+      "rarity": "legendary",
+      "baseStats": {
+        "hp": 145,
+        "atk": 12,
+        "def": 16,
+        "spd": 12
+      },
+      "passive": "archon_passive",
+      "active": "archon_active"
     }
   ]
 }

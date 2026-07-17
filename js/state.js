@@ -44,7 +44,51 @@ const AbilityDescriptions = {
   geist_active:    'Heilt das gesamte Team um 30 % Max-LP.',
   phoenix_passive: 'Lädt stetig: +5 Energie pro Sekunde.',
   phoenix_active:  'Belebt einen Gefallenen (40 % LP) oder heilt den Schwächsten (25 %).',
+  // Fusions-Archetypen
+  koloss_passive:    'Reduziert erlittenen Schaden um 3. +6 Energie pro erlittenem Treffer.',
+  koloss_active:     'Schild (25 % Max-LP) für das ganze Team, 5 Sekunden Spott.',
+  wyvern_passive:    'Schnellste Ladung: +10 Energie pro Angriff.',
+  wyvern_active:     '3 Treffer à 130 % ANG auf die gegnerische Rückreihe.',
+  leviathan_passive: 'Vergiftet Ziele (max. 5 Stapel). +7 Energie pro Angriff.',
+  leviathan_active:  '320 % ANG auf den Gegner mit den meisten LP.',
+  seraph_passive:    'Lädt stetig: +6 Energie pro Sekunde.',
+  seraph_active:     'Belebt einen Gefallenen (50 % LP) oder heilt den Schwächsten (30 %).',
+  behemoth_passive:  'Heilt sich um 18 % des verursachten Schadens. +7 Energie pro Angriff.',
+  behemoth_active:   '260 % ANG auf den schwächsten Gegner + Blutung (3×12 %).',
+  gargoyle_passive:  'Reduziert erlittenen Schaden um 2. +6 Energie pro erlittenem Treffer.',
+  gargoyle_active:   'Schild (22 % Max-LP) für das ganze Team, 5 Sekunden Spott.',
+  basilisk_passive:  'Vergiftet Ziele (max. 5 Stapel). +6 Energie pro Angriff.',
+  basilisk_active:   'Gift-Fläche (18 %/s, 4 s) + VER −15 % auf alle Gegner.',
+  chimaera_passive:  'Schnelle Ladung: +10 Energie pro Angriff.',
+  chimaera_active:   '2 Treffer à 170 % ANG auf den schwächsten Gegner.',
+  sphinx_passive:    '+8 Energie pro Angriff.',
+  sphinx_active:     'Heilt das gesamte Team um 25 % Max-LP.',
+  barghest_passive:  'Heilt sich um 18 % des verursachten Schadens. +7 Energie pro Angriff.',
+  barghest_active:   '240 % ANG auf den schwächsten Gegner + Blutung (3×12 %).',
+  ouroboros_passive: 'Lädt stetig: +6 Energie pro Sekunde.',
+  ouroboros_active:  'Gift-Fläche (15 %/s, 5 s) + VER −10 % auf alle Gegner.',
+  archon_passive:    'Lädt stetig: +7 Energie pro Sekunde.',
+  archon_active:     'Heilt das gesamte Team um 35 % Max-LP.',
 };
+
+// ---------- Fusions-Kreaturen (generiert aus fusions.json: 12 Archetypen × 6 Elemente) ----------
+// Nicht in CREATURES_DATA — Sammlung/Silhouetten zeigen sie über FusionArchetypes an.
+
+const FusionArchetypes = {};
+FUSIONS_DATA.fusionArchetypes.forEach(f => {
+  FusionArchetypes[f.id] = f;
+  Object.keys(Elements).forEach(elId => {
+    const id = 'fx_' + f.id + '_' + elId;
+    Creatures[id] = {
+      id,
+      name: FUSIONS_DATA.namePrefixes[elId] + '-' + f.name,
+      archetype: f.id, role: f.role, element: elId,
+      rarity: f.rarity, tier: 2, baseStats: f.baseStats,
+      passive: f.passive, active: f.active,
+      fusion: true, pair: f.pair,
+    };
+  });
+});
 
 // ---------- Speicherstand ----------
 
@@ -68,7 +112,19 @@ let Save = loadSave();
 function loadSave() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    if (raw) return Object.assign(defaultSave(), JSON.parse(raw));
+    if (raw) {
+      const s = Object.assign(defaultSave(), JSON.parse(raw));
+      // Migration 17.07.2026: alte Element-Hybride (steam_/ash_/frost_<archetyp>)
+      // existieren nicht mehr — entfernen, 100 Gold Ersatz pro Kreatur.
+      Object.keys(s.collection).forEach(id => {
+        if (!Creatures[id]) { delete s.collection[id]; s.gold += 100; }
+      });
+      s.team = s.team.filter(id => s.collection[id]);
+      const spare = Object.keys(s.collection).filter(id => !s.team.includes(id));
+      while (s.team.length < 3 && spare.length) s.team.push(spare.shift());
+      if (!Object.keys(s.collection).length) return defaultSave();
+      return s;
+    }
   } catch (e) { console.warn('Speicherstand unlesbar, starte neu.', e); }
   return defaultSave();
 }
@@ -112,27 +168,50 @@ function levelUp(id) {
 
 function ownedIds() { return Object.keys(Save.collection); }
 
-// ---------- Fusion ----------
+// ---------- Fusion (Archetyp + Element, seit 17.07.2026) ----------
+// Zwei Basis-Kreaturen VERSCHIEDENER Archetypen (beide Max-Level) -> Fusions-Archetyp.
+// Element: gleich+gleich -> gleich, sonst Hybrid (fire+water=steam, fire+nature=ash,
+// nature+water=frost). Fusions-Kreaturen selbst sind nicht erneut fusionierbar.
 
-// Rezepte, deren beide Zutaten im Besitz sind.
-function availableRecipes() {
-  return FUSIONS_DATA.recipes.filter(r => r.inputs.every(id => Save.collection[id]));
+function fusionElementResult(a, b) {
+  if (a === b) return a;
+  const combo = FUSIONS_DATA.elementCombos.find(c => c.elements.includes(a) && c.elements.includes(b));
+  return combo ? combo.result : null;
 }
 
-function recipeReady(recipe) {
-  return recipe.inputs.every(id => {
-    const e = Save.collection[id];
-    return e && (!recipe.requiresMaxLevel || e.level >= MAX_LEVEL);
-  }) && !Save.collection[recipe.output];
+function fusionArchetypeFor(archA, archB) {
+  return FUSIONS_DATA.fusionArchetypes.find(f =>
+    (f.pair[0] === archA && f.pair[1] === archB) ||
+    (f.pair[0] === archB && f.pair[1] === archA)) || null;
 }
 
-// Verbraucht beide Zutaten, fügt Hybrid (Level 1) hinzu, flickt das Team.
-function fuse(recipe) {
-  if (!recipeReady(recipe)) return false;
-  recipe.inputs.forEach(id => delete Save.collection[id]);
-  Save.collection[recipe.output] = { level: 1 };
-  Save.team = Save.team.map(id => recipe.inputs.includes(id) ? recipe.output : id);
-  // Doppelte Ersetzung (beide Zutaten im Team) auffüllen.
+// Ergebnis-Kreatur-ID für zwei Kreaturen — oder null (gleicher Archetyp, kein
+// Rezept-Paar, Fusions-Kreatur als Zutat).
+function fusionResult(cidA, cidB) {
+  const a = Creatures[cidA], b = Creatures[cidB];
+  if (!a || !b || a.fusion || b.fusion || cidA === cidB) return null;
+  if (a.archetype === b.archetype) return null;
+  const f = fusionArchetypeFor(a.archetype, b.archetype);
+  const elId = fusionElementResult(a.element, b.element);
+  return f && elId ? 'fx_' + f.id + '_' + elId : null;
+}
+
+// Wie fusionResult, prüft zusätzlich Besitz + Max-Level + noch nicht vorhanden.
+function fusionReady(cidA, cidB) {
+  const out = fusionResult(cidA, cidB);
+  if (!out || Save.collection[out]) return null;
+  const ea = Save.collection[cidA], eb = Save.collection[cidB];
+  return ea && eb && ea.level >= MAX_LEVEL && eb.level >= MAX_LEVEL ? out : null;
+}
+
+// Verbraucht beide Zutaten, fügt die Fusions-Kreatur (Level 1) hinzu, flickt das Team.
+function fuseCreatures(cidA, cidB) {
+  const out = fusionReady(cidA, cidB);
+  if (!out) return null;
+  delete Save.collection[cidA];
+  delete Save.collection[cidB];
+  Save.collection[out] = { level: 1 };
+  Save.team = Save.team.map(id => (id === cidA || id === cidB) ? out : id);
   Save.team = [...new Set(Save.team)];
   while (Save.team.length < 3) {
     const spare = ownedIds().find(id => !Save.team.includes(id));
@@ -140,7 +219,7 @@ function fuse(recipe) {
     Save.team.push(spare);
   }
   persist();
-  return true;
+  return out;
 }
 
 // ---------- Fortschritt ----------

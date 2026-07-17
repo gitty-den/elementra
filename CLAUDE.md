@@ -3,6 +3,17 @@
 Kreaturen-Sammel-Autobattler (Echtzeit, 3 vs 3) mit Element-System und Fusion.
 Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 
+## Navigation (seit 17.07.2026: Hub-and-Spoke, kein Bottom-Nav)
+
+- App startet ins **Hauptmenü** (`renderMenu`): Lager-Szene mit den 3 Team-Kreaturen
+  am Pixel-Lagerfeuer (`campfireArt`, 2 Flacker-Frames), vertikale Buttons
+  Kampagne/Sammlung/Fusion/Einstellungen. Topbar (Gold, ⚙, Zurück-Pfeil) nur in
+  Subscreens (`body.in-menu` blendet sie aus).
+- **Kein Zurück im Kampf** — raus nur über das Sieg/Niederlage-Overlay.
+- Niederlage zeigt EINEN kurzen rotierenden Tipp (`DEFEAT_TIPS`), keine Textwand.
+- Kampf-HUD: Kompakt-Plakette (`unit-plate`) — Level-Badge links an der HP-Bar,
+  Energie-Bar darunter, kein Name.
+
 ## Regeln
 
 - **Kein Build-Schritt, kein Framework.** Spiel muss per `file://` UND Preview-Server laufen.
@@ -50,19 +61,20 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 | Datei | Inhalt |
 |---|---|
 | `js/data.js` | GENERIERT — Rohdaten aus `data/*.json` als Globals `TYPES_DATA`, `CREATURES_DATA`, `FUSIONS_DATA` |
-| `js/state.js` | Lookups (`Elements`, `Creatures`, `Abilities`), Save (localStorage `elementra_save_v1`), Level-Logik (`MAX_LEVEL` 5, +10 %/Level, Kosten 30·Level), Fusion (`fuse`, `recipeReady`), Stage-Fortschritt |
+| `js/state.js` | Lookups (`Elements`, `Creatures`, `Abilities`), Save (localStorage `elementra_save_v1`, Migration entfernt unbekannte IDs gegen 100 Gold), Level-Logik (`MAX_LEVEL` 5, +10 %/Level, Kosten 30·Level), Fusion (`fusionResult/fusionReady/fuseCreatures`), Stage-Fortschritt |
 | `js/svg.js` | KOMPLETT obsolet — nur die Farbtabelle `SceneThemes` wird noch von `sceneArt` (pixel.js) gelesen. Keine SVG-Funktion mehr aufrufen |
 | `js/pixel.js` | **Standard-Kreaturen-Renderer**: `creatureArt(c, {noAura})` — `PixelArchetypes` (7 Char-Maps) × `PixelPalettes` (6 Elemente), 32×32-Canvas → dataURI, Cache. Tippfehler-Pixel erscheinen magenta |
 | `js/sfx.js` | WebAudio-Synth (`Sfx.hit/ulti/win/...`), kein Audio-Asset, entsperrt bei erster Interaktion |
 | `js/music.js` | Generative Musik (WebAudio, Lookahead-Scheduler): Themes `map`/`battle`, `Music.play(theme)`, Toggle in ⚙. Hooks: Titel-Tap, `beginBattle`, `endBattleUI` |
 | `js/stages.js` | 10 Kampagnen-Stages: Gegner, Gold, First-Clear-Bonus, Kreaturen-Unlocks, `theme` (Arena-Hintergrund) |
 | `js/battle.js` | Engine: `createBattle`, `updateBattle(battle, dtMs)`, `castActive`. Events via `battle.on((type, data) => …)`: attack, damage, heal, absorb, shieldGain, poison, ulti, die, revive, energyFull, end |
-| `js/ui.js` | Screens (map/collection/fusion), Kampf-UI (rAF-Loop), Overlays, Titelscreen (`showTitle`), `debugBattleStep(ms)` |
+| `js/ui.js` | Screens (menu/map/collection/fusion), Kampf-UI (rAF-Loop), Overlays, Hauptmenü (`renderMenu`), `debugBattleStep(ms)` |
 | `js/main.js` | Bootstrap |
 
 ## UI-Design (Game-Look, kein Web-Look!)
 
-- **Titelscreen** (`showTitle`): Emblem + Logo, Tap startet und entsperrt AudioContext.
+- **Hauptmenü** (`renderMenu`): Emblem + Logo über Lager-Szene; erste Interaktion
+  (pointerdown, main.js) entsperrt AudioContext und startet die Musik.
 - **Kampagne = Weltkarte**: Zickzack-Pfad (SVG, in `renderMap` aus Knotenpositionen berechnet),
   Medaillon-Knoten, Stage 1 unten, aktuelle Stage pulsiert gold. Kein Listen-Layout!
 - **Kampf = Arena-Szene**: `sceneSVG(stage.theme)` als Hintergrund, Einheiten absolut
@@ -74,6 +86,28 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   Vignette + Korn-Overlay auf `body::before/after`, Sheen-Animation auf Legendär-Karten,
   Versalien + Letterspacing für Titel. Neue UI-Elemente müssen diesem Look folgen —
   keine flachen Web-Buttons/-Listen.
+
+## Fusion (Redesign 17.07.2026: Archetyp + Element)
+
+- Alte Regel (gleicher Archetyp, Element-Hybrid als Ergebnis) ist WEG — die 21
+  Hybrid-Kreaturen (steam_/ash_/frost_*) existieren nicht mehr; `creatures.json`
+  hat nur noch 21 Basis-Kreaturen.
+- Neu: zwei Basis-Kreaturen VERSCHIEDENER Archetypen (beide Max-Level) → einer von
+  **12 kuratierten Fusions-Archetypen** (`fusions.json` → `fusionArchetypes`:
+  Koloss=Drache+Golem, Wyvern=Drache+Greif, Leviathan=Drache+Wyrm, Seraph=Drache+
+  Phönix, Behemoth=Golem+Wolf, Gargoyle=Golem+Geist, Basilisk=Golem+Wyrm,
+  Chimära=Greif+Wolf, Sphinx=Greif+Geist, Barghest=Wolf+Geist, Ouroboros=Wyrm+
+  Phönix, Archon=Geist+Phönix). 9 Paare haben bewusst KEIN Rezept.
+- Element des Ergebnisses: gleich+gleich → gleich, sonst Hybrid-Element
+  (fire+water=steam, fire+nature=ash, nature+water=frost). Hybride kämpfen neutral.
+- Ergebnis-IDs `fx_<archetyp>_<element>` werden zur Laufzeit in state.js generiert
+  (12×6=72 Einträge in `Creatures`, NICHT in creatures.json); Name =
+  `namePrefixes[element]`-Archetypname (z. B. „Aschen-Koloss").
+- Sprites: eigene Char-Maps je Fusions-Archetyp in `PixelArchetypes` (pixel.js),
+  Paletten wie gehabt je Element. Angriffs-Animationen erben per CSS vom passenden
+  Eltern-Archetyp (Block „Fusions-Archetypen erben…" in style.css).
+- Fusions-Kreaturen sind Endstufe: nicht erneut fusionierbar.
+- Fusion-Screen ist ein freier 2-Slot-Picker mit Ergebnis-Vorschau (`renderFusion`).
 
 ## Kampfsystem (Kurzfassung)
 
@@ -91,12 +125,15 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 
 - **Elementar-Konter auf dem Tank kippt jeden Kampf** — der Spieler hat im Prototyp nur
   nature_golem als Tank; Stages dürfen daher keine reinen Feuer-Konter-Trios sein.
-- **Heiler-Falle ist Absicht:** water_geist (ANG 8) macht das Team früh stabil, aber ab
-  Stage 8 gewinnen nur Triple-DPS-Teams. Team-Umbau ist die gewollte Lernkurve.
 - Unlock-Reihenfolge liefert Konter VOR der Stage, die ihn braucht: S3→water_wyrm (vor
-  Feuer-S4), S4→nature_wolf (vor Wasser-S5), S7→water_drache (Demo-Fusion), S10→fire_phoenix.
-- Referenzkurve (simuliert): S1–3 Starter Lv1–2 · S4 Lv3 + water_wyrm · S5–7 Lv3–4 ·
-  S8–10 Lv5 Triple-DPS; S10 auch mit Fusions-Drache ~30 s.
+  Feuer-S4), S4→nature_wolf (vor Wasser-S5), S10→fire_phoenix.
+- Referenzkurve (Sim 17.07.2026, nach Fusions-Redesign): S1–3 Starter Lv1–2 ·
+  S4 Lv3 + water_wyrm · S5–7 Lv3–4 · **S8–10 Lv5 Triple-DPS** (S10: Lv4-DPS verliert,
+  Lv5-DPS ~30 s, Team mit Fusions-Koloss ~19 s).
+- **fx_wyvern als Gegner ist tabu bzw. nur mit Sim-Beleg:** multiHit 3× auf die
+  Rückreihe vernichtet schon auf Lv1 jedes Nicht-Fusions-Team (getestet 17.07.).
+- Alte „Heiler-Falle"-Notiz relativiert: ein Heiler-Team MIT Lv5-Drache gewann auch
+  das alte S10 — die Falle betraf nur Teams ohne echten DPS-Kern.
 
 ## Debug/Test (wichtig — Browser-Pane-Tab ist oft `hidden`, rAF pausiert dann!)
 

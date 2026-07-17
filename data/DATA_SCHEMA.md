@@ -7,12 +7,14 @@ Data-driven Grundlage für das Spiel. Drei Dateien, gedacht als `/data/*.json` i
 | Datei | Inhalt |
 |---|---|
 | `types.json` | Element-System (3 Basis + 3 Hybride) inkl. Schadens-Multiplikatoren |
-| `creatures.json` | 42 Kreaturen (21 Basis + 21 Hybride), Stats, Ability-Referenzen |
-| `fusions.json` | Fusions-Regel + 21 konkrete Rezepte |
+| `creatures.json` | 21 Basis-Kreaturen (7 Archetypen × 3 Elemente), Stats, Ability-Referenzen (inkl. Fusions-Abilities) |
+| `fusions.json` | Fusions-Regel „archetype+element": Element-Kombinatorik, Namens-Präfixe, 12 Fusions-Archetypen |
 
 ## ID-Konvention
 
-Kreatur-`id` ist immer `<element>_<archetyp>`, z. B. `fire_drache`, `steam_golem`. Der `name` ist der Anzeigename (bei Hybriden aktuell Platzhalter wie „Dampf-Drache").
+Basis-Kreatur-`id` ist `<element>_<archetyp>`, z. B. `fire_drache`. Fusions-Kreaturen
+heißen `fx_<fusionsarchetyp>_<element>` (z. B. `fx_koloss_ash`) und werden zur
+LAUFZEIT aus `fusions.json` generiert (state.js) — sie stehen nicht in `creatures.json`.
 
 ## Elemente (`types.json`)
 
@@ -34,15 +36,18 @@ Hybride (Tier 2) sind **neutral** — kein Typ-Vorteil, aber auch keine Schwäch
 - **Energie-Modell:** Leiste 0–100. Passive lädt (Angriff/Treffer/Zeit), aktive Fähigkeit (Ulti) kostet volle 100 und wird per Antippen ausgelöst.
 - `mvp: true` markiert die 6 Start-Kreaturen.
 
-## Fusionen (`fusions.json`)
+## Fusionen (`fusions.json`, Redesign 17.07.2026)
 
-- **Regel „elemental":** gleicher Archetyp, zwei verschiedene Basis-Elemente auf Max-Level → Hybrid.
-- Jedes `recipe`: `inputs` (2 Kreatur-IDs) → `output` (Hybrid-ID), `requiresMaxLevel: true`.
-- **Post-MVP:** Regel „archetype" (gleiches Element, andere Archetypen → Chimäre) ist als `enabled: false` vorgesehen.
+- **Regel „archetype+element":** zwei Basis-Kreaturen VERSCHIEDENER Archetypen,
+  beide Max-Level → einer von 12 kuratierten `fusionArchetypes` (je `pair`,
+  `role`, `rarity`, `baseStats`, `passive`/`active`-Referenz).
+- Element des Ergebnisses: gleiche Eltern-Elemente → dasselbe, sonst
+  `elementCombos` (fire+water=steam, fire+nature=ash, nature+water=frost).
+- Anzeigename = `namePrefixes[element]` + „-" + Archetypname („Aschen-Koloss").
+- 9 der 21 Archetyp-Paare haben bewusst kein Rezept (Content-Reserve).
+- Die frühere Regel „elemental" samt 21 Hybrid-Kreaturen ist entfernt.
 
 ## MVP-Subset
 
 Aktiv im ersten Build (`mvp: true`):
 `fire_drache` (Glutdrache), `nature_golem` (Moosgolem), `water_geist` (Quellgeist), `nature_wolf` (Dornwolf), `water_wyrm` (Seeschlange), `fire_greif` (Aschengreif).
-
-Demo-Fusion: dazu `water_drache` (Tiefendrache) freischalten → `fire_drache` + `water_drache` = `steam_drache` (Dampf-Drache).

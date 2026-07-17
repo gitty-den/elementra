@@ -4,7 +4,8 @@
 //   einzigen Tank nature_golem kippt sonst jeden Kampf).
 // - Unlocks liefern das Konter-Werkzeug VOR der Stage, die es braucht:
 //   S3 gibt Wasser-DPS vor der Feuer-Stage 4, S4 gibt Natur-DPS vor der Wasser-Stage 5.
-// - Stage 7 liefert water_drache für die Demo-Fusion (DATA_SCHEMA.md).
+// - S8–S10 zeigen Fusions-Kreaturen (fx_*) als Gegner — Vorgeschmack aufs eigene
+//   Fusions-Endgame; Level per Headless-Sim ausbalanciert.
 
 const STAGES = [
   {
@@ -70,19 +71,19 @@ const STAGES = [
     gold: 110, firstClearBonus: 140, unlockCreature: 'water_drache',
   },
   {
-    id: 8, name: 'Aschewüste', theme: 'ash', desc: 'Hybride Kreaturen — Vorsicht, neutral!',
+    id: 8, name: 'Aschewüste', theme: 'ash', desc: 'Eine Fusions-Chimära — Vorsicht, neutral!',
     enemies: [
-      { id: 'ash_wolf', level: 1 },
-      { id: 'fire_drache', level: 3 },
-      { id: 'nature_geist', level: 2 },
+      { id: 'fx_chimaera_ash', level: 2 },
+      { id: 'fire_drache', level: 4 },
+      { id: 'nature_geist', level: 3 },
     ],
     gold: 120, firstClearBonus: 160, unlockCreature: null,
   },
   {
-    id: 9, name: 'Frostgrat', theme: 'frost', desc: 'Eisige Hybride halten den Pass.',
+    id: 9, name: 'Frostgrat', theme: 'frost', desc: 'Frost-Fusionen halten den Pass.',
     enemies: [
-      { id: 'frost_golem', level: 1 },
-      { id: 'frost_wyrm', level: 1 },
+      { id: 'fx_gargoyle_frost', level: 2 },
+      { id: 'fx_basilisk_frost', level: 3 },
       { id: 'water_geist', level: 4 },
     ],
     gold: 130, firstClearBonus: 180, unlockCreature: null,
@@ -91,8 +92,8 @@ const STAGES = [
     id: 10, name: 'Thron der Elemente', theme: 'storm', desc: 'Der Phönix prüft, ob du würdig bist.',
     enemies: [
       { id: 'fire_phoenix', level: 3 },
-      { id: 'steam_drache', level: 2 },
-      { id: 'frost_golem', level: 2 },
+      { id: 'fx_leviathan_steam', level: 2 },
+      { id: 'fx_koloss_frost', level: 1 },
     ],
     gold: 150, firstClearBonus: 250, unlockCreature: 'fire_phoenix',
   },

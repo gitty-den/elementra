@@ -21,7 +21,11 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+/* html-Hintergrund + dvh: iOS-Standalone malt sonst einen weißen Streifen
+   unter der Home-Indicator-Zone (Canvas-Bereich außerhalb von height:100%). */
 html, body { height: 100%; }
+html { background: var(--bg0); }
+body { height: 100dvh; }
 
 body {
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
@@ -89,34 +93,12 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .coll-screen, .fusion-screen { padding: 16px 14px 24px; }
 @keyframes screenIn { from { opacity: 0; transform: translateY(10px); } }
 
-#nav {
-  display: flex;
-  border-top: 1px solid var(--panel-border);
-  background: linear-gradient(180deg, rgba(15, 18, 36, 0.98), rgba(8, 10, 22, 0.98));
-  box-shadow: 0 -8px 26px rgba(0, 0, 0, 0.5);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  z-index: 5;
-}
-#nav button {
-  flex: 1; padding: 9px 0 11px;
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-  color: var(--text-dim); font-size: 0.72rem; font-weight: 800;
-  letter-spacing: 0.5px; text-transform: uppercase;
-  transition: color 0.2s;
-}
-#nav button .nav-ico {
-  font-size: 1.3rem; width: 44px; height: 32px;
-  display: grid; place-items: center; border-radius: 12px;
-  filter: grayscale(0.7); transition: all 0.25s;
-}
-#nav button.active { color: var(--text); }
-#nav button.active .nav-ico {
-  filter: none; transform: translateY(-2px);
-  background: linear-gradient(180deg, rgba(124, 108, 255, 0.35), rgba(124, 108, 255, 0.08));
-  box-shadow: 0 0 16px rgba(124, 108, 255, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.18);
-}
+/* Kein Bottom-Nav mehr — Hub-and-Spoke: Hauptmenü als Landingpage,
+   Zurück-Pfeil in der Topbar führt aus jedem Screen dorthin. */
+#btn-back { width: 34px; height: 30px; display: grid; place-items: center; opacity: 0.9; }
+body.in-menu #topbar { display: none; }
 
-body.in-battle #nav, body.in-battle #topbar { display: none; }
+body.in-battle #topbar { display: none; }
 body.in-battle #screen { overflow: hidden; }
 
 .screen-title {
@@ -503,18 +485,21 @@ body.in-battle #screen { overflow: hidden; }
 
 .unit.taunting .unit-art { filter: drop-shadow(0 0 12px rgba(122, 200, 255, 0.8)); }
 
-/* Statusleisten über der Figur */
-.unit-bars { position: relative; z-index: 3; width: 132%; margin: 0 0 2px -16%; }
-.unit-tag {
-  font-size: 0.62rem; font-weight: 800; text-align: center;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
-  margin-bottom: 2px;
+/* Kompakt-Plakette über der Figur: Level-Badge links bündig an HP-Bar,
+   darunter die Energie-Bar — kein Name im Kampf (Interview 17.07.2026). */
+.unit-plate {
+  position: relative; z-index: 3;
+  display: flex; align-items: stretch; gap: 3px;
+  width: 118%; margin: 0 0 3px -9%;
 }
-.unit-tag b {
-  background: rgba(0, 0, 0, 0.55); border-radius: 5px; padding: 0 4px; margin-left: 2px;
-  font-size: 0.58rem; color: var(--gold);
+.unit-lvl {
+  flex: 0 0 auto; min-width: 18px;
+  display: grid; place-items: center;
+  font-size: 0.4rem; color: var(--gold);
+  background: rgba(0, 0, 0, 0.7);
+  box-shadow: inset 0 0 0 1px rgba(255, 201, 77, 0.55);
 }
+.unit-plate-bars { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
 .bar {
   height: 7px; border-radius: 5px; background: var(--hp-bg);
   position: relative; overflow: hidden;
@@ -708,7 +693,7 @@ body.in-battle #screen { overflow: hidden; }
 
 @media (min-width: 700px) {
   #screen { max-width: 640px; margin: 0 auto; width: 100%; }
-  #topbar, #nav { padding-left: calc((100vw - 640px) / 2); padding-right: calc((100vw - 640px) / 2); }
+  #topbar { padding-left: calc((100vw - 640px) / 2); padding-right: calc((100vw - 640px) / 2); }
 }
 
 /* ===== Pixel-Look (Design-Pivot 15.07.2026): Pixel-Sprites + kantiges Retro-UI ===== */
@@ -739,9 +724,7 @@ body.in-battle #screen { overflow: hidden; }
 .ts-slot { border-radius: 4px; }
 .ts-slot-tag { border-radius: 3px; }
 .gold-pill { border-radius: 4px; }
-#nav button { border-radius: 4px; }
 .bar, .fill { border-radius: 1px; }
-.unit-tag b { border-radius: 2px; }
 .settings-info { letter-spacing: 0.4px; }
 
 /* ===== Pixel-Typografie + Pixel-Assets (alles Pixelart, 15.07.2026) ===== */
@@ -763,7 +746,7 @@ body { font-family: 'VT323', 'Courier New', monospace; letter-spacing: 0.3px; }
 
 /* Headline-/Button-Schrift: Press Start 2P (kompakt gesetzt, Buchstaben sind breit) */
 h1, h2, .btn, .logo, .screen-title, .title-logo, .title-cta, .title-tag,
-#nav button, .battle-stage-name, .node-medal span, .ts-label, .result h1 {
+.battle-stage-name, .node-medal span, .ts-label, .result h1, .unit-lvl {
   font-family: 'Press Start 2P', monospace;
 }
 h1 { font-size: 1.05rem; line-height: 1.5; }
@@ -775,7 +758,6 @@ h2 { font-size: 0.72rem; line-height: 1.6; }
 .title-logo { font-size: 1.35rem; letter-spacing: 3px; padding-left: 3px; }
 .title-tag { font-size: 0.42rem; letter-spacing: 1.5px; }
 .title-cta { font-size: 0.5rem; letter-spacing: 1px; }
-#nav button { font-size: 0.42rem; letter-spacing: 0.5px; }
 .battle-stage-name { font-size: 0.55rem; }
 .node-medal span { font-size: 0.62rem; }
 .ts-label { font-size: 0.55rem; }
@@ -887,6 +869,89 @@ body::after {
 .fusion-ok { color: var(--hp); font-weight: 900; }
 .fusion-src { display: inline-flex; align-items: center; gap: 4px; color: var(--text-dim); }
 .fusion-row.teaser { opacity: 0.9; }
+
+/* ===== Hauptmenü (Landingpage, 17.07.2026): Lager-Szene mit aktivem Team ===== */
+
+.menu-screen { position: relative; height: 100%; overflow: hidden; animation: screenIn 0.3s ease; }
+.menu-bg { position: absolute; inset: 0; }
+.menu-bg::after {
+  content: ''; position: absolute; inset: 0;
+  box-shadow: inset 0 0 140px 40px rgba(0, 0, 8, 0.65);
+}
+.menu-camp { position: absolute; inset: 0; z-index: 1; }
+.menu-creature {
+  position: absolute; width: min(24vw, 118px);
+  transform: translateX(-50%);
+  animation: idleBob 2.8s ease-in-out var(--bob-delay, 0s) infinite;
+}
+.menu-creature.flip img { transform: scaleX(-1); }
+.camp-fire {
+  position: absolute; left: 50%; top: 61%;
+  width: min(18vw, 88px); transform: translateX(-50%);
+}
+.campfire { position: relative; display: block; width: 100%; aspect-ratio: 1; }
+.campfire img { position: absolute; inset: 0; }
+.campfire .fire-f2 { animation: fireFlick 0.55s steps(1) infinite; }
+@keyframes fireFlick { 0%, 49% { opacity: 0; } 50%, 100% { opacity: 1; } }
+.camp-glow {
+  position: absolute; left: 50%; top: 63%;
+  width: 260px; height: 170px; transform: translate(-50%, -30%);
+  background: radial-gradient(ellipse, rgba(255, 160, 60, 0.32), transparent 65%);
+  animation: glowPulse 2.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes glowPulse { 50% { opacity: 0.6; } }
+.menu-content {
+  position: relative; z-index: 2; height: 100%;
+  display: flex; flex-direction: column; align-items: center;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 30px);
+}
+.menu-emblem { width: 110px; animation: emblemFloat 4s ease-in-out infinite; }
+.menu-emblem img { width: 100%; height: auto; }
+.menu-buttons {
+  margin-top: auto;
+  margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
+  display: flex; flex-direction: column; gap: 12px;
+  width: min(74vw, 300px);
+}
+.menu-buttons .btn { width: 100%; }
+.menu-buttons .px-ico { width: 16px; height: 16px; vertical-align: -3px; margin-right: 5px; }
+
+/* ===== Fusion-Picker (Archetyp+Element-Fusion) ===== */
+
+.fx-slot { width: 88px; cursor: pointer; }
+.fx-slot .ccard { pointer-events: none; }
+.fx-slot:not(.filled) {
+  min-height: 100px; display: grid; place-items: center;
+  border: 1px dashed rgba(255, 255, 255, 0.22); border-radius: 4px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(0, 0, 0, 0.28));
+}
+.fusion-nores {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  color: var(--text-dim); font-size: 0.72rem; text-align: center; padding: 10px 2px;
+}
+.fusion-hint { color: var(--text-dim); font-size: 0.8rem; margin: 8px 2px 14px; text-align: center; }
+.fx-grid { margin-top: 4px; }
+.fx-cand { text-align: center; }
+.fx-cand .lvl-pips { margin-top: 3px; }
+.fx-cand.notmax .ccard { opacity: 0.7; }
+
+/* Niederlage: EIN kurzer Tipp mit Pixel-Icons statt Textwand */
+.defeat-tip .px-ico { vertical-align: -3px; }
+
+/* Fusions-Archetypen erben die passende Angriffs-Animation ihrer Eltern */
+.unit.attacking.arch-behemoth .unit-body,
+.unit.attacking.arch-chimaera .unit-body,
+.unit.attacking.arch-barghest .unit-body { animation: atkDash 0.3s cubic-bezier(0.2, 0, 0.3, 1); }
+.unit.attacking.arch-koloss .unit-body,
+.unit.attacking.arch-gargoyle .unit-body { animation: atkStomp 0.5s cubic-bezier(0.4, 0, 0.5, 1); }
+.unit.attacking.arch-leviathan .unit-body,
+.unit.attacking.arch-basilisk .unit-body,
+.unit.attacking.arch-ouroboros .unit-body { animation: atkWhip 0.42s cubic-bezier(0.35, 0, 0.3, 1); }
+.unit.attacking.arch-wyvern .unit-body,
+.unit.attacking.arch-sphinx .unit-body { animation: atkDive 0.44s cubic-bezier(0.35, 0, 0.4, 1); }
+.unit.attacking.arch-seraph .unit-body { animation: atkSwoop 0.48s cubic-bezier(0.3, 0, 0.35, 1); }
+.unit.attacking.arch-archon .unit-body { animation: atkPhase 0.46s ease-in-out; }
 
 /* Logo-Auswahl */
 .logo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

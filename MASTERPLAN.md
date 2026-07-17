@@ -57,9 +57,19 @@ Stil: dunkel-episch mit Element-Glow.
 
 ### Phase 2 — Content & Tiefe
 
-- [ ] Nutzer-Feedback zum Prototyp einarbeiten (Kampfgefühl, Tempo, Schwierigkeit)
-- [ ] Kreaturen-Namen der Hybride finalisieren (aktuell Platzhalter „Dampf-Drache" etc.)
-- [ ] Mehr Kampagnen-Kapitel; Chimären-Fusion (`fusions.json` Regel `archetype`, aktuell `enabled: false`)
+- [x] 17.07.: **Nutzer-Feedback-Runde 1 umgesetzt:** Hauptmenü als Landingpage
+      (Lager-Szene mit aktivem Team am Pixel-Lagerfeuer, vertikales Titelmenü,
+      Bottom-Nav ersetzt durch Hub-and-Spoke mit Topbar-Zurück), kein Flucht-Button
+      im Kampf, EIN rotierender Niederlage-Tipp statt Textwand, Kampf-HUD als
+      Kompakt-Plakette (Level-Badge an HP-Bar), Element-Attack-Sounds,
+      Safe-Area-Fix (weißer iOS-Streifen).
+- [x] 17.07.: **Fusions-Redesign: Archetyp + Element.** Alte Element-Hybride
+      (Dampf-Drache & Co.) komplett entfernt; 12 kuratierte Fusions-Archetypen
+      (Koloss, Wyvern, Leviathan, Seraph, Behemoth, Gargoyle, Basilisk, Chimära,
+      Sphinx, Barghest, Ouroboros, Archon) mit eigenen Char-Maps, Abilities und
+      freiem 2-Slot-Picker; S8–S10 zeigen Fusions-Gegner, per Sim neu balanciert
+      (Details in CLAUDE.md).
+- [ ] Mehr Kampagnen-Kapitel (Stages 11+, weitere Fusions-Rezepte für die 9 offenen Paare)
 - [ ] Idle-/Tages-Belohnungen, Erfolge
 - [ ] Team-Positionen (Front/Backline ausbauen — Engine kennt `enemyBackline` schon)
   - [x] 15.07.: Positionen im Team-Select sichtbar (Slot 1 = „Vorne", wird zuerst

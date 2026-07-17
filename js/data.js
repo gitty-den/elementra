@@ -1,5 +1,4 @@
-// Auto-generiert aus data/*.json (file://-kompatibel, kein fetch noetig).
-// Bei Datenaenderung: JSON anpassen und diese Datei neu generieren (siehe CLAUDE.md).
+// Auto-generiert aus data/*.json
 const TYPES_DATA = {
   "multipliers": {
     "advantage": 1.5,
@@ -93,7 +92,7 @@ const CREATURES_DATA = {
       "target": "enemyHighestHp",
       "effect": "elementalNuke",
       "params": {
-        "atkMultiplier": 3.0
+        "atkMultiplier": 3
       }
     },
     "golem_passive": {
@@ -206,6 +205,227 @@ const CREATURES_DATA = {
         "reviveHpPct": 0.4,
         "healPctMaxHp": 0.25
       }
+    },
+    "koloss_passive": {
+      "name": "Obsidianpanzer",
+      "trigger": "onHit",
+      "energyGain": 6,
+      "effect": "damageReduction",
+      "params": {
+        "flatReduce": 3
+      }
+    },
+    "koloss_active": {
+      "name": "Ewiger Wall",
+      "energyCost": 100,
+      "target": "allAllies",
+      "effect": "teamShield",
+      "params": {
+        "shieldPctMaxHp": 0.25,
+        "durationSec": 5,
+        "taunt": true
+      }
+    },
+    "wyvern_passive": {
+      "name": "Sturmschwingen",
+      "trigger": "onAttack",
+      "energyGain": 10,
+      "effect": "none",
+      "params": {}
+    },
+    "wyvern_active": {
+      "name": "Dreifachstoss",
+      "energyCost": 100,
+      "target": "enemyBackline",
+      "effect": "multiHit",
+      "params": {
+        "hits": 3,
+        "atkMultiplier": 1.3
+      }
+    },
+    "leviathan_passive": {
+      "name": "Abgrundgift",
+      "trigger": "onAttack",
+      "energyGain": 7,
+      "effect": "applyPoison",
+      "params": {
+        "stackPct": 0.05,
+        "maxStacks": 5
+      }
+    },
+    "leviathan_active": {
+      "name": "Urflut",
+      "energyCost": 100,
+      "target": "enemyHighestHp",
+      "effect": "elementalNuke",
+      "params": {
+        "atkMultiplier": 3.2
+      }
+    },
+    "seraph_passive": {
+      "name": "Lichtquell",
+      "trigger": "perSecond",
+      "energyGain": 6,
+      "effect": "none",
+      "params": {}
+    },
+    "seraph_active": {
+      "name": "Auferstehung",
+      "energyCost": 100,
+      "target": "fallenAllyElseLowest",
+      "effect": "reviveOrHeal",
+      "params": {
+        "reviveHpPct": 0.5,
+        "healPctMaxHp": 0.3
+      }
+    },
+    "behemoth_passive": {
+      "name": "Urhunger",
+      "trigger": "onAttack",
+      "energyGain": 7,
+      "effect": "lifesteal",
+      "params": {
+        "pctOfDamage": 0.18
+      }
+    },
+    "behemoth_active": {
+      "name": "Knochenbrecher",
+      "energyCost": 100,
+      "target": "enemyLowestHp",
+      "effect": "hitPlusBleed",
+      "params": {
+        "atkMultiplier": 2.6,
+        "bleedPct": 0.12,
+        "bleedTicks": 3
+      }
+    },
+    "gargoyle_passive": {
+      "name": "Steinschwingen",
+      "trigger": "onHit",
+      "energyGain": 6,
+      "effect": "damageReduction",
+      "params": {
+        "flatReduce": 2
+      }
+    },
+    "gargoyle_active": {
+      "name": "Waechterschrei",
+      "energyCost": 100,
+      "target": "allAllies",
+      "effect": "teamShield",
+      "params": {
+        "shieldPctMaxHp": 0.22,
+        "durationSec": 5,
+        "taunt": true
+      }
+    },
+    "basilisk_passive": {
+      "name": "Schreckensblick",
+      "trigger": "onAttack",
+      "energyGain": 6,
+      "effect": "applyPoison",
+      "params": {
+        "stackPct": 0.05,
+        "maxStacks": 5
+      }
+    },
+    "basilisk_active": {
+      "name": "Versteinerung",
+      "energyCost": 100,
+      "target": "allEnemies",
+      "effect": "spreadDotDebuff",
+      "params": {
+        "dotPct": 0.18,
+        "durationSec": 4,
+        "defDown": 0.15
+      }
+    },
+    "chimaera_passive": {
+      "name": "Dreiseelen",
+      "trigger": "onAttack",
+      "energyGain": 10,
+      "effect": "none",
+      "params": {}
+    },
+    "chimaera_active": {
+      "name": "Wildes Zerreissen",
+      "energyCost": 100,
+      "target": "enemyLowestHp",
+      "effect": "multiHit",
+      "params": {
+        "hits": 2,
+        "atkMultiplier": 1.7
+      }
+    },
+    "sphinx_passive": {
+      "name": "Raetselblick",
+      "trigger": "onAttack",
+      "energyGain": 8,
+      "effect": "none",
+      "params": {}
+    },
+    "sphinx_active": {
+      "name": "Wuestensegen",
+      "energyCost": 100,
+      "target": "allAllies",
+      "effect": "teamHeal",
+      "params": {
+        "healPctMaxHp": 0.25
+      }
+    },
+    "barghest_passive": {
+      "name": "Seelenfrass",
+      "trigger": "onAttack",
+      "energyGain": 7,
+      "effect": "lifesteal",
+      "params": {
+        "pctOfDamage": 0.18
+      }
+    },
+    "barghest_active": {
+      "name": "Schattenhatz",
+      "energyCost": 100,
+      "target": "enemyLowestHp",
+      "effect": "hitPlusBleed",
+      "params": {
+        "atkMultiplier": 2.4,
+        "bleedPct": 0.12,
+        "bleedTicks": 3
+      }
+    },
+    "ouroboros_passive": {
+      "name": "Ewiger Kreis",
+      "trigger": "perSecond",
+      "energyGain": 6,
+      "effect": "none",
+      "params": {}
+    },
+    "ouroboros_active": {
+      "name": "Zeitgift",
+      "energyCost": 100,
+      "target": "allEnemies",
+      "effect": "spreadDotDebuff",
+      "params": {
+        "dotPct": 0.15,
+        "durationSec": 5,
+        "defDown": 0.1
+      }
+    },
+    "archon_passive": {
+      "name": "Astralstrom",
+      "trigger": "perSecond",
+      "energyGain": 7,
+      "effect": "none",
+      "params": {}
+    },
+    "archon_active": {
+      "name": "Astralsegen",
+      "energyCost": 100,
+      "target": "allAllies",
+      "effect": "teamHeal",
+      "params": {
+        "healPctMaxHp": 0.35
+      }
     }
   },
   "creatures": [
@@ -264,72 +484,6 @@ const CREATURES_DATA = {
       "mvp": false
     },
     {
-      "id": "steam_drache",
-      "name": "Dampf-Drache",
-      "archetype": "drache",
-      "role": "dps",
-      "element": "steam",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 126,
-        "atk": 31,
-        "def": 14,
-        "spd": 17
-      },
-      "passive": "drache_passive",
-      "active": "drache_active",
-      "fusionSource": [
-        "fire_drache",
-        "water_drache"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "ash_drache",
-      "name": "Asche-Drache",
-      "archetype": "drache",
-      "role": "dps",
-      "element": "ash",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 126,
-        "atk": 31,
-        "def": 14,
-        "spd": 17
-      },
-      "passive": "drache_passive",
-      "active": "drache_active",
-      "fusionSource": [
-        "fire_drache",
-        "nature_drache"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "frost_drache",
-      "name": "Frost-Drache",
-      "archetype": "drache",
-      "role": "dps",
-      "element": "frost",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 126,
-        "atk": 31,
-        "def": 14,
-        "spd": 17
-      },
-      "passive": "drache_passive",
-      "active": "drache_active",
-      "fusionSource": [
-        "nature_drache",
-        "water_drache"
-      ],
-      "mvp": false
-    },
-    {
       "id": "fire_golem",
       "name": "Magmagolem",
       "archetype": "golem",
@@ -381,72 +535,6 @@ const CREATURES_DATA = {
       },
       "passive": "golem_passive",
       "active": "golem_active",
-      "mvp": false
-    },
-    {
-      "id": "steam_golem",
-      "name": "Dampf-Golem",
-      "archetype": "golem",
-      "role": "tank",
-      "element": "steam",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 224,
-        "atk": 17,
-        "def": 28,
-        "spd": 8
-      },
-      "passive": "golem_passive",
-      "active": "golem_active",
-      "fusionSource": [
-        "fire_golem",
-        "water_golem"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "ash_golem",
-      "name": "Asche-Golem",
-      "archetype": "golem",
-      "role": "tank",
-      "element": "ash",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 224,
-        "atk": 17,
-        "def": 28,
-        "spd": 8
-      },
-      "passive": "golem_passive",
-      "active": "golem_active",
-      "fusionSource": [
-        "fire_golem",
-        "nature_golem"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "frost_golem",
-      "name": "Frost-Golem",
-      "archetype": "golem",
-      "role": "tank",
-      "element": "frost",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 224,
-        "atk": 17,
-        "def": 28,
-        "spd": 8
-      },
-      "passive": "golem_passive",
-      "active": "golem_active",
-      "fusionSource": [
-        "nature_golem",
-        "water_golem"
-      ],
       "mvp": false
     },
     {
@@ -504,72 +592,6 @@ const CREATURES_DATA = {
       "mvp": false
     },
     {
-      "id": "steam_greif",
-      "name": "Dampf-Greif",
-      "archetype": "greif",
-      "role": "speed",
-      "element": "steam",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 105,
-        "atk": 22,
-        "def": 11,
-        "spd": 28
-      },
-      "passive": "greif_passive",
-      "active": "greif_active",
-      "fusionSource": [
-        "fire_greif",
-        "water_greif"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "ash_greif",
-      "name": "Asche-Greif",
-      "archetype": "greif",
-      "role": "speed",
-      "element": "ash",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 105,
-        "atk": 22,
-        "def": 11,
-        "spd": 28
-      },
-      "passive": "greif_passive",
-      "active": "greif_active",
-      "fusionSource": [
-        "fire_greif",
-        "nature_greif"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "frost_greif",
-      "name": "Frost-Greif",
-      "archetype": "greif",
-      "role": "speed",
-      "element": "frost",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 105,
-        "atk": 22,
-        "def": 11,
-        "spd": 28
-      },
-      "passive": "greif_passive",
-      "active": "greif_active",
-      "fusionSource": [
-        "nature_greif",
-        "water_greif"
-      ],
-      "mvp": false
-    },
-    {
       "id": "fire_wolf",
       "name": "Höllenwolf",
       "archetype": "wolf",
@@ -621,72 +643,6 @@ const CREATURES_DATA = {
       },
       "passive": "wolf_passive",
       "active": "wolf_active",
-      "mvp": false
-    },
-    {
-      "id": "steam_wolf",
-      "name": "Dampf-Bestie",
-      "archetype": "wolf",
-      "role": "bruiser",
-      "element": "steam",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 154,
-        "atk": 28,
-        "def": 17,
-        "spd": 18
-      },
-      "passive": "wolf_passive",
-      "active": "wolf_active",
-      "fusionSource": [
-        "fire_wolf",
-        "water_wolf"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "ash_wolf",
-      "name": "Asche-Bestie",
-      "archetype": "wolf",
-      "role": "bruiser",
-      "element": "ash",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 154,
-        "atk": 28,
-        "def": 17,
-        "spd": 18
-      },
-      "passive": "wolf_passive",
-      "active": "wolf_active",
-      "fusionSource": [
-        "fire_wolf",
-        "nature_wolf"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "frost_wolf",
-      "name": "Frost-Bestie",
-      "archetype": "wolf",
-      "role": "bruiser",
-      "element": "frost",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 154,
-        "atk": 28,
-        "def": 17,
-        "spd": 18
-      },
-      "passive": "wolf_passive",
-      "active": "wolf_active",
-      "fusionSource": [
-        "nature_wolf",
-        "water_wolf"
-      ],
       "mvp": false
     },
     {
@@ -744,72 +700,6 @@ const CREATURES_DATA = {
       "mvp": true
     },
     {
-      "id": "steam_wyrm",
-      "name": "Dampf-Wyrm",
-      "archetype": "wyrm",
-      "role": "dot",
-      "element": "steam",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 119,
-        "atk": 21,
-        "def": 13,
-        "spd": 20
-      },
-      "passive": "wyrm_passive",
-      "active": "wyrm_active",
-      "fusionSource": [
-        "fire_wyrm",
-        "water_wyrm"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "ash_wyrm",
-      "name": "Asche-Wyrm",
-      "archetype": "wyrm",
-      "role": "dot",
-      "element": "ash",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 119,
-        "atk": 21,
-        "def": 13,
-        "spd": 20
-      },
-      "passive": "wyrm_passive",
-      "active": "wyrm_active",
-      "fusionSource": [
-        "fire_wyrm",
-        "nature_wyrm"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "frost_wyrm",
-      "name": "Frost-Wyrm",
-      "archetype": "wyrm",
-      "role": "dot",
-      "element": "frost",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 119,
-        "atk": 21,
-        "def": 13,
-        "spd": 20
-      },
-      "passive": "wyrm_passive",
-      "active": "wyrm_active",
-      "fusionSource": [
-        "nature_wyrm",
-        "water_wyrm"
-      ],
-      "mvp": false
-    },
-    {
       "id": "fire_geist",
       "name": "Flammengeist",
       "archetype": "geist",
@@ -864,72 +754,6 @@ const CREATURES_DATA = {
       "mvp": true
     },
     {
-      "id": "steam_geist",
-      "name": "Dampf-Elementargeist",
-      "archetype": "geist",
-      "role": "support",
-      "element": "steam",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 133,
-        "atk": 11,
-        "def": 15,
-        "spd": 15
-      },
-      "passive": "geist_passive",
-      "active": "geist_active",
-      "fusionSource": [
-        "fire_geist",
-        "water_geist"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "ash_geist",
-      "name": "Asche-Elementargeist",
-      "archetype": "geist",
-      "role": "support",
-      "element": "ash",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 133,
-        "atk": 11,
-        "def": 15,
-        "spd": 15
-      },
-      "passive": "geist_passive",
-      "active": "geist_active",
-      "fusionSource": [
-        "fire_geist",
-        "nature_geist"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "frost_geist",
-      "name": "Frost-Elementargeist",
-      "archetype": "geist",
-      "role": "support",
-      "element": "frost",
-      "rarity": "epic",
-      "tier": 2,
-      "baseStats": {
-        "hp": 133,
-        "atk": 11,
-        "def": 15,
-        "spd": 15
-      },
-      "passive": "geist_passive",
-      "active": "geist_active",
-      "fusionSource": [
-        "nature_geist",
-        "water_geist"
-      ],
-      "mvp": false
-    },
-    {
       "id": "fire_phoenix",
       "name": "Phönix",
       "archetype": "phoenix",
@@ -982,277 +806,260 @@ const CREATURES_DATA = {
       "passive": "phoenix_passive",
       "active": "phoenix_active",
       "mvp": false
-    },
-    {
-      "id": "steam_phoenix",
-      "name": "Dampf-Phönixvogel",
-      "archetype": "phoenix",
-      "role": "sustain",
-      "element": "steam",
-      "rarity": "legendary",
-      "tier": 2,
-      "baseStats": {
-        "hp": 140,
-        "atk": 20,
-        "def": 17,
-        "spd": 17
-      },
-      "passive": "phoenix_passive",
-      "active": "phoenix_active",
-      "fusionSource": [
-        "fire_phoenix",
-        "water_phoenix"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "ash_phoenix",
-      "name": "Asche-Phönixvogel",
-      "archetype": "phoenix",
-      "role": "sustain",
-      "element": "ash",
-      "rarity": "legendary",
-      "tier": 2,
-      "baseStats": {
-        "hp": 140,
-        "atk": 20,
-        "def": 17,
-        "spd": 17
-      },
-      "passive": "phoenix_passive",
-      "active": "phoenix_active",
-      "fusionSource": [
-        "fire_phoenix",
-        "nature_phoenix"
-      ],
-      "mvp": false
-    },
-    {
-      "id": "frost_phoenix",
-      "name": "Frost-Phönixvogel",
-      "archetype": "phoenix",
-      "role": "sustain",
-      "element": "frost",
-      "rarity": "legendary",
-      "tier": 2,
-      "baseStats": {
-        "hp": 140,
-        "atk": 20,
-        "def": 17,
-        "spd": 17
-      },
-      "passive": "phoenix_passive",
-      "active": "phoenix_active",
-      "fusionSource": [
-        "nature_phoenix",
-        "water_phoenix"
-      ],
-      "mvp": false
     }
   ]
 };
 const FUSIONS_DATA = {
-  "rules": {
-    "elemental": {
-      "description": "Gleicher Archetyp, zwei verschiedene Basis-Elemente auf Max-Level -> Hybrid (Tier 2).",
-      "combos": [
-        {
-          "elements": [
-            "fire",
-            "water"
-          ],
-          "result": "steam"
-        },
-        {
-          "elements": [
-            "fire",
-            "nature"
-          ],
-          "result": "ash"
-        },
-        {
-          "elements": [
-            "nature",
-            "water"
-          ],
-          "result": "frost"
-        }
-      ]
+  "rule": "archetype+element",
+  "description": "Zwei Max-Level-Kreaturen VERSCHIEDENER Archetypen fusionieren zu einem Fusions-Archetyp. Element: gleich+gleich -> gleich, sonst Hybrid-Element. Hybride bleiben im Kampf neutral.",
+  "requiresMaxLevel": true,
+  "elementCombos": [
+    {
+      "elements": [
+        "fire",
+        "water"
+      ],
+      "result": "steam"
     },
-    "archetype": {
-      "description": "OPTIONAL / POST-MVP: gleiches Element, zwei verschiedene Archetypen -> Chimäre.",
-      "enabled": false
+    {
+      "elements": [
+        "fire",
+        "nature"
+      ],
+      "result": "ash"
+    },
+    {
+      "elements": [
+        "nature",
+        "water"
+      ],
+      "result": "frost"
     }
+  ],
+  "namePrefixes": {
+    "fire": "Glut",
+    "nature": "Dorn",
+    "water": "Flut",
+    "steam": "Dampf",
+    "ash": "Aschen",
+    "frost": "Frost"
   },
-  "hybridsAreNeutral": true,
-  "recipes": [
+  "fusionArchetypes": [
     {
-      "inputs": [
-        "fire_drache",
-        "water_drache"
+      "id": "koloss",
+      "name": "Koloss",
+      "pair": [
+        "drache",
+        "golem"
       ],
-      "output": "steam_drache",
-      "requiresMaxLevel": true
+      "role": "tank",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 230,
+        "atk": 20,
+        "def": 26,
+        "spd": 8
+      },
+      "passive": "koloss_passive",
+      "active": "koloss_active"
     },
     {
-      "inputs": [
-        "fire_drache",
-        "nature_drache"
+      "id": "wyvern",
+      "name": "Wyvern",
+      "pair": [
+        "drache",
+        "greif"
       ],
-      "output": "ash_drache",
-      "requiresMaxLevel": true
+      "role": "speed",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 105,
+        "atk": 26,
+        "def": 10,
+        "spd": 24
+      },
+      "passive": "wyvern_passive",
+      "active": "wyvern_active"
     },
     {
-      "inputs": [
-        "nature_drache",
-        "water_drache"
+      "id": "leviathan",
+      "name": "Leviathan",
+      "pair": [
+        "drache",
+        "wyrm"
       ],
-      "output": "frost_drache",
-      "requiresMaxLevel": true
+      "role": "dps",
+      "rarity": "legendary",
+      "baseStats": {
+        "hp": 125,
+        "atk": 27,
+        "def": 12,
+        "spd": 15
+      },
+      "passive": "leviathan_passive",
+      "active": "leviathan_active"
     },
     {
-      "inputs": [
-        "fire_golem",
-        "water_golem"
+      "id": "seraph",
+      "name": "Seraph",
+      "pair": [
+        "drache",
+        "phoenix"
       ],
-      "output": "steam_golem",
-      "requiresMaxLevel": true
+      "role": "sustain",
+      "rarity": "legendary",
+      "baseStats": {
+        "hp": 135,
+        "atk": 24,
+        "def": 14,
+        "spd": 13
+      },
+      "passive": "seraph_passive",
+      "active": "seraph_active"
     },
     {
-      "inputs": [
-        "fire_golem",
-        "nature_golem"
+      "id": "behemoth",
+      "name": "Behemoth",
+      "pair": [
+        "golem",
+        "wolf"
       ],
-      "output": "ash_golem",
-      "requiresMaxLevel": true
+      "role": "bruiser",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 190,
+        "atk": 24,
+        "def": 20,
+        "spd": 10
+      },
+      "passive": "behemoth_passive",
+      "active": "behemoth_active"
     },
     {
-      "inputs": [
-        "nature_golem",
-        "water_golem"
+      "id": "gargoyle",
+      "name": "Gargoyle",
+      "pair": [
+        "golem",
+        "geist"
       ],
-      "output": "frost_golem",
-      "requiresMaxLevel": true
+      "role": "tank",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 200,
+        "atk": 14,
+        "def": 24,
+        "spd": 9
+      },
+      "passive": "gargoyle_passive",
+      "active": "gargoyle_active"
     },
     {
-      "inputs": [
-        "fire_greif",
-        "water_greif"
+      "id": "basilisk",
+      "name": "Basilisk",
+      "pair": [
+        "golem",
+        "wyrm"
       ],
-      "output": "steam_greif",
-      "requiresMaxLevel": true
+      "role": "dot",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 150,
+        "atk": 19,
+        "def": 18,
+        "spd": 11
+      },
+      "passive": "basilisk_passive",
+      "active": "basilisk_active"
     },
     {
-      "inputs": [
-        "fire_greif",
-        "nature_greif"
+      "id": "chimaera",
+      "name": "Chimära",
+      "pair": [
+        "greif",
+        "wolf"
       ],
-      "output": "ash_greif",
-      "requiresMaxLevel": true
+      "role": "bruiser",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 140,
+        "atk": 26,
+        "def": 13,
+        "spd": 19
+      },
+      "passive": "chimaera_passive",
+      "active": "chimaera_active"
     },
     {
-      "inputs": [
-        "nature_greif",
-        "water_greif"
+      "id": "sphinx",
+      "name": "Sphinx",
+      "pair": [
+        "greif",
+        "geist"
       ],
-      "output": "frost_greif",
-      "requiresMaxLevel": true
+      "role": "support",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 115,
+        "atk": 18,
+        "def": 12,
+        "spd": 18
+      },
+      "passive": "sphinx_passive",
+      "active": "sphinx_active"
     },
     {
-      "inputs": [
-        "fire_wolf",
-        "water_wolf"
+      "id": "barghest",
+      "name": "Barghest",
+      "pair": [
+        "wolf",
+        "geist"
       ],
-      "output": "steam_wolf",
-      "requiresMaxLevel": true
+      "role": "bruiser",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 150,
+        "atk": 24,
+        "def": 14,
+        "spd": 15
+      },
+      "passive": "barghest_passive",
+      "active": "barghest_active"
     },
     {
-      "inputs": [
-        "fire_wolf",
-        "nature_wolf"
+      "id": "ouroboros",
+      "name": "Ouroboros",
+      "pair": [
+        "wyrm",
+        "phoenix"
       ],
-      "output": "ash_wolf",
-      "requiresMaxLevel": true
+      "role": "dot",
+      "rarity": "epic",
+      "baseStats": {
+        "hp": 130,
+        "atk": 20,
+        "def": 14,
+        "spd": 16
+      },
+      "passive": "ouroboros_passive",
+      "active": "ouroboros_active"
     },
     {
-      "inputs": [
-        "nature_wolf",
-        "water_wolf"
+      "id": "archon",
+      "name": "Archon",
+      "pair": [
+        "geist",
+        "phoenix"
       ],
-      "output": "frost_wolf",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "fire_wyrm",
-        "water_wyrm"
-      ],
-      "output": "steam_wyrm",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "fire_wyrm",
-        "nature_wyrm"
-      ],
-      "output": "ash_wyrm",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "nature_wyrm",
-        "water_wyrm"
-      ],
-      "output": "frost_wyrm",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "fire_geist",
-        "water_geist"
-      ],
-      "output": "steam_geist",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "fire_geist",
-        "nature_geist"
-      ],
-      "output": "ash_geist",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "nature_geist",
-        "water_geist"
-      ],
-      "output": "frost_geist",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "fire_phoenix",
-        "water_phoenix"
-      ],
-      "output": "steam_phoenix",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "fire_phoenix",
-        "nature_phoenix"
-      ],
-      "output": "ash_phoenix",
-      "requiresMaxLevel": true
-    },
-    {
-      "inputs": [
-        "nature_phoenix",
-        "water_phoenix"
-      ],
-      "output": "frost_phoenix",
-      "requiresMaxLevel": true
+      "role": "support",
+      "rarity": "legendary",
+      "baseStats": {
+        "hp": 145,
+        "atk": 12,
+        "def": 16,
+        "spd": 12
+      },
+      "passive": "archon_passive",
+      "active": "archon_active"
     }
   ]
 };

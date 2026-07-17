@@ -29,7 +29,19 @@ const Sfx = {
     osc.stop(t0 + dur + 0.02);
   },
   click() { this.tone(660, 0.06, 'triangle', 0.08); },
-  hit()   { this.tone(180, 0.09, 'square', 0.06, 90); },
+  // Angriffs-Sound je Element: Feuer knistert, Wasser ploppt, Natur schlägt dumpf,
+  // Dampf zischt, Asche grollt, Frost klirrt. Ohne Element: alter Einheits-Hit.
+  hit(element) {
+    switch (element) {
+      case 'fire':   this.tone(170, 0.09, 'sawtooth', 0.06, 70); this.tone(950, 0.05, 'square', 0.025, 320, 0.015); break;
+      case 'nature': this.tone(130, 0.11, 'triangle', 0.09, 80); this.tone(1600, 0.04, 'square', 0.02, 900, 0.01); break;
+      case 'water':  this.tone(520, 0.11, 'sine', 0.08, 130); break;
+      case 'steam':  this.tone(1100, 0.1, 'sawtooth', 0.03, 380); this.tone(330, 0.09, 'sine', 0.05, 140, 0.01); break;
+      case 'ash':    this.tone(110, 0.12, 'square', 0.055, 55); this.tone(680, 0.05, 'sawtooth', 0.028, 240, 0.03); break;
+      case 'frost':  this.tone(1150, 0.07, 'triangle', 0.05, 1700); this.tone(560, 0.06, 'sine', 0.045, 290, 0.02); break;
+      default:       this.tone(180, 0.09, 'square', 0.06, 90);
+    }
+  },
   ulti()  { this.tone(220, 0.35, 'sawtooth', 0.1, 880); },
   heal()  { this.tone(520, 0.18, 'sine', 0.09, 780); },
   die()   { this.tone(300, 0.4, 'sawtooth', 0.08, 60); },
