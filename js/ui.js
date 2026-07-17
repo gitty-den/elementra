@@ -75,23 +75,29 @@ function starsHTML(n) {
 }
 
 // ---------- Screen: Kampagnen-Weltkarte ----------
-// Zickzack-Pfad von unten (Stage 1) nach oben (Stage 10), Medaillon-Knoten.
+// Horizontaler Zickzack-Pfad (Stage 1 links), Medaillons mit Theme-Icons statt
+// Nummern — sprachunabhängig, Details erst im Team-Select (UI-Grundsätze 17.07.).
 
-const MAP_NODE_SPACING = 122;
+const MAP_NODE_SPACING_X = 136;
+const MAP_WORLD_H = 440; // logische Höhe in px (vertikal zentriert)
+
+// Theme -> Pixel-Icon auf dem Medaillon; Glow-Farbe für den Knoten.
+const MapThemeIcon = { fire: 'fire', nature: 'nature', water: 'water', storm: 'bolt', ash: 'ash', frost: 'frost' };
+const MapThemeGlow = { fire: '#ff7a3c', nature: '#7dff8a', water: '#5ab8ff', storm: '#b18aff', ash: '#e0965a', frost: '#a8e8ff' };
 
 function renderMap(root) {
   const wrap = el('div', 'map-screen');
-  const height = STAGES.length * MAP_NODE_SPACING + 140;
+  const width = STAGES.length * MAP_NODE_SPACING_X + 190;
   const world = el('div', 'map-world');
-  world.style.height = height + 'px';
+  world.style.width = width + 'px';
+  world.style.height = MAP_WORLD_H + 'px';
 
   const pos = STAGES.map((s, i) => ({
-    x: i % 2 === 0 ? 26 : 62,
-    y: height - 120 - i * MAP_NODE_SPACING,
+    x: 80 + i * MAP_NODE_SPACING_X,
+    y: MAP_WORLD_H * (i % 2 === 0 ? 0.62 : 0.3),
   }));
-  // Gepixelter Pfad durch alle Knoten (Referenzbreite 390)
-  const pts = pos.map(p => ({ x: p.x * 3.9 + 16, y: p.y + 36 }));
-  world.innerHTML = `<img class="map-trail pixel-sprite" src="${mapTrailURI(pts, 390, height)}" alt="" draggable="false">`;
+  const pts = pos.map(p => ({ x: p.x, y: p.y + 34 }));
+  world.innerHTML = `<img class="map-trail pixel-sprite" src="${mapTrailURI(pts, width, MAP_WORLD_H)}" alt="" draggable="false">`;
   world.style.backgroundImage = `url(${starTileURI()})`;
 
   const current = highestClearedStage() + 1;
@@ -99,20 +105,21 @@ function renderMap(root) {
     const cleared = Save.stages[stage.id] || 0;
     const unlocked = stageUnlocked(stage.id);
     const node = el('div', `map-node ${cleared ? 'cleared' : ''} ${unlocked ? '' : 'locked'} ${stage.id === current ? 'current' : ''}`);
-    node.style.left = pos[i].x + '%';
+    node.style.left = pos[i].x + 'px';
     node.style.top = pos[i].y + 'px';
+    node.style.setProperty('--theme-glow', MapThemeGlow[stage.theme] || '#b18aff');
     node.innerHTML = `
-      <div class="node-medal"><span>${unlocked ? stage.id : iconArt('lock', 16)}</span></div>
+      <div class="node-medal"><span>${unlocked ? iconArt(MapThemeIcon[stage.theme] || 'bolt', 30) : iconArt('lock', 22)}</span></div>
       <div class="node-stars">${starsHTML(cleared)}</div>
-      <div class="node-label">${stage.name}</div>
-      ${stage.unlockCreature && !Save.stages[stage.id] && unlocked ? `<div class="node-egg">${iconArt('egg', 18)}</div>` : ''}`;
+      ${stage.unlockCreature && !Save.stages[stage.id] && unlocked ? `<div class="node-egg">${iconArt('egg', 20)}</div>` : ''}`;
     if (unlocked) node.onclick = () => { Sfx.click(); openTeamSelect(stage); };
     world.appendChild(node);
   });
 
   wrap.appendChild(world);
   root.appendChild(wrap);
-  root.scrollTop = root.scrollHeight; // Start unten bei Stage 1
+  // Aktuelle Stage in die Bildmitte scrollen
+  wrap.scrollLeft = Math.max(0, 80 + (current - 1) * MAP_NODE_SPACING_X - wrap.clientWidth / 2);
 }
 
 // ---------- Team-Auswahl ----------
@@ -716,13 +723,13 @@ function renderMenu(root) {
     </div>
     <div class="menu-content">
       <div class="menu-emblem">${emblemArt()}</div>
-      <div class="title-logo">ELEMENTRA</div>
+      <div class="title-logo menu-logo">ELEMENTRA</div>
       <div class="title-tag">Sammle. Fusioniere. Herrsche.</div>
-      <div class="menu-buttons">
-        <button class="btn btn-primary" data-goto="map">${iconArt('map', 16)} Kampagne</button>
-        <button class="btn btn-ghost" data-goto="collection">${iconArt('book', 16)} Sammlung</button>
-        <button class="btn btn-ghost" data-goto="fusion">${iconArt('orb', 16)} Fusion</button>
-        <button class="btn btn-ghost btn-sm" id="menu-settings">${iconArt('gear', 14)} Einstellungen</button>
+      <div class="menu-grid">
+        <button class="menu-tile primary" data-goto="map">${iconArt('map', 36)}<span>Kampagne</span></button>
+        <button class="menu-tile" data-goto="collection">${iconArt('book', 36)}<span>Sammlung</span></button>
+        <button class="menu-tile" data-goto="fusion">${iconArt('orb', 36)}<span>Fusion</span></button>
+        <button class="menu-tile" id="menu-settings">${iconArt('gear', 36)}<span>Optionen</span></button>
       </div>
     </div>`;
   root.appendChild(wrap);

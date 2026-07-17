@@ -175,38 +175,42 @@ body.in-battle #screen { overflow: hidden; }
 }
 @keyframes ctaPulse { 50% { opacity: 0.35; } }
 
-/* ---------- Kampagnen-Weltkarte ---------- */
+/* ---------- Kampagnen-Weltkarte (horizontal seit 17.07.2026) ---------- */
 
-.map-screen { min-height: 100%; }
+.map-screen {
+  height: 100%; overflow-x: auto; overflow-y: hidden;
+  display: flex; align-items: center;
+  -webkit-overflow-scrolling: touch;
+}
 .map-world {
-  position: relative;
+  position: relative; flex: 0 0 auto;
   background:
-    radial-gradient(500px 300px at 75% 15%, rgba(124, 108, 255, 0.12), transparent 70%),
-    radial-gradient(500px 320px at 20% 55%, rgba(47, 128, 237, 0.1), transparent 70%),
-    radial-gradient(500px 300px at 70% 90%, rgba(76, 175, 80, 0.1), transparent 70%);
+    radial-gradient(500px 300px at 15% 25%, rgba(76, 175, 80, 0.1), transparent 70%),
+    radial-gradient(500px 320px at 45% 70%, rgba(47, 128, 237, 0.1), transparent 70%),
+    radial-gradient(500px 300px at 80% 30%, rgba(124, 108, 255, 0.12), transparent 70%);
 }
 .map-trail { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 .map-node {
-  position: absolute; width: 78px; margin-left: -6px;
+  position: absolute; width: 84px;
+  transform: translateX(-50%);
   text-align: center; cursor: pointer;
   transition: transform 0.15s;
 }
-.map-node:active { transform: scale(0.94); }
+.map-node:active { transform: translateX(-50%) scale(0.94); }
 .map-node.locked { cursor: default; opacity: 0.45; filter: saturate(0.3); }
 
 .node-medal {
-  width: 62px; height: 62px; margin: 0 auto; border-radius: 50%;
+  width: 72px; height: 72px; margin: 0 auto; border-radius: 50%;
   display: grid; place-items: center;
-  font-weight: 900; font-size: 1.3rem;
-  color: #fff; text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
   background:
     radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.28), transparent 45%),
     linear-gradient(180deg, #2a3168, #171c40);
   border: 3px solid #5d6ad1;
-  box-shadow: 0 0 0 3px rgba(15, 18, 40, 0.9), 0 6px 18px rgba(0, 0, 0, 0.55),
-              inset 0 -4px 8px rgba(0, 0, 20, 0.45);
+  box-shadow: 0 0 0 3px rgba(15, 18, 40, 0.9), 0 0 14px var(--theme-glow, transparent),
+              0 6px 18px rgba(0, 0, 0, 0.55), inset 0 -4px 8px rgba(0, 0, 20, 0.45);
 }
+.node-medal .px-ico { filter: drop-shadow(0 0 5px var(--theme-glow, transparent)); }
 .map-node.cleared .node-medal {
   border-color: #4cd964;
   background:
@@ -221,13 +225,7 @@ body.in-battle #screen { overflow: hidden; }
   0%, 100% { box-shadow: 0 0 0 3px rgba(15, 18, 40, 0.9), 0 0 12px rgba(255, 201, 77, 0.5); }
   50% { box-shadow: 0 0 0 3px rgba(15, 18, 40, 0.9), 0 0 30px rgba(255, 201, 77, 0.9); transform: translateY(-3px); }
 }
-.node-stars { margin-top: 3px; line-height: 1; }
-.node-label {
-  margin-top: 2px; font-size: 0.68rem; font-weight: 800;
-  color: var(--text); text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
-  letter-spacing: 0.3px;
-}
-.map-node.locked .node-label { color: var(--text-dim); }
+.node-stars { margin-top: 4px; line-height: 1; }
 .node-egg {
   position: absolute; top: -8px; right: 2px; font-size: 1rem;
   filter: drop-shadow(0 0 6px rgba(255, 201, 77, 0.8));
@@ -493,22 +491,22 @@ body.in-battle #screen { overflow: hidden; }
   width: 118%; margin: 0 0 3px -9%;
 }
 .unit-lvl {
-  flex: 0 0 auto; min-width: 18px;
+  flex: 0 0 auto; min-width: 22px;
   display: grid; place-items: center;
-  font-size: 0.4rem; color: var(--gold);
+  font-size: 0.48rem; color: var(--gold);
   background: rgba(0, 0, 0, 0.7);
   box-shadow: inset 0 0 0 1px rgba(255, 201, 77, 0.55);
 }
 .unit-plate-bars { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
 .bar {
-  height: 7px; border-radius: 5px; background: var(--hp-bg);
+  height: 9px; border-radius: 5px; background: var(--hp-bg);
   position: relative; overflow: hidden;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 5px; transition: width 0.18s linear; }
 .hp-fill { background: linear-gradient(180deg, #7dedb2, #38b54a 55%, #23913d); }
 .shield-fill { background: rgba(122, 200, 255, 0.8); mix-blend-mode: screen; }
-.energy-bar { height: 5px; margin-top: 2px; }
+.energy-bar { height: 6px; margin-top: 2px; }
 .energy-fill { background: linear-gradient(180deg, #8fd4ff, #2d7fd6); }
 
 /* Kampf-Zustände */
@@ -740,8 +738,9 @@ body.in-battle #screen { overflow: hidden; }
   font-display: swap;
 }
 
-/* VT323 ist schmal/klein — Grundgröße anheben, damit alle rem-Größen mitwachsen */
-:root { font-size: 19px; }
+/* VT323 ist schmal/klein — Grundgröße anheben, damit alle rem-Größen mitwachsen.
+   21px seit 17.07.2026: „auf Handybildschirm schwer zu lesen" — im Zweifel größer. */
+:root { font-size: 21px; }
 body { font-family: 'VT323', 'Courier New', monospace; letter-spacing: 0.3px; }
 
 /* Headline-/Button-Schrift: Press Start 2P (kompakt gesetzt, Buchstaben sind breit) */
@@ -906,16 +905,41 @@ body::after {
   display: flex; flex-direction: column; align-items: center;
   padding-top: calc(env(safe-area-inset-top, 0px) + 30px);
 }
-.menu-emblem { width: 110px; animation: emblemFloat 4s ease-in-out infinite; }
+.menu-emblem { width: 150px; animation: emblemFloat 4s ease-in-out infinite; }
 .menu-emblem img { width: 100%; height: auto; }
-.menu-buttons {
+.menu-logo { font-size: 1.55rem; letter-spacing: 2px; margin-top: 4px; max-width: 96vw; }
+.menu-content .title-tag { font-size: 0.48rem; white-space: nowrap; }
+
+/* Daumenfreundliches 2×2-Kachel-Raster statt enger Button-Liste */
+.menu-grid {
   margin-top: auto;
-  margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
-  display: flex; flex-direction: column; gap: 12px;
-  width: min(74vw, 300px);
+  margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 26px);
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  width: min(88vw, 380px);
 }
-.menu-buttons .btn { width: 100%; }
-.menu-buttons .px-ico { width: 16px; height: 16px; vertical-align: -3px; margin-right: 5px; }
+.menu-tile {
+  min-height: 96px; padding: 14px 8px 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 9px;
+  font-family: 'Press Start 2P', monospace; font-size: 0.55rem; color: var(--text);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+  border: 2px solid var(--panel-border); border-radius: 4px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18), inset 0 -3px 0 rgba(0, 0, 0, 0.4),
+              0 3px 0 rgba(0, 0, 0, 0.5);
+  transition: transform 0.12s, filter 0.2s;
+}
+.menu-tile:active {
+  transform: translateY(2px); filter: brightness(1.1);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+              0 1px 0 rgba(0, 0, 0, 0.5);
+}
+.menu-tile.primary {
+  background: linear-gradient(180deg, #9d7dff, #6a4fe0 48%, #5233c4);
+  border-color: rgba(196, 172, 255, 0.8); color: #fff;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.35), inset 0 -3px 0 rgba(20, 8, 70, 0.6),
+              0 3px 0 rgba(20, 8, 70, 0.8);
+}
+.menu-tile .px-ico { width: 36px; height: 36px; }
 
 /* ===== Fusion-Picker (Archetyp+Element-Fusion) ===== */
 

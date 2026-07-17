@@ -14,6 +14,13 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 - Kampf-HUD: Kompakt-Plakette (`unit-plate`) — Level-Badge links an der HP-Bar,
   Energie-Bar darunter, kein Name.
 
+## UI-Grundsätze (Nutzer-Feedback 17.07.2026, bindend)
+
+- **Icon-basiert statt Text:** so wenig Wörter wie möglich; Erklärungen visuell
+  vermitteln (sprachunabhängig — Ziel internationaler Store).
+- **Groß genug fürs Handy:** Buttons daumengroß, Counter/Bars deutlich lesbar;
+  im Zweifel größer. Erste Fassung war auf iPhone 13 zu klein.
+
 ## Regeln
 
 - **Kein Build-Schritt, kein Framework.** Spiel muss per `file://` UND Preview-Server laufen.
@@ -75,8 +82,10 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 
 - **Hauptmenü** (`renderMenu`): Emblem + Logo über Lager-Szene; erste Interaktion
   (pointerdown, main.js) entsperrt AudioContext und startet die Musik.
-- **Kampagne = Weltkarte**: Zickzack-Pfad (SVG, in `renderMap` aus Knotenpositionen berechnet),
-  Medaillon-Knoten, Stage 1 unten, aktuelle Stage pulsiert gold. Kein Listen-Layout!
+- **Kampagne = Weltkarte, HORIZONTAL scrollend** (seit 17.07.): Zickzack-Pfad links→rechts,
+  Stage 1 links, aktuelle Stage pulsiert gold und wird beim Öffnen zentriert.
+  Medaillons zeigen **Theme-Icons statt Nummern** (`MapThemeIcon`/`MapThemeGlow` in ui.js),
+  keine Text-Labels auf der Map — Details erst im Team-Select. Kein Listen-Layout!
 - **Kampf = Arena-Szene**: `sceneSVG(stage.theme)` als Hintergrund, Einheiten absolut
   positioniert über `SLOT_POS` (Prozent-Koordinaten in ui.js), Gegner per `scaleX(-1)`
   gespiegelt. Idle-Bobbing, gerichteter Ausfallschritt (Vektor per getBoundingClientRect
@@ -130,6 +139,10 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 - Referenzkurve (Sim 17.07.2026, nach Fusions-Redesign): S1–3 Starter Lv1–2 ·
   S4 Lv3 + water_wyrm · S5–7 Lv3–4 · **S8–10 Lv5 Triple-DPS** (S10: Lv4-DPS verliert,
   Lv5-DPS ~30 s, Team mit Fusions-Koloss ~19 s).
+- Kapitel 2 (Sim 17.07.2026): S11–13 Lv5-Basis-Teams · **S14 = erste Fusions-Pflicht**
+  (Lv5-DPS verliert gegen Barghest, 1 Fusion genügt) · S15–17 Fusions-Ära ·
+  S18–19 brauchen ausgebaute Fusionen (Koloss Lv3+ bzw. 2 Fusionen) ·
+  S20 All-Fusion-Finale (ohne eigene Fusion nicht schaffbar).
 - **fx_wyvern als Gegner ist tabu bzw. nur mit Sim-Beleg:** multiHit 3× auf die
   Rückreihe vernichtet schon auf Lv1 jedes Nicht-Fusions-Team (getestet 17.07.).
 - Alte „Heiler-Falle"-Notiz relativiert: ein Heiler-Team MIT Lv5-Drache gewann auch

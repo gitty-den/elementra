@@ -69,7 +69,16 @@ Stil: dunkel-episch mit Element-Glow.
       Sphinx, Barghest, Ouroboros, Archon) mit eigenen Char-Maps, Abilities und
       freiem 2-Slot-Picker; S8–S10 zeigen Fusions-Gegner, per Sim neu balanciert
       (Details in CLAUDE.md).
-- [ ] Mehr Kampagnen-Kapitel (Stages 11+, weitere Fusions-Rezepte für die 9 offenen Paare)
+- [x] 17.07.: **Feedback-Runde 2:** Hauptmenü mit größerem Logo + 2×2-Kachel-Raster
+      (daumenfreundlich), Kampagnen-Map horizontal scrollend mit Theme-Icons statt
+      Nummern (sprachunabhängig, keine Labels), UI global vergrößert (Root 21px,
+      dickere Bars, größere Icons). UI-Grundsätze in CLAUDE.md verankert:
+      icon-basiert, visuell, groß.
+- [x] 17.07.: **Kapitel 2 (Stages 11–20)** generiert: 10 neue Unlocks Richtung
+      Sammlung, Fusions-Gegner ab S14 (erste Fusions-Pflicht), All-Fusion-Finale
+      S20; per Headless-Sim balanciert. Offen für Kapitel 3: nature_wyrm,
+      water_greif, nature_geist als Unlocks.
+- [ ] Mehr Kampagnen-Kapitel (Stages 21+, weitere Fusions-Rezepte für die 9 offenen Paare)
 - [ ] Idle-/Tages-Belohnungen, Erfolge
 - [ ] Team-Positionen (Front/Backline ausbauen — Engine kennt `enemyBackline` schon)
   - [x] 15.07.: Positionen im Team-Select sichtbar (Slot 1 = „Vorne", wird zuerst

@@ -97,4 +97,97 @@ const STAGES = [
     ],
     gold: 150, firstClearBonus: 250, unlockCreature: 'fire_phoenix',
   },
+
+  // ===== Kapitel 2 (17.07.2026): Fusions-Ära. Ab S15 sind eigene Fusionen
+  // faktisch Pflicht, S20 ist ein All-Fusion-Bosskampf. Levels per Sim.
+  {
+    id: 11, name: 'Glutfelder', theme: 'fire', desc: 'Glühende Schlacke, patrouillierende Golems.',
+    enemies: [
+      { id: 'fire_golem', level: 4 },
+      { id: 'fire_wolf', level: 4 },
+      { id: 'fire_geist', level: 3 },
+    ],
+    gold: 160, firstClearBonus: 200, unlockCreature: 'water_golem',
+  },
+  {
+    id: 12, name: 'Sturmsee', theme: 'water', desc: 'Die See tobt — alles hier beißt.',
+    enemies: [
+      { id: 'water_drache', level: 5 },
+      { id: 'water_wolf', level: 5 },
+      { id: 'water_greif', level: 4 },
+    ],
+    gold: 170, firstClearBonus: 210, unlockCreature: 'nature_greif',
+  },
+  {
+    id: 13, name: 'Dornenwald', theme: 'nature', desc: 'Der Wald selbst stellt sich dir entgegen.',
+    enemies: [
+      { id: 'nature_drache', level: 5 },
+      { id: 'nature_wolf', level: 5 },
+      { id: 'nature_geist', level: 5 },
+    ],
+    gold: 180, firstClearBonus: 220, unlockCreature: 'fire_wyrm',
+  },
+  {
+    id: 14, name: 'Aschensturm', theme: 'ash', desc: 'Ein Geisterwolf jagt im Aschenregen.',
+    enemies: [
+      { id: 'fx_barghest_ash', level: 1 },
+      { id: 'fire_drache', level: 5 },
+      { id: 'fire_greif', level: 4 },
+    ],
+    gold: 190, firstClearBonus: 230, unlockCreature: 'nature_drache',
+  },
+  {
+    id: 15, name: 'Eistiefe', theme: 'frost', desc: 'Unter dem Eis wartet der Basilisk.',
+    enemies: [
+      { id: 'fx_basilisk_frost', level: 4 },
+      { id: 'water_golem', level: 5 },
+      { id: 'water_geist', level: 5 },
+    ],
+    gold: 200, firstClearBonus: 240, unlockCreature: 'fire_golem',
+  },
+  {
+    id: 16, name: 'Himmelspass', theme: 'storm', desc: 'Die Sphinx bewacht den Aufstieg.',
+    enemies: [
+      { id: 'fx_sphinx_steam', level: 3 },
+      { id: 'nature_greif', level: 5 },
+      { id: 'fire_greif', level: 5 },
+    ],
+    gold: 210, firstClearBonus: 250, unlockCreature: 'water_wolf',
+  },
+  {
+    id: 17, name: 'Seelenmoor', theme: 'nature', desc: 'Irrlichter führen dich vom Weg ab.',
+    enemies: [
+      { id: 'fx_barghest_frost', level: 3 },
+      { id: 'nature_geist', level: 5 },
+      { id: 'nature_wolf', level: 5 },
+    ],
+    gold: 220, firstClearBonus: 260, unlockCreature: 'fire_geist',
+  },
+  {
+    id: 18, name: 'Obsidianfeste', theme: 'fire', desc: 'Der Koloss hält die schwarzen Tore.',
+    enemies: [
+      { id: 'fx_koloss_ash', level: 2 },
+      { id: 'fire_golem', level: 5 },
+      { id: 'fire_drache', level: 5 },
+    ],
+    gold: 230, firstClearBonus: 280, unlockCreature: 'fire_wolf',
+  },
+  {
+    id: 19, name: 'Frostthron', theme: 'frost', desc: 'Gargoyle und Ouroboros — Eis ohne Ende.',
+    enemies: [
+      { id: 'fx_gargoyle_frost', level: 3 },
+      { id: 'fx_ouroboros_frost', level: 2 },
+      { id: 'water_drache', level: 5 },
+    ],
+    gold: 240, firstClearBonus: 300, unlockCreature: 'water_phoenix',
+  },
+  {
+    id: 20, name: 'Herz der Elemente', theme: 'storm', desc: 'Drei Fusionen. Keine Gnade.',
+    enemies: [
+      { id: 'fx_seraph_steam', level: 3 },
+      { id: 'fx_leviathan_ash', level: 3 },
+      { id: 'fx_archon_frost', level: 3 },
+    ],
+    gold: 300, firstClearBonus: 400, unlockCreature: 'nature_phoenix',
+  },
 ];
