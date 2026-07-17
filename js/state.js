@@ -18,14 +18,15 @@ const RarityInfo = {
   legendary: { name: 'Legendär',   color: '#ffb300' },
 };
 
+// icon = PixelIcons-Name (iconArt), keine Emoji (UI-Grundsätze).
 const RoleInfo = {
-  dps:     { name: 'Angreifer', icon: '⚔️' },
-  tank:    { name: 'Tank',      icon: '🛡️' },
-  speed:   { name: 'Läufer',    icon: '⚡' },
-  bruiser: { name: 'Raufbold',  icon: '🐺' },
-  dot:     { name: 'Gift',      icon: '☠️' },
-  support: { name: 'Heiler',    icon: '✨' },
-  sustain: { name: 'Bewahrer',  icon: '🔆' },
+  dps:     { name: 'Angreifer', icon: 'sword' },
+  tank:    { name: 'Tank',      icon: 'shield' },
+  speed:   { name: 'Läufer',    icon: 'bolt' },
+  bruiser: { name: 'Raufbold',  icon: 'fang' },
+  dot:     { name: 'Gift',      icon: 'skull' },
+  support: { name: 'Heiler',    icon: 'sparkle' },
+  sustain: { name: 'Bewahrer',  icon: 'sun' },
 };
 
 // Beschreibungstexte der Fähigkeiten (Effekt-IDs aus creatures.json).

@@ -51,8 +51,14 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   16 (symmetric) bzw. 32 bzw. Icon-Breite; Fehler = Magenta-Pixel + console.warn.
 - Kampf-Feedback: Angriffs-Animation je Archetyp (CSS `atkDash/atkBite/atkStomp/atkPhase/
   atkWhip/atkSwoop/atkDive`, Richtungs-Flip via `--dir` am `.unit`), Pixel-Partikel bei
-  Treffer/Heilung/Tod/Ulti (`spawnParticles`, Farben aus `PixelPalettes`). Fusion-Screen
-  ist visuell (Element-Legende, Level-Pips, Fundort-Tags, Teaser-Rezepte) — keine Textwände.
+  Treffer/Heilung/Tod (`spawnParticles`). **Ulti-Moment** (17.07.): `spawnUltiBurst`
+  (30 Partikel in Element-Farben, Flugbahn je Element: Feuer/Asche steigen, Wasser/Frost
+  spritzen, Natur wirbelt, Rest radial) + Schockwellen-Ring + Vollbild-Blitz +
+  `casting`-Aufbäumen + 260-ms-Hit-Stop (`B.freezeUntil`). Fusion-Screen ist visuell —
+  keine Textwände.
+- **Karten rahmenlos:** `.ccard` ohne Box/Border — Seltenheit + Auswahl als Drop-Shadow-
+  Glow am Sprite. Long-Press auf Karten = Stat-Peek (`attachLongPress`, 450 ms;
+  `contextmenu` global unterdrückt, `-webkit-touch-callout: none`).
 - Schrift: Pixel-Fonts aus `fonts/` (OFL-Lizenz, lokal, offline-fähig): „Press Start 2P"
   für Headlines/Buttons, „VT323" für Fließtext (Grundgröße 19px). Keine System-/Webfonts.
   UI-Look: kantige Ecken, harte Stufen-Schatten, CSS-Scanlines (style.css „Pixel-Look" + „Pixel-Typografie").

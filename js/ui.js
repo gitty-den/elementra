@@ -175,13 +175,18 @@ function openTeamSelect(stage) {
       Sfx.click();
       render();
     });
-    ov.querySelectorAll('.ts-grid .ccard').forEach(card => card.onclick = () => {
-      Sfx.click();
-      const id = card.dataset.cid;
-      if (picked.includes(id)) picked = picked.filter(x => x !== id);
-      else if (picked.length < 3) picked.push(id);
-      selSlot = -1;
-      render();
+    ov.querySelectorAll('.ts-grid .ccard').forEach(card => {
+      card.onclick = () => {
+        if (card._lpFired) { card._lpFired = false; return; }
+        Sfx.click();
+        const id = card.dataset.cid;
+        if (picked.includes(id)) picked = picked.filter(x => x !== id);
+        else if (picked.length < 3) picked.push(id);
+        selSlot = -1;
+        render();
+      };
+      // Long-Press = Stat-Peek, danach zurück in die Team-Auswahl
+      attachLongPress(card, () => openCreatureDetail(card.dataset.cid, { onClose: render }));
     });
     ov.querySelector('#ts-cancel').onclick = () => { Sfx.click(); closeOverlay(); };
     ov.querySelector('#ts-start').onclick = () => {
@@ -248,7 +253,8 @@ function beginBattle(stage, teamIds) {
   const frame = now => {
     const dt = Math.min(64, now - last);
     last = now;
-    updateBattle(battle, dt * B.speed);
+    // Hit-Stop während Ulti-Moment (B.freezeUntil), Anzeige läuft weiter
+    if (!B.freezeUntil || now >= B.freezeUntil) updateBattle(battle, dt * B.speed);
     renderBars();
     if (!battle.over) B.raf = requestAnimationFrame(frame);
     else renderBars();
@@ -340,6 +346,42 @@ function spawnParticles(u, color, count = 14) {
   }
 }
 
+// Ulti-Burst: großer Partikelregen in den Element-Farben, Flugbahn je Element
+// (Feuer/Asche steigen, Wasser/Frost spritzen nach unten, Natur wirbelt seitlich,
+// Rest explodiert radial). Dazu Schockwellen-Ring am Wirker.
+function spawnUltiBurst(u) {
+  const card = B && B.unitEls[u.uid];
+  if (!card) return;
+  const elId = u.c.element;
+  const pal = PixelPalettes[elId];
+  const colors = [pal.m, pal.l, pal.h, pal.g];
+  const fx = card.querySelector('.fx-layer');
+  for (let i = 0; i < 30; i++) {
+    const p = el('span', 'particle particle-big');
+    p.style.background = colors[i % colors.length];
+    let dx, dy;
+    if (elId === 'fire' || elId === 'ash') {
+      dx = Math.random() * 160 - 80; dy = -(Math.random() * 190 + 50);
+    } else if (elId === 'water' || elId === 'frost') {
+      dx = Math.random() * 220 - 110; dy = Math.random() * 130 + 20;
+    } else if (elId === 'nature') {
+      dx = Math.random() * 260 - 130; dy = Math.random() * 90 - 45;
+    } else {
+      const a = Math.random() * Math.PI * 2, r = Math.random() * 110 + 60;
+      dx = Math.cos(a) * r; dy = Math.sin(a) * r;
+    }
+    p.style.setProperty('--dx', dx + 'px');
+    p.style.setProperty('--dy', dy + 'px');
+    p.style.left = '50%'; p.style.top = '50%';
+    fx.appendChild(p);
+    setTimeout(() => p.remove(), 1100);
+  }
+  const wave = el('span', 'ulti-wave');
+  wave.style.borderColor = pal.g;
+  fx.appendChild(wave);
+  setTimeout(() => wave.remove(), 700);
+}
+
 function onBattleEvent(type, d) {
   switch (type) {
     case 'attack': {
@@ -390,17 +432,31 @@ function onBattleEvent(type, d) {
     case 'shieldGain': floatText(d.target, '🛡 Schild', 'absorb'); break;
     case 'poison': floatText(d.target, '☠ ×' + d.stacks, 'poison'); break;
     case 'ulti': {
-      const p = { glow: PixelPalettes[d.unit.c.element].g };
-      spawnParticles(d.unit, p.glow, 18);
+      const glow = PixelPalettes[d.unit.c.element].g;
+      // Kurzer Hit-Stop: Kampf friert ~260 ms ein, Ulti bekommt ihren Moment.
+      B.freezeUntil = performance.now() + 260;
+      spawnUltiBurst(d.unit);
+      const caster = B.unitEls[d.unit.uid];
+      if (caster) {
+        caster.classList.remove('casting');
+        void caster.offsetWidth;
+        caster.classList.add('casting');
+        setTimeout(() => caster.classList.remove('casting'), 550); // idleBob wieder freigeben
+      }
       const scr = document.querySelector('.battle-screen');
       if (scr) {
         scr.classList.remove('shaking');
         void scr.offsetWidth;
         scr.classList.add('shaking');
+        // Element-farbiger Vollbild-Blitz
+        const flash = el('div', 'ulti-screen-flash');
+        flash.style.background = `radial-gradient(circle at 50% 45%, ${glow}55, transparent 70%)`;
+        scr.appendChild(flash);
+        setTimeout(() => flash.remove(), 450);
       }
       const banner = $('#ulti-banner');
       if (banner) {
-        banner.innerHTML = `<div class="ulti-flash" style="--glow:${p.glow}">
+        banner.innerHTML = `<div class="ulti-flash" style="--glow:${glow}">
           <b>${d.unit.c.name}</b> — ${d.ability.name}!</div>`;
         setTimeout(() => { banner.innerHTML = ''; }, 1300);
       }
@@ -514,55 +570,80 @@ function renderCollection(root) {
     wrap.appendChild(g3);
   }
   root.appendChild(wrap);
-  wrap.querySelectorAll('.coll-grid .ccard:not(.unknown)').forEach(card =>
-    card.onclick = () => { Sfx.click(); openCreatureDetail(card.dataset.cid); });
+  wrap.querySelectorAll('.coll-grid .ccard:not(.unknown)').forEach(card => {
+    const open = () => { Sfx.click(); openCreatureDetail(card.dataset.cid); };
+    card.onclick = () => {
+      if (card._lpFired) { card._lpFired = false; return; }
+      open();
+    };
+    attachLongPress(card, open);
+  });
 }
 
-function openCreatureDetail(cid) {
+// Icon-basiert (UI-Grundsätze): Element-/Rollen-Icon, Level-Pips, Stat-Icons.
+// opts.onClose: Rücksprung (z. B. Team-Select-Re-Render nach Long-Press-Peek).
+function openCreatureDetail(cid, opts = {}) {
   const render = () => {
     const c = Creatures[cid];
     const entry = Save.collection[cid];
     const st = statsAtLevel(c, entry.level);
     const r = RarityInfo[c.rarity];
-    const role = RoleInfo[c.role];
     const isMax = entry.level >= MAX_LEVEL;
     const cost = levelUpCost(entry.level);
-    const elName = Elements[c.element].name;
     const ov = showOverlay(`
       <div class="detail">
         <div class="detail-art rarity-${c.rarity}">${creatureArt(c)}</div>
-        <h2>${c.name}</h2>
+        <h2 style="--rar:${r.color}">${c.name}</h2>
         <div class="detail-tags">
-          <span class="tag" style="--rar:${r.color}">${r.name}</span>
-          <span class="tag">${ElementIcons[c.element]} ${elName}</span>
-          <span class="tag">${role.icon} ${role.name}</span>
-          <span class="tag">${isMax ? 'MAX-LEVEL' : 'Level ' + entry.level}</span>
+          <span class="tag">${ElementIcons[c.element]}</span>
+          <span class="tag">${iconArt(RoleInfo[c.role].icon, 16)}</span>
+          <span class="tag">${isMax ? iconArt('star', 15) + ' MAX' : levelPipsHTML(entry.level)}</span>
         </div>
         <div class="stat-grid">
-          <div class="stat"><i>LP</i><b>${st.hp}</b></div>
-          <div class="stat"><i>ANG</i><b>${st.atk}</b></div>
-          <div class="stat"><i>VER</i><b>${st.def}</b></div>
-          <div class="stat"><i>TMP</i><b>${st.spd}</b></div>
+          <div class="stat">${iconArt('heart', 17)}<b>${st.hp}</b></div>
+          <div class="stat">${iconArt('sword', 17)}<b>${st.atk}</b></div>
+          <div class="stat">${iconArt('shield', 17)}<b>${st.def}</b></div>
+          <div class="stat">${iconArt('bolt', 17)}<b>${st.spd}</b></div>
         </div>
         <div class="ability-box">
-          <div class="ab"><b>Passiv — ${Abilities[c.passive].name}:</b> ${AbilityDescriptions[c.passive]}</div>
-          <div class="ab"><b>Ulti — ${Abilities[c.active].name}:</b> ${AbilityDescriptions[c.active]}</div>
+          <div class="ab">${iconArt('orb', 14)} <b>${Abilities[c.passive].name}:</b> ${AbilityDescriptions[c.passive]}</div>
+          <div class="ab">${iconArt('bolt', 14)} <b>${Abilities[c.active].name}:</b> ${AbilityDescriptions[c.active]}</div>
         </div>
         <div class="ov-actions">
           <button class="btn btn-ghost" id="det-close">Schließen</button>
           ${isMax
-            ? `<button class="btn btn-max" disabled>✦ ${c.fusion ? 'Maximalstufe' : 'Bereit zur Fusion'}</button>`
+            ? `<button class="btn btn-max" disabled>${iconArt('star', 14)} MAX</button>`
             : `<button class="btn btn-primary" id="det-lvl" ${canLevelUp(cid) ? '' : 'disabled'}>
-                 Level-Up (${iconArt('coin')} ${cost})</button>`}
+                 Lvl. Up (${iconArt('coin')} ${cost})</button>`}
         </div>
       </div>`);
-    ov.querySelector('#det-close').onclick = () => { Sfx.click(); closeOverlay(); showScreen('collection'); };
+    ov.querySelector('#det-close').onclick = () => {
+      Sfx.click();
+      closeOverlay();
+      if (opts.onClose) opts.onClose(); else showScreen('collection');
+    };
     const lvlBtn = ov.querySelector('#det-lvl');
     if (lvlBtn) lvlBtn.onclick = () => {
       if (levelUp(cid)) { Sfx.heal(); updateGoldDisplay(); render(); }
     };
   };
   render();
+}
+
+// Long-Press (450 ms, max. 10 px Bewegung) — öffnet den Stat-Peek am Handy.
+// Setzt _lpFired, damit der nachfolgende Click-Handler nicht zusätzlich feuert.
+function attachLongPress(node, fn) {
+  let timer = null, x0 = 0, y0 = 0;
+  const cancel = () => { if (timer) { clearTimeout(timer); timer = null; } };
+  node.addEventListener('pointerdown', e => {
+    x0 = e.clientX; y0 = e.clientY;
+    cancel();
+    timer = setTimeout(() => { timer = null; node._lpFired = true; fn(); }, 450);
+  });
+  node.addEventListener('pointermove', e => {
+    if (Math.hypot(e.clientX - x0, e.clientY - y0) > 10) cancel();
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => node.addEventListener(ev, cancel));
 }
 
 // ---------- Screen: Fusion ----------
@@ -655,12 +736,16 @@ function renderFusion(root) {
   });
   const fuseBtn = row.querySelector('.btn-fuse');
   if (fuseBtn) fuseBtn.onclick = () => { Sfx.click(); playFusion(fusionPick[0], fusionPick[1]); };
-  grid.querySelectorAll('.ccard').forEach(card => card.onclick = () => {
-    const id = card.dataset.cid;
-    if (fusionPick.includes(id)) fusionPick = fusionPick.filter(x => x !== id);
-    else if (fusionPick.length < 2) fusionPick.push(id);
-    Sfx.click();
-    showScreen('fusion');
+  grid.querySelectorAll('.ccard').forEach(card => {
+    card.onclick = () => {
+      if (card._lpFired) { card._lpFired = false; return; }
+      const id = card.dataset.cid;
+      if (fusionPick.includes(id)) fusionPick = fusionPick.filter(x => x !== id);
+      else if (fusionPick.length < 2) fusionPick.push(id);
+      Sfx.click();
+      showScreen('fusion');
+    };
+    attachLongPress(card, () => openCreatureDetail(card.dataset.cid, { onClose: () => showScreen('fusion') }));
   });
 }
 

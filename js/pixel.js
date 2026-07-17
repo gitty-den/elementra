@@ -579,6 +579,36 @@ const PixelIcons = {
     '....m....m..', '....m....m..', '..mmm..mmm..', '.mmmm.mmmm..', '.mmmm.mmmm..',
     '..mm...mm...', '............',
   ] },
+  heart: { pal: { o: '#5c1020', m: '#e84a5f', l: '#ff8a9b', h: '#ffd0d8' }, rows: [
+    '............', '..oo....oo..', '.ommo..ommo.', 'omllmoomllmo', 'omhlmmmmllmo',
+    'omllllllllmo', '.omllllllmo.', '..omllllmo..', '...omllmo...', '....ommo....',
+    '.....oo.....', '............',
+  ] },
+  shield: { pal: { o: '#1a2a4a', m: '#5d8ac9', l: '#9dc3f0', h: '#e2f0ff' }, rows: [
+    '............', '.oooooooooo.', '.omllhhllmo.', '.omllhhllmo.', '.omllllllmo.',
+    '.ommllllmmo.', '.ommllllmmo.', '..omllllmo..', '..ommllmmo..', '...omllmo...',
+    '....ommo....', '.....oo.....',
+  ] },
+  fang: { pal: { o: '#3a2a1a', m: '#e8dcc8', l: '#fffaf0' }, rows: [
+    '............', '.oo......oo.', '.omo....omo.', '.olmo..omlo.', '.olmo..omlo.',
+    '.ollmoomllo.', '.ollmoomllo.', '..olmoomlo..', '..olmoomlo..', '...oo..oo...',
+    '............', '............',
+  ] },
+  skull: { pal: { o: '#2a2a35', m: '#c8ccd8', l: '#eef1f8' }, rows: [
+    '............', '...oooooo...', '..omllllmo..', '.omllllllmo.', '.omlollolmo.',
+    '.omoolloomo.', '.omllllllmo.', '..omlmmlmo..', '..oml..lmo..', '...o.oo.o...',
+    '............', '............',
+  ] },
+  sparkle: { pal: { m: '#b18aff', l: '#d9c9ff', h: '#ffffff' }, rows: [
+    '.....m......', '.....m......', '....mlm.....', 'mmmlhhlmmm..', '....mlm...m.',
+    '.....m...mlm', '.....m....m.', '..m.........', '.mlm........', '..m.........',
+    '............', '............',
+  ] },
+  sun: { pal: { m: '#ffc94d', l: '#ffe9a8', h: '#fff8e0' }, rows: [
+    '.....m......', '.m...m...m..', '..m.mlm.m...', '...mlllm....', '..mllhllm...',
+    'mmmlhhhlmmm.', '..mllhllm...', '...mlllm....', '..m.mlm.m...', '.m...m...m..',
+    '.....m......', '............',
+  ] },
 };
 
 // ===================== Lagerfeuer (Hauptmenü-Szene, 2 Flacker-Frames) =====================

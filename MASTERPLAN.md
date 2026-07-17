@@ -84,6 +84,12 @@ Stil: dunkel-episch mit Element-Glow.
       Sprite-Umrandung statt Bodenring, Einstellungen mit Lautstärke-Reglern
       (Sound/Musik 0–100 %), Sprite-Galerie/Logo-Wahl entfernt — Logo fest:
       Element-Ring.
+- [x] 17.07.: **Feedback-Runde 4:** Ulti-Moment (Element-Partikel-Burst mit
+      elementtypischer Flugbahn, Schockwelle, Vollbild-Blitz, Caster-Aufbäumen,
+      260-ms-Hit-Stop), Kreaturen-Karten komplett rahmenlos (Seltenheit/Auswahl
+      als Sprite-Glow), Detail-Overlay icon-basiert (Herz/Schwert/Schild/Blitz,
+      Rollen-Pixel-Icons statt Emoji, Level-Pips, „Lvl. Up"), Long-Press am Handy
+      öffnet Stat-Peek statt iOS-Bildmenü (contextmenu + touch-callout unterdrückt).
 - [ ] Mehr Kampagnen-Kapitel (Stages 21+, weitere Fusions-Rezepte für die 9 offenen Paare)
 - [ ] Idle-/Tages-Belohnungen, Erfolge
 - [ ] Team-Positionen (Front/Backline ausbauen — Engine kennt `enemyBackline` schon)

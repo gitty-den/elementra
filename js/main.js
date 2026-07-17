@@ -13,6 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Erste Interaktion irgendwo entsperrt den AudioContext und startet die Musik.
   document.body.addEventListener('pointerdown', () => Music.play('map'), { once: true });
 
+  // iOS-Long-Press öffnet sonst das Bild-Kontextmenü der Sprites — unterdrücken
+  // (Long-Press ist im Spiel der Stat-Peek, siehe attachLongPress in ui.js).
+  document.addEventListener('contextmenu', e => e.preventDefault());
+
   showScreen('menu');
 
   // PWA: Service Worker nur über http(s) — file:// wirft SecurityError
