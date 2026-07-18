@@ -89,7 +89,8 @@ const STAGES = [
     gold: 130, firstClearBonus: 180, unlockCreature: null,
   },
   {
-    id: 10, name: 'Thron der Elemente', theme: 'storm', desc: 'Der Phönix prüft, ob du würdig bist.',
+    id: 10, name: 'Thron der Elemente', theme: 'storm', boss: true,
+    desc: 'Der Phönix prüft, ob du würdig bist.',
     enemies: [
       { id: 'fire_phoenix', level: 3 },
       { id: 'fx_leviathan_steam', level: 2 },
@@ -182,7 +183,8 @@ const STAGES = [
     gold: 240, firstClearBonus: 300, unlockCreature: 'water_phoenix',
   },
   {
-    id: 20, name: 'Herz der Elemente', theme: 'storm', desc: 'Drei Fusionen. Keine Gnade.',
+    id: 20, name: 'Herz der Elemente', theme: 'storm', boss: true,
+    desc: 'Drei Fusionen. Keine Gnade.',
     enemies: [
       { id: 'fx_seraph_steam', level: 3 },
       { id: 'fx_leviathan_ash', level: 3 },

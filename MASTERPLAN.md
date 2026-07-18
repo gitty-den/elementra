@@ -94,10 +94,15 @@ Stil: dunkel-episch mit Element-Glow.
       die Menü-Position; Links/Rechts-Swipe zwischen Kampagne/Sammlung/Fusion
       (im Kampf gesperrt); Map fokussiert immer die aktuelle Stage; Teamwahl
       ersetzt per Antippen direkt (markierter Slot, sonst hinterste Position).
-- [ ] **Progression/Retention (nächster großer Block, Nutzer-Feedback 17.07.):**
-      zu schnell, keine Bindung, kein Ziel. Kandidaten: Kampf-XP statt Gold-Kauf
-      (Bindung), Erfolge/Sammelziele + Tagesbonus (Ziel), Ökonomie-Bremse (Tempo),
-      Kapitel-Boss-Inszenierung (Sog). Richtung vom Nutzer klären.
+- [x] 17.07.: **Progression-Paket** (alle 4 Bausteine vom Nutzer gewählt):
+      **Kampf-XP** — Kreaturen leveln durchs Kämpfen (`xpNeed` 35·Level, Sieg
+      `10+2·Stage`, Niederlage ⅓; XP-Feier im Ergebnis-Screen, XP-Bar im Detail);
+      Gold-Level-Up nur noch Beschleuniger. **Ökonomie-Bremse** — Level-Kosten
+      60·Level (statt 30), Wiederholungs-Gold halbiert. **Ziele** — Panel in der
+      Sammlung (Basis x/21, Fusionen x/12, Sterne x/60) mit 6 abholbaren
+      Meilenstein-Belohnungen + Tages-Bonus (50 Gold/Kalendertag).
+      **Boss-Inszenierung** — S10/S20 `boss: true`: großer roter Map-Knoten,
+      Intro-Auftritt des Boss-Sprites (Kampf startet eingefroren), Sieg-Schmuck.
 - [ ] Mehr Kampagnen-Kapitel (Stages 21+, weitere Fusions-Rezepte für die 9 offenen Paare)
 - [ ] Idle-/Tages-Belohnungen, Erfolge
 - [ ] Team-Positionen (Front/Backline ausbauen — Engine kennt `enemyBackline` schon)

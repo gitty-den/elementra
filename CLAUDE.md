@@ -135,6 +135,17 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 - Fusions-Kreaturen sind Endstufe: nicht erneut fusionierbar.
 - Fusion-Screen ist ein freier 2-Slot-Picker mit Ergebnis-Vorschau (`renderFusion`).
 
+## Progression (17.07.2026)
+
+- **Kampf-XP ist der Hauptweg:** `gainXp`/`grantTeamXp` in state.js — Sieg gibt
+  `10+2·Stage` XP je Team-Mitglied (Niederlage ⅓), `xpNeed = 35·Level`, Cap Lv 5.
+  Gold-Level-Up kostet 60·Level und setzt xp=0 (reiner Beschleuniger).
+- Wiederholungs-Clears geben nur halbes Stage-Gold.
+- **Ziele/Meilensteine:** `MILESTONES` + `goalProgress`/`claimMilestone` (state.js),
+  Panel oben in der Sammlung. Tages-Bonus: `claimDailyBonus` (50 Gold, Kalendertag).
+- **Boss-Stages** (`boss: true` in stages.js, aktuell S10/S20): roter XL-Map-Knoten,
+  Intro-Overlay in beginBattle (Kampf via `B.freezeUntil` eingefroren), Sieg-Schmuck.
+
 ## Kampfsystem (Kurzfassung)
 
 - Echtzeit; Angriffsintervall `max(700, 2400 − spd·50)` ms, erste Angriffe pro Slot gestaffelt.

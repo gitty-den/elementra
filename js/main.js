@@ -47,6 +47,21 @@ document.addEventListener('DOMContentLoaded', () => {
   showScreen('menu');
   initSwipe();
 
+  // Tages-Bonus: einmal pro Kalendertag, nach dem Splash.
+  if (dailyBonusAvailable()) {
+    setTimeout(() => {
+      claimDailyBonus();
+      updateGoldDisplay();
+      const ov = showOverlay(`
+        <div class="daily-bonus">
+          ${iconArt('sun', 40)}
+          <div class="result-gold">+ ${iconArt('coin')} ${DAILY_BONUS_GOLD}</div>
+          <div class="ov-actions"><button class="btn btn-primary" id="db-ok">Weiter</button></div>
+        </div>`);
+      ov.querySelector('#db-ok').onclick = () => { Sfx.click(); closeOverlay(); };
+    }, 2700);
+  }
+
   // PWA: Service Worker nur über http(s) — file:// wirft SecurityError
   if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('sw.js').catch((err) => console.warn('SW-Registrierung fehlgeschlagen:', err));

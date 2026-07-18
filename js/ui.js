@@ -104,7 +104,7 @@ function renderMap(root) {
   STAGES.forEach((stage, i) => {
     const cleared = Save.stages[stage.id] || 0;
     const unlocked = stageUnlocked(stage.id);
-    const node = el('div', `map-node ${cleared ? 'cleared' : ''} ${unlocked ? '' : 'locked'} ${stage.id === current ? 'current' : ''}`);
+    const node = el('div', `map-node ${cleared ? 'cleared' : ''} ${unlocked ? '' : 'locked'} ${stage.id === current ? 'current' : ''} ${stage.boss ? 'boss' : ''}`);
     node.style.left = pos[i].x + '%';
     node.style.top = pos[i].y + 'px';
     node.style.setProperty('--theme-glow', MapThemeGlow[stage.theme] || '#b18aff');
@@ -256,6 +256,17 @@ function beginBattle(stage, teamIds) {
 
   battle.enemies.forEach(u => $('#arena').appendChild(buildUnitEl(u)));
   battle.allies.forEach(u => $('#arena').appendChild(buildUnitEl(u)));
+
+  // Boss-Inszenierung: kurzer Auftritt des Boss-Sprites, Kampf startet eingefroren.
+  if (stage.boss) {
+    const bossC = Creatures[stage.enemies[0].id];
+    const intro = el('div', 'boss-intro', `<div class="boss-intro-art">${creatureArt(bossC)}</div>`);
+    document.querySelector('.battle-screen').appendChild(intro);
+    B.freezeUntil = performance.now() + 1800;
+    Sfx.ulti();
+    setTimeout(() => intro.classList.add('gone'), 1400);
+    setTimeout(() => intro.remove(), 2000);
+  }
 
   // Kein Zurück/Aufgeben im Kampf — raus geht es erst über das Ergebnis-Overlay.
   $('#bt-speed').onclick = e => {
@@ -528,10 +539,27 @@ function endBattleUI() {
   Music.play('map');
 }
 
+// XP-Zeile fürs Ergebnis: Mini-Sprite + XP-Balken + Level-Up-Feier je Team-Mitglied.
+function xpRowHTML(gains) {
+  return `<div class="xp-row">${gains.map(g => {
+    const c = Creatures[g.id];
+    const maxed = g.level >= MAX_LEVEL;
+    const pct = maxed ? 100 : Math.round(g.xp / g.need * 100);
+    return `<div class="xp-cell ${g.ups ? 'lvlup' : ''}">
+      <div class="xp-art">${creatureArt(c, { noAura: true })}</div>
+      <div class="bar xp-bar"><div class="fill xp-fill" style="width:${pct}%"></div></div>
+      ${g.ups ? `<div class="xp-up">${iconArt('bolt', 12)} Lv ${g.level}!</div>`
+              : `<div class="xp-plus">+${g.amount}</div>`}
+    </div>`;
+  }).join('')}</div>`;
+}
+
 function showBattleResult(winner) {
   if (!B) return; // Kampf wurde bereits verlassen (z. B. Aufgeben im Endmoment)
   const stage = B.stage;
+  const teamIds = B.battle.allies.map(u => u.cid);
   const alive = B.battle.allies.filter(u => u.alive).length;
+  const xpGains = grantTeamXp(stage, teamIds, winner === 'ally');
   if (winner === 'ally') {
     Sfx.win();
     const rewards = grantStageRewards(stage, alive);
@@ -540,11 +568,15 @@ function showBattleResult(winner) {
         <div class="unlock-label">Neue Kreatur freigeschaltet!</div>
         ${creatureCardHTML(rewards.unlocked, 1, { cls: 'unlock-card' })}
       </div>` : '';
+    const bossHTML = stage.boss ? `
+      <div class="boss-clear">${iconArt('star', 18)}${emblemArt()}${iconArt('star', 18)}</div>` : '';
     showOverlay(`
-      <div class="result victory">
+      <div class="result victory ${stage.boss ? 'boss-win' : ''}">
         <h1>Sieg!</h1>
+        ${bossHTML}
         <div class="result-stars">${starsHTML(alive)}</div>
         <div class="result-gold">+ ${iconArt('coin')} ${rewards.gold}</div>
+        ${xpRowHTML(xpGains)}
         ${unlockHTML}
         <div class="ov-actions">
           <button class="btn btn-ghost" id="res-again">Nochmal</button>
@@ -557,6 +589,7 @@ function showBattleResult(winner) {
       <div class="result defeat">
         <h1>Niederlage</h1>
         <p class="defeat-tip">${nextDefeatTip()}</p>
+        ${xpRowHTML(xpGains)}
         <div class="ov-actions">
           <button class="btn btn-ghost" id="res-next">Zur Karte</button>
           <button class="btn btn-primary" id="res-again">Nochmal</button>
@@ -570,9 +603,43 @@ function showBattleResult(winner) {
 
 // ---------- Screen: Sammlung ----------
 
+// Ziele-Panel: drei Fortschrittsbalken (Basis/Fusionen/Sterne) + Meilenstein-Chips.
+function goalsPanelHTML() {
+  const goals = [
+    { type: 'base',   icon: 'book', max: 21 },
+    { type: 'fusion', icon: 'orb',  max: 12 },
+    { type: 'stars',  icon: 'star', max: STAGES.length * 3 },
+  ];
+  return `<div class="goals">${goals.map(g => {
+    const val = goalProgress(g.type);
+    const chips = MILESTONES.filter(m => m.type === g.type).map(m => {
+      const claimed = Save.milestones[m.id];
+      const ready = !claimed && val >= m.need;
+      return `<button class="goal-chip ${claimed ? 'claimed' : ready ? 'ready' : 'locked'}"
+        data-mid="${m.id}" ${ready ? '' : 'disabled'}>
+        <i>${m.need}</i>${claimed ? '✓' : `${iconArt('coin', 13)} ${m.gold}`}</button>`;
+    }).join('');
+    return `<div class="goal-row">
+      ${iconArt(g.icon, 22)}
+      <div class="bar goal-bar"><div class="fill goal-fill" style="width:${Math.min(100, val / g.max * 100)}%"></div></div>
+      <b class="goal-val">${val}/${g.max}</b>
+      <span class="goal-chips">${chips}</span>
+    </div>`;
+  }).join('')}</div>`;
+}
+
 function renderCollection(root) {
   const wrap = el('div', 'coll-screen');
   wrap.appendChild(el('div', 'screen-title', 'Sammlung'));
+  wrap.appendChild(el('div', '', goalsPanelHTML()));
+  wrap.querySelectorAll('.goal-chip.ready').forEach(chip => chip.onclick = () => {
+    const m = MILESTONES.find(x => x.id === chip.dataset.mid);
+    if (m && claimMilestone(m)) {
+      Sfx.win();
+      updateGoldDisplay();
+      showScreen('collection');
+    }
+  });
   const owned = ownedIds();
   const grid = el('div', 'coll-grid');
   grid.innerHTML = owned.map(id => creatureCardHTML(id, Save.collection[id].level)).join('');
@@ -624,6 +691,9 @@ function openCreatureDetail(cid, opts = {}) {
           <span class="tag">${iconArt(RoleInfo[c.role].icon, 16)}</span>
           <span class="tag">${isMax ? iconArt('star', 15) + ' MAX' : levelPipsHTML(entry.level)}</span>
         </div>
+        ${isMax ? '' : `<div class="detail-xp"><div class="bar xp-bar">
+          <div class="fill xp-fill" style="width:${Math.round((entry.xp || 0) / xpNeed(entry.level) * 100)}%"></div>
+        </div></div>`}
         <div class="stat-grid">
           <div class="stat">${iconArt('heart', 17)}<b>${st.hp}</b></div>
           <div class="stat">${iconArt('sword', 17)}<b>${st.atk}</b></div>

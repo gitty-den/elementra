@@ -11,6 +11,77 @@ const MAX_LEVEL = 5;                 // Prototyp-Cap; Fusion verlangt Max-Level.
 const LEVEL_STAT_BONUS = 0.10;       // +10 % Basiswerte pro Level über 1.
 const SAVE_KEY = 'elementra_save_v1';
 
+// ---------- Kampf-XP (17.07.2026: Bindung — Kreaturen wachsen durchs Kämpfen) ----------
+// Gold-Level-Up bleibt als teurer Beschleuniger (Ökonomie-Bremse: 60·Level).
+
+function xpNeed(level) { return 35 * level; }           // XP für Level -> Level+1
+function stageXp(stage) { return 10 + stage.id * 2; }   // Sieg; Niederlage: 1/3 davon
+
+// Verteilt XP an eine Kreatur; gibt Anzahl Level-Ups zurück.
+function gainXp(id, amount) {
+  const e = Save.collection[id];
+  if (!e || e.level >= MAX_LEVEL) return 0;
+  e.xp = (e.xp || 0) + amount;
+  let ups = 0;
+  while (e.level < MAX_LEVEL && e.xp >= xpNeed(e.level)) {
+    e.xp -= xpNeed(e.level);
+    e.level++;
+    ups++;
+  }
+  if (e.level >= MAX_LEVEL) e.xp = 0;
+  return ups;
+}
+
+// XP nach Kampf für das ganze Team; Ergebnisliste für die Sieg/Niederlage-Anzeige.
+function grantTeamXp(stage, teamIds, won) {
+  const amount = won ? stageXp(stage) : Math.ceil(stageXp(stage) / 3);
+  const gains = teamIds.filter(id => Save.collection[id]).map(id => {
+    const ups = gainXp(id, amount);
+    const e = Save.collection[id];
+    return { id, amount, ups, level: e.level, xp: e.xp || 0, need: xpNeed(e.level) };
+  });
+  persist();
+  return gains;
+}
+
+// ---------- Meilensteine / Sammelziele ----------
+
+const MILESTONES = [
+  { id: 'base10',  type: 'base',   need: 10, gold: 150 },
+  { id: 'base21',  type: 'base',   need: 21, gold: 400 },
+  { id: 'fx3',     type: 'fusion', need: 3,  gold: 200 },
+  { id: 'fx12',    type: 'fusion', need: 12, gold: 600 },
+  { id: 'stars30', type: 'stars',  need: 30, gold: 250 },
+  { id: 'stars60', type: 'stars',  need: 60, gold: 800 },
+];
+
+function goalProgress(type) {
+  if (type === 'base') return ownedIds().filter(id => !Creatures[id].fusion).length;
+  if (type === 'fusion') return ownedIds().filter(id => Creatures[id].fusion).length;
+  return Object.values(Save.stages).reduce((a, b) => a + b, 0); // stars
+}
+
+function claimMilestone(m) {
+  if (Save.milestones[m.id] || goalProgress(m.type) < m.need) return false;
+  Save.milestones[m.id] = true;
+  Save.gold += m.gold;
+  persist();
+  return true;
+}
+
+// Tages-Bonus: einmal pro Kalendertag beim Start.
+const DAILY_BONUS_GOLD = 50;
+function dailyBonusAvailable() {
+  return Save.lastLogin !== new Date().toISOString().slice(0, 10);
+}
+function claimDailyBonus() {
+  if (!dailyBonusAvailable()) return false;
+  Save.lastLogin = new Date().toISOString().slice(0, 10);
+  Save.gold += DAILY_BONUS_GOLD;
+  persist();
+  return true;
+}
+
 const RarityInfo = {
   common:    { name: 'Gewöhnlich', color: '#9e9e9e' },
   rare:      { name: 'Selten',     color: '#42a5f5' },
@@ -96,14 +167,16 @@ FUSIONS_DATA.fusionArchetypes.forEach(f => {
 function defaultSave() {
   return {
     gold: 120,
-    // Sammlung: id -> { level }
+    // Sammlung: id -> { level, xp } (xp = Fortschritt zum nächsten Level)
     collection: {
-      fire_drache:  { level: 1 },
-      nature_golem: { level: 1 },
-      water_geist:  { level: 1 },
+      fire_drache:  { level: 1, xp: 0 },
+      nature_golem: { level: 1, xp: 0 },
+      water_geist:  { level: 1, xp: 0 },
     },
     team: ['fire_drache', 'nature_golem', 'water_geist'],
     stages: {},            // stageId -> Sterne (1–3)
+    milestones: {},        // milestoneId -> true (abgeholt)
+    lastLogin: null,       // 'YYYY-MM-DD' des letzten Tages-Bonus
     settings: { sfxVol: 1, musicVol: 1 }, // Regler 0–1 statt An/Aus (17.07.2026)
   };
 }
@@ -128,6 +201,8 @@ function loadSave() {
       if (typeof s.settings.sfxVol !== 'number') s.settings.sfxVol = s.settings.sfx === false ? 0 : 1;
       if (typeof s.settings.musicVol !== 'number') s.settings.musicVol = s.settings.music === false ? 0 : 1;
       delete s.settings.sfx; delete s.settings.music; delete s.settings.emblem;
+      // Migration Kampf-XP: alten Einträgen xp-Feld geben.
+      Object.values(s.collection).forEach(e => { if (typeof e.xp !== 'number') e.xp = 0; });
       return s;
     }
   } catch (e) { console.warn('Speicherstand unlesbar, starte neu.', e); }
@@ -156,7 +231,8 @@ function statsAtLevel(creature, level) {
   };
 }
 
-function levelUpCost(level) { return 30 * level; } // Level 1→2 = 30 … 4→5 = 120.
+// Ökonomie-Bremse 17.07.2026: Gold-Level-Up ist Beschleuniger, nicht Hauptweg.
+function levelUpCost(level) { return 60 * level; } // Level 1→2 = 60 … 4→5 = 240.
 
 function canLevelUp(id) {
   const e = Save.collection[id];
@@ -167,6 +243,7 @@ function levelUp(id) {
   if (!canLevelUp(id)) return false;
   Save.gold -= levelUpCost(Save.collection[id].level);
   Save.collection[id].level++;
+  Save.collection[id].xp = 0; // Gold-Kauf startet das neue Level frisch
   persist();
   return true;
 }
@@ -215,7 +292,7 @@ function fuseCreatures(cidA, cidB) {
   if (!out) return null;
   delete Save.collection[cidA];
   delete Save.collection[cidB];
-  Save.collection[out] = { level: 1 };
+  Save.collection[out] = { level: 1, xp: 0 };
   Save.team = Save.team.map(id => (id === cidA || id === cidB) ? out : id);
   Save.team = [...new Set(Save.team)];
   while (Save.team.length < 3) {
@@ -239,12 +316,13 @@ function grantStageRewards(stage, stars) {
   const first = !Save.stages[stage.id];
   const prev = Save.stages[stage.id] || 0;
   Save.stages[stage.id] = Math.max(prev, stars);
-  let gold = stage.gold;
+  // Ökonomie-Bremse: Wiederholungen bringen nur halbes Gold.
+  let gold = first ? stage.gold : Math.round(stage.gold * 0.5);
   let unlocked = null;
   if (first) {
     gold += stage.firstClearBonus;
     if (stage.unlockCreature && !Save.collection[stage.unlockCreature]) {
-      Save.collection[stage.unlockCreature] = { level: 1 };
+      Save.collection[stage.unlockCreature] = { level: 1, xp: 0 };
       unlocked = stage.unlockCreature;
     }
   }
