@@ -90,6 +90,14 @@ Stil: dunkel-episch mit Element-Glow.
       als Sprite-Glow), Detail-Overlay icon-basiert (Herz/Schwert/Schild/Blitz,
       Rollen-Pixel-Icons statt Emoji, Level-Pips, „Lvl. Up"), Long-Press am Handy
       öffnet Stat-Peek statt iOS-Bildmenü (contextmenu + touch-callout unterdrückt).
+- [x] 17.07.: **Feedback-Runde 5:** Splash = rotierendes Logo, fliegt per FLIP auf
+      die Menü-Position; Links/Rechts-Swipe zwischen Kampagne/Sammlung/Fusion
+      (im Kampf gesperrt); Map fokussiert immer die aktuelle Stage; Teamwahl
+      ersetzt per Antippen direkt (markierter Slot, sonst hinterste Position).
+- [ ] **Progression/Retention (nächster großer Block, Nutzer-Feedback 17.07.):**
+      zu schnell, keine Bindung, kein Ziel. Kandidaten: Kampf-XP statt Gold-Kauf
+      (Bindung), Erfolge/Sammelziele + Tagesbonus (Ziel), Ökonomie-Bremse (Tempo),
+      Kapitel-Boss-Inszenierung (Sog). Richtung vom Nutzer klären.
 - [ ] Mehr Kampagnen-Kapitel (Stages 21+, weitere Fusions-Rezepte für die 9 offenen Paare)
 - [ ] Idle-/Tages-Belohnungen, Erfolge
 - [ ] Team-Positionen (Front/Backline ausbauen — Engine kennt `enemyBackline` schon)

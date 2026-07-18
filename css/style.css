@@ -896,6 +896,24 @@ body::after {
 .fusion-src { display: inline-flex; align-items: center; gap: 4px; color: var(--text-dim); }
 .fusion-row.teaser { opacity: 0.9; }
 
+/* ===== Splash: rotierendes Logo, fliegt zur Menü-Position (17.07.2026) ===== */
+
+#splash {
+  position: fixed; inset: 0; z-index: 200;
+  background: var(--bg0);
+  display: grid; place-items: center;
+  transition: opacity 0.45s 0.4s;
+  pointer-events: none;
+}
+#splash.done { opacity: 0; }
+.splash-emblem { width: 150px; animation: splashSpin 4s linear infinite; }
+.splash-emblem img { width: 100%; height: auto; }
+@keyframes splashSpin { 100% { transform: rotate(360deg); } }
+.splash-emblem.fly {
+  animation: none;
+  transition: transform 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* ===== Hauptmenü (Landingpage, 17.07.2026): Lager-Szene mit aktivem Team ===== */
 
 .menu-screen { position: relative; height: 100%; overflow: hidden; animation: screenIn 0.3s ease; }

@@ -118,7 +118,30 @@ function renderMap(root) {
 
   wrap.appendChild(world);
   root.appendChild(wrap);
-  root.scrollTop = root.scrollHeight; // Start unten bei Stage 1
+  // Aktuelle Stage in die Bildmitte (nach Kampf & beim Öffnen gleich im Fokus)
+  const idx = Math.min(current, STAGES.length) - 1;
+  root.scrollTop = Math.max(0, pos[idx].y - root.clientHeight / 2 + 50);
+}
+
+// ---------- Swipe-Navigation zwischen den Subscreens (links/rechts) ----------
+
+const SWIPE_ORDER = ['map', 'collection', 'fusion'];
+
+function initSwipe() {
+  const s = $('#screen');
+  let x0 = 0, y0 = 0, armed = false;
+  s.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; armed = true; });
+  s.addEventListener('pointerup', e => {
+    if (!armed) return;
+    armed = false;
+    if (B) return; // im Kampf niemals Screen wechseln
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+    const i = SWIPE_ORDER.indexOf(currentScreen);
+    if (i === -1) return;
+    const next = SWIPE_ORDER[i + (dx < 0 ? 1 : -1)];
+    if (next) { Sfx.click(); showScreen(next); }
+  });
 }
 
 // ---------- Team-Auswahl ----------
@@ -150,7 +173,7 @@ function openTeamSelect(stage) {
       </div>
       <div class="ts-label">Wähle dein Team (${picked.length}/3)</div>
       <div class="ts-slots">${slots}</div>
-      <div class="ts-slot-hint">Die vorderste Kreatur wird zuerst angegriffen — Slots antippen zum Tauschen.</div>
+      <div class="ts-slot-hint">Vorne wird zuerst angegriffen. Antippen ersetzt direkt.</div>
       <div class="ts-grid">
         ${owned.map(id => creatureCardHTML(id, Save.collection[id].level,
           { cls: picked.includes(id) ? 'picked' : '' })).join('')}
@@ -181,7 +204,9 @@ function openTeamSelect(stage) {
         Sfx.click();
         const id = card.dataset.cid;
         if (picked.includes(id)) picked = picked.filter(x => x !== id);
+        else if (selSlot >= 0) picked[selSlot] = id;          // markierten Slot ersetzen
         else if (picked.length < 3) picked.push(id);
+        else picked[picked.length - 1] = id;                  // Team voll: hinterste Position ersetzen
         selSlot = -1;
         render();
       };

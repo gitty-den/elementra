@@ -5,10 +5,15 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 
 ## Navigation (seit 17.07.2026: Hub-and-Spoke, kein Bottom-Nav)
 
-- App startet ins **Hauptmenü** (`renderMenu`): Lager-Szene mit den 3 Team-Kreaturen
-  am Pixel-Lagerfeuer (`campfireArt`, 2 Flacker-Frames), vertikale Buttons
-  Kampagne/Sammlung/Fusion/Einstellungen. Topbar (Gold, ⚙, Zurück-Pfeil) nur in
-  Subscreens (`body.in-menu` blendet sie aus).
+- App startet mit **Splash** (nur rotierendes Ring-Logo, fliegt per FLIP auf die
+  Emblem-Position im Menü — `showSplash` in main.js), dann **Hauptmenü**
+  (`renderMenu`): Lager-Szene mit den 3 Team-Kreaturen am Pixel-Lagerfeuer
+  (`campfireArt`, 2 Flacker-Frames), 2×2-Kachel-Raster. Topbar (Gold, ⚙,
+  Zurück-Pfeil) nur in Subscreens (`body.in-menu` blendet sie aus).
+- **Swipe links/rechts** wechselt zwischen map/collection/fusion (`initSwipe`,
+  Reihenfolge `SWIPE_ORDER`; im Kampf gesperrt via `if (B) return`).
+- Map fokussiert beim Rendern immer die aktuelle Stage (Scroll zentriert).
+- Teamwahl: Antippen ersetzt direkt — markierter Slot, sonst hinterste Position.
 - **Kein Zurück im Kampf** — raus nur über das Sieg/Niederlage-Overlay.
 - Niederlage zeigt EINEN kurzen rotierenden Tipp (`DEFEAT_TIPS`), keine Textwand.
 - Kampf-HUD: Kompakt-Plakette (`unit-plate`) — Level-Badge links an der HP-Bar,
