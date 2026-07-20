@@ -1565,3 +1565,70 @@ body.gold-visible .gold-pill { display: flex; }
   25%  { opacity: 1; }
   100% { opacity: 0; transform: translateY(-46px) scale(1.1); }
 }
+
+/* ===================================================================
+   Bildschirmgrößen (21.07.2026)
+   Grundsatz: Handy = nur Hochformat (Querformat zeigt „bitte drehen"),
+   Tablet/Desktop = Hoch- UND Querformat. Statt fester 21px skaliert die
+   Grundschrift jetzt mit der KLEINEREN Bildschirmachse (vmin), damit die
+   UI auf einem iPhone SE genauso passt wie auf einem iPad.
+   =================================================================== */
+
+:root { font-size: clamp(17px, 4.4vmin, 25px); }
+
+/* Einheiten in der Arena an beiden Achsen deckeln, sonst laufen sie im
+   Querformat auseinander bzw. ragen unten heraus. */
+.unit { width: min(27vw, 30vh, 150px); }
+
+/* ---- Handy quer: Spiel pausiert optisch, Hinweis zum Drehen ---- */
+#rotate-hint { display: none; }
+@media (orientation: landscape) and (max-height: 600px) {
+  #rotate-hint {
+    display: flex; position: fixed; inset: 0; z-index: 200;
+    flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    background: linear-gradient(180deg, #12162c, #06070f);
+    text-align: center;
+  }
+  .rot-icon {
+    width: 54px; height: 86px; border: 4px solid var(--accent); border-radius: 6px;
+    box-shadow: 0 0 22px rgba(124, 108, 255, 0.5), inset 0 0 12px rgba(124, 108, 255, 0.25);
+    animation: rotHint 2.2s ease-in-out infinite;
+  }
+  .rot-text {
+    font-family: 'Press Start 2P', monospace; font-size: 0.6rem;
+    letter-spacing: 1px; color: var(--text); line-height: 1.8;
+  }
+  @keyframes rotHint {
+    0%, 45% { transform: rotate(90deg); }
+    60%, 100% { transform: rotate(0deg); }
+  }
+}
+
+/* ---- Tablet quer (genug Höhe): kompakteres Layout, alles bleibt spielbar ---- */
+@media (orientation: landscape) and (min-height: 601px) {
+  /* Spielfläche mittig halten, damit die Arena nicht extrem breit wird */
+  #screen { max-width: 720px; margin: 0 auto; width: 100%; }
+  /* Hauptmenü: vier Kacheln nebeneinander statt 2×2 — spart Höhe */
+  .menu-grid { grid-template-columns: repeat(4, 1fr); width: min(92vw, 760px); margin-bottom: 20px; }
+  .menu-tile { min-height: 82px; }
+  .title-block { margin-top: 6px; }
+  /* Overlays dürfen die volle Höhe nutzen */
+  .overlay-box { max-height: 94dvh; width: min(90vw, 640px); }
+  /* Team-Auswahl: Slots und Grid nebeneinander statt untereinander */
+  .ts-slots { max-width: 520px; margin-inline: auto; }
+  .ts-grid { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+}
+
+/* ---- Sehr kleine Handys (iPhone SE & Co.) ---- */
+@media (max-width: 380px) {
+  .menu-grid { width: 94vw; gap: 10px; }
+  .menu-tile { min-height: 84px; }
+  .ts-slot { min-height: 96px; }
+  .ts-slot-art { width: 52px; height: 52px; }
+  .pin-key { width: 64px; height: 54px; }
+}
+
+/* ---- Große Schirme: nicht ins Unendliche wachsen ---- */
+@media (min-width: 1100px) and (orientation: landscape) {
+  #screen { max-width: 780px; }
+}

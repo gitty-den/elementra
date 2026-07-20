@@ -141,6 +141,13 @@ Stil: dunkel-episch mit Element-Glow.
       Heilung als leuchtender Boden-Kreis unter dem Team (`spawnHealField`),
       und **Rausch-Kanal im Synth** (`Sfx.noise`): Feuer faucht, Dampf zischt,
       Frost klirrt, Natur schneidet — vorher klangen alle Ults gleich.
+- [x] 21.07. (Runde 7): **Fusion aufgeräumt** — Picker zeigt nur Max-Level-Kreaturen
+      und nach der ersten Wahl nur noch Partner mit echtem Rezept. **Team-Auswahl
+      korrigiert** — jede Änderung braucht zwei Taps, nichts rutscht mehr
+      ungefragt auf den letzten Platz. **Dummy-Kampf-Ausstieg repariert**
+      (`leaveBattle`; vorher blieb die tote Arena stehen). **Bildschirmgrößen**:
+      Handy nur hochkant (Dreh-Hinweis im Querformat), Tablet quer mit
+      4-spaltigem Menü, Grundschrift skaliert per `vmin`. sw.js → v7.
 - [ ] Mehr Kampagnen-Kapitel (Stages 21+, weitere Fusions-Rezepte für die 9 offenen Paare)
 - [ ] Idle-/Tages-Belohnungen, Erfolge
 - [ ] Team-Positionen (Front/Backline ausbauen — Engine kennt `enemyBackline` schon)

@@ -274,24 +274,51 @@ function stageFitScore(id, stage) {
 // Hinweiszeile — Belohnung nur als Icon+Zahl, Warnung nur als Icon.
 function openTeamSelect(stage) {
   let picked = Save.team.filter(id => Save.collection[id]).slice(0, 3);
-  let selSlot = -1;      // markierte Position für den Tausch
+  // Markierung: { kind: 'slot', i } oder { kind: 'card', id } — null = nichts gewählt.
+  let sel = null;
   let showAll = false;   // Grid: erst Empfehlungen, auf Wunsch alles
 
-  // Zwei Taps tauschen, Reihenfolge egal: markieren -> zweites Ziel antippen.
-  // Funktioniert für Slots wie für Karten im Grid (beide laufen hier zusammen).
-  const tapPos = i => {
-    if (selSlot === -1) { if (picked[i]) selSlot = i; }
-    else if (selSlot === i) selSlot = -1;                       // Markierung lösen
-    else if (picked[i]) { [picked[selSlot], picked[i]] = [picked[i], picked[selSlot]]; selSlot = -1; }
-    else { picked.push(picked.splice(selSlot, 1)[0]); selSlot = -1; }  // in leere Position rücken
+  // IMMER zwei Taps (Korrektur 21.07.2026): der erste Tap markiert nur, der
+  // zweite führt aus. Vorher rutschte eine angetippte Kreatur sofort auf den
+  // letzten Platz — genau das soll nicht passieren. Reihenfolge bleibt egal:
+  // Slot→Slot tauscht Positionen, Karte→Slot setzt ein, Slot→Karte genauso.
+  const selSlotIndex = () => (sel && sel.kind === 'slot' ? sel.i : -1);
+
+  const putAt = (i, id) => {                 // Kreatur an Position i legen
+    const from = picked.indexOf(id);
+    if (from === i) return;
+    if (from >= 0) [picked[from], picked[i]] = [picked[i], picked[from]];  // schon im Team: tauschen
+    else picked[i] = id;
+    picked = picked.filter(x => x);          // Lücken schließen (splice-Reste)
   };
+
+  const tapPos = i => {
+    if (!sel) { sel = { kind: 'slot', i }; return; }            // markieren (auch leere Position)
+    if (sel.kind === 'card') { putAt(i, sel.id); sel = null; return; }
+    if (sel.i === i) { sel = null; return; }                    // Markierung lösen
+    const j = sel.i;
+    if (picked[i] || picked[j]) {                               // Positionen tauschen
+      const tmp = picked[i];
+      picked[i] = picked[j];
+      picked[j] = tmp;
+      picked = picked.filter(x => x);
+    }
+    sel = null;
+  };
+
   const tapCard = id => {
     const idx = picked.indexOf(id);
-    if (idx >= 0) { tapPos(idx); return; }                     // schon im Team: Tausch-Logik
-    if (selSlot >= 0) picked[selSlot] = id;                    // markierte Position ersetzen
-    else if (picked.length < 3) picked.push(id);
-    else picked[picked.length - 1] = id;                       // Team voll: hinterste ersetzen
-    selSlot = -1;
+    if (sel && sel.kind === 'slot') { putAt(sel.i, id); sel = null; return; }
+    if (sel && sel.kind === 'card') {
+      if (sel.id === id) { sel = null; return; }                // dieselbe Karte: lösen
+      // Zwei Grid-Karten: beide im Team -> Positionen tauschen, sonst neue merken.
+      const iA = picked.indexOf(sel.id), iB = idx;
+      if (iA >= 0 && iB >= 0) { [picked[iA], picked[iB]] = [picked[iB], picked[iA]]; sel = null; }
+      else if (iA >= 0 && iB === -1) { picked[iA] = id; sel = null; }   // Austausch gegen Bank
+      else sel = { kind: 'card', id };
+      return;
+    }
+    sel = { kind: 'card', id };                                 // erster Tap: nur markieren
   };
 
   const render = () => {
@@ -302,7 +329,7 @@ function openTeamSelect(stage) {
       const c = picked[i] ? Creatures[picked[i]] : null;
       const warnHere = warn && ((warn.where === 'front' && i === 0) || (warn.where === 'team' && i === 0));
       return `
-        <div class="ts-slot ${c ? 'filled' : ''} ${selSlot === i ? 'sel' : ''} ${i === 0 ? 'front' : ''}" data-slot="${i}">
+        <div class="ts-slot ${c ? 'filled' : ''} ${selSlotIndex() === i ? 'sel' : ''} ${i === 0 ? 'front' : ''}" data-slot="${i}">
           ${i === 0 ? `<div class="ts-front-mark">${iconArt('shield', 14)}</div>` : ''}
           ${warnHere ? `<button class="ts-warn-ico" data-warn="1">${iconArt('skull', 16)}</button>` : ''}
           ${c
@@ -328,7 +355,9 @@ function openTeamSelect(stage) {
       <div class="ts-slots">${slots}</div>
       <div class="ts-grid ${showAll ? '' : 'ts-grid-short'}">
         ${shown.map(id => creatureCardHTML(id, Save.collection[id].level,
-          { cls: (picked.includes(id) ? 'picked ' : '') + (selSlot >= 0 && picked[selSlot] === id ? 'marked' : '') })).join('')}
+          { cls: (picked.includes(id) ? 'picked ' : '')
+               + ((sel && sel.kind === 'card' && sel.id === id) ||
+                  (selSlotIndex() >= 0 && picked[selSlotIndex()] === id) ? 'marked' : '') })).join('')}
       </div>
       ${owned.length > shown.length ? `<button class="ts-more" id="ts-more">${iconArt('back', 15)}</button>` : ''}
       <div class="ov-actions">
@@ -352,7 +381,7 @@ function openTeamSelect(stage) {
         const i = +slotEl.dataset.slot;
         if (!picked[i]) return;
         picked.splice(i, 1);
-        selSlot = -1;
+        sel = null;
         Sfx.click();
         render();
       });
@@ -473,18 +502,34 @@ function beginBattle(stage, teamIds) {
 
 // Aufgeben: bestätigen, dann als Niederlage werten und Ergebnis zeigen.
 function showGiveUpConfirm() {
+  // Im Dev-Kampf gibt es nichts zu verlieren — dort heißt „Aufgeben" schlicht
+  // „Simulation beenden" und führt ohne Ergebnis-Screen zurück (Fix 21.07.2026).
+  const isDev = B && B.stage && B.stage.dev;
   const ov = showOverlay(`
     <div class="giveup-confirm">
-      <div class="gu-icon">${iconArt('flag', 40)}</div>
-      <div class="gu-q">Kampf aufgeben?</div>
-      <div class="gu-sub">Zählt als Niederlage — zurück zur Karte.</div>
+      <div class="gu-icon">${iconArt(isDev ? 'gear' : 'flag', 40)}</div>
+      <div class="gu-q">${isDev ? 'Simulation beenden?' : 'Kampf aufgeben?'}</div>
+      <div class="gu-sub">${isDev ? 'Kein Ergebnis, keine Belohnung.' : 'Zählt als Niederlage — zurück zur Karte.'}</div>
       <div class="ov-actions">
-        <button class="btn btn-ghost" id="gu-no">Weiter kämpfen</button>
-        <button class="btn btn-danger" id="gu-yes">Aufgeben</button>
+        <button class="btn btn-ghost" id="gu-no">${isDev ? 'Weiter testen' : 'Weiter kämpfen'}</button>
+        <button class="btn btn-danger" id="gu-yes">${isDev ? 'Beenden' : 'Aufgeben'}</button>
       </div>
     </div>`, 'giveup-ov');
   ov.querySelector('#gu-no').onclick = () => { Sfx.click(); closeOverlay(); };
-  ov.querySelector('#gu-yes').onclick = () => { Sfx.click(); closeOverlay(); giveUpBattle(); };
+  ov.querySelector('#gu-yes').onclick = () => {
+    Sfx.click();
+    closeOverlay();
+    if (isDev) { leaveBattle('menu'); return; }
+    giveUpBattle();
+  };
+}
+
+// Kampf verlassen und wieder auf einem echten Screen landen. endBattleUI allein
+// räumt nur den Zustand ab — ohne showScreen blieb die tote Arena stehen und man
+// kam nicht mehr heraus (Bug im Dummy-Kampf, 21.07.2026).
+function leaveBattle(screen = 'map') {
+  endBattleUI();
+  showScreen(screen);
 }
 
 function giveUpBattle() {
@@ -972,7 +1017,9 @@ function showBattleResult(winner) {
     Sfx.click(); closeOverlay(); endBattleUI();
     currentChapter = nextCh.id; showScreen('map');
   };
-  $('#res-again').onclick = () => { Sfx.click(); closeOverlay(); endBattleUI(); openTeamSelect(stageRef); };
+  // Erst zurück auf die Karte, dann die Team-Auswahl — sonst liegt hinter dem
+  // Overlay noch die tote Arena und „Zurück" führt ins Nichts.
+  $('#res-again').onclick = () => { Sfx.click(); closeOverlay(); leaveBattle('map'); openTeamSelect(stageRef); };
 }
 
 // ---------- Screen: Sammlung ----------
@@ -1191,21 +1238,32 @@ function renderFusionBody(parent) {
   wrap.appendChild(el('div', 'fusion-legend', combos.map(([x, y, out]) => `
     <div class="fl-chip">${iconArt(x, 16)}<b>+</b>${iconArt(y, 16)}<b>=</b>${iconArt(out, 16)}</div>`).join('')));
   wrap.appendChild(el('div', 'fusion-hint',
-    'Zwei verschiedene Archetypen, beide auf Max-Level — beide werden verbraucht!'));
+    a && fusionPick.length < 2
+      ? 'Passende Partner — beide Kreaturen werden verbraucht!'
+      : 'Zwei verschiedene Archetypen auf Max-Level — beide werden verbraucht!'));
 
-  // Kandidaten: Basis-Kreaturen im Besitz (Fusions-Kreaturen sind Endstufe).
-  const cands = ownedIds().filter(id => !Creatures[id].fusion).sort((x, y) =>
-    (Save.collection[y].level - Save.collection[x].level) ||
-    Creatures[x].name.localeCompare(Creatures[y].name));
+  // Kandidaten (21.07.2026): NUR fusionsfähige Kreaturen zeigen — Basis-Archetyp
+  // (Fusionen sind Endstufe) auf Max-Level. Alles darunter würde ohnehin nur
+  // ausgegraut herumstehen. Ist bereits eine Kreatur gewählt, bleiben nur die
+  // Partner übrig, mit denen es wirklich ein Rezept gibt (9 Paare haben keins).
+  const cands = ownedIds().filter(id => {
+    const c = Creatures[id];
+    if (c.fusion || Save.collection[id].level < MAX_LEVEL) return false;
+    if (fusionPick.includes(id)) return true;
+    if (a && fusionPick.length < 2 && !fusionResult(a, id)) return false;
+    return true;
+  }).sort((x, y) => Creatures[x].name.localeCompare(Creatures[y].name));
+
   const grid = el('div', 'ts-grid fx-grid');
-  grid.innerHTML = cands.map(id => {
-    const lvl = Save.collection[id].level;
-    const maxed = lvl >= MAX_LEVEL;
-    return `<div class="fx-cand ${maxed ? '' : 'notmax'}">
-      ${creatureCardHTML(id, lvl, { cls: fusionPick.includes(id) ? 'picked' : '' })}
-      ${maxed ? '' : levelPipsHTML(lvl)}
-    </div>`;
-  }).join('');
+  if (cands.length) {
+    grid.innerHTML = cands.map(id =>
+      `<div class="fx-cand">${creatureCardHTML(id, Save.collection[id].level,
+        { cls: fusionPick.includes(id) ? 'picked' : '' })}</div>`).join('');
+  } else {
+    // Nichts übrig: entweder noch niemand auf Max-Level oder kein Partner passt.
+    grid.innerHTML = `<div class="fusion-nores fx-empty">${iconArt('lock', 22)}
+      <div>${a ? 'Kein passender Partner im Besitz' : 'Noch keine Kreatur auf Max-Level'}</div></div>`;
+  }
   wrap.appendChild(grid);
 
   // Noch nicht erweckte Fusions-Archetypen als Silhouetten-Teaser.
@@ -1403,7 +1461,8 @@ function showDevBattleResult(winner) {
         <button class="btn btn-primary" id="res-devagain">Nochmal</button>
       </div>
     </div>`, 'result-ov');
-  $('#res-devexit').onclick = () => { Sfx.click(); closeOverlay(); endBattleUI(); openDevBoard(); };
+  // „Zurück" muss auf einem echten Screen landen, sonst bleibt die tote Arena stehen.
+  $('#res-devexit').onclick = () => { Sfx.click(); closeOverlay(); leaveBattle('menu'); };
   $('#res-devagain').onclick = () => { Sfx.click(); closeOverlay(); endBattleUI(); startDevBattle(); };
 }
 

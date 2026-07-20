@@ -44,10 +44,18 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   keine Hinweiszeile, keine Labels. Darunter drei große Slots, darunter das Grid
   mit den 6 besten Kandidaten (`stageFitScore`) und einem Aufklapp-Pfeil für alle.
   Team-Warnung nur als Warn-Icon am Front-Slot; Text erst beim Antippen
-  (`floatHint`). **Tausch = zwei Taps, Reihenfolge egal** (`tapPos`/`tapCard`):
-  erstes Antippen markiert, zweites tauscht — funktioniert für Slots wie für
-  Karten im Grid. Long-Press auf einen Slot nimmt die Kreatur aus dem Team.
+  (`floatHint`). **IMMER zwei Taps** (Korrektur 21.07.): der erste Tap markiert
+  nur (`sel` = `{kind:'slot'|'card'}`), der zweite führt aus — Slot→Slot tauscht
+  Positionen, Karte→Slot setzt ein, Karte→Karte tauscht bzw. ersetzt. Reihenfolge
+  egal. **Nichts darf bei einem einzelnen Tap auf den letzten Platz rutschen** —
+  genau das war der Fehler der ersten Fassung. Long-Press auf einen Slot nimmt
+  die Kreatur aus dem Team.
 - **Kein Zurück im Kampf** — raus nur über das Sieg/Niederlage-Overlay.
+- **Kampf immer über `leaveBattle(screen)` verlassen** (21.07.): `endBattleUI()`
+  räumt nur den Zustand ab und lässt die tote Arena im `#screen` stehen — ohne
+  folgendes `showScreen` sitzt man fest (war der Bug im Dummy-Kampf). Im
+  Dev-Kampf heißt „Aufgeben" außerdem „Simulation beenden" und führt direkt
+  ins Menü, ohne Ergebnis-Overlay.
 - Niederlage zeigt EINEN kurzen rotierenden Tipp (`DEFEAT_TIPS`), keine Textwand.
 - Kampf-HUD: Kompakt-Plakette (`unit-plate`) — Level-Badge links an der HP-Bar,
   Energie-Bar darunter, kein Name.
@@ -77,6 +85,14 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   ```
 - PowerShell-Skripte: reines ASCII (PowerShell 5.1 liest UTF-8 ohne BOM als ANSI).
 - Zielgerät: iPhone 13, Hochformat, Safari. Touch zuerst; Desktop nur Dev-Fallback.
+- **Bildschirmgrößen (21.07.):** Handy = NUR Hochformat — im Querformat unter
+  601 px Höhe legt sich `#rotate-hint` über alles („bitte hochkant halten").
+  Tablet/Desktop dürfen quer (ab 601 px Höhe): Menü wird 4-spaltig, `#screen`
+  auf 720 px begrenzt, Overlays bis 94 dvh. Grundschrift ist nicht mehr fest
+  21 px, sondern `clamp(17px, 4.4vmin, 25px)` — skaliert an der KLEINEREN
+  Bildschirmachse. Arena-Einheiten sind auf `min(27vw, 30vh, 150px)` gedeckelt,
+  damit sie im Querformat nicht aus dem Bild wachsen. `manifest.webmanifest`
+  steht deshalb auf `orientation: any`.
 - Grafik: **ALLES ist Pixelart — NIE wieder Vektor/SVG/Emoji für Sichtbares erzeugen.**
   Jedes neue visuelle Element (Kreatur, Icon, Hintergrund, Emblem, Effekt) wird direkt
   als Pixelart in `js/pixel.js` gebaut: Char-Maps oder Low-Res-Canvas → dataURI →
@@ -197,6 +213,10 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   Eltern-Archetyp (Block „Fusions-Archetypen erben…" in style.css).
 - Fusions-Kreaturen sind Endstufe: nicht erneut fusionierbar.
 - Fusion-Screen ist ein freier 2-Slot-Picker mit Ergebnis-Vorschau (`renderFusion`).
+- **Picker zeigt nur, was wirklich geht** (21.07.): ausschließlich Basis-Kreaturen
+  auf Max-Level; ist bereits eine gewählt, bleiben nur Partner übrig, für die
+  `fusionResult` ein Rezept liefert. Keine ausgegrauten Karten mehr. Leerer Fall
+  bekommt eine Erklärzeile (kein Max-Level / kein passender Partner).
 
 ## Progression (17.07.2026)
 
