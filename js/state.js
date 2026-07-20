@@ -9,7 +9,8 @@ const Abilities = CREATURES_DATA.abilities;
 
 const MAX_LEVEL = 5;                 // Prototyp-Cap; Fusion verlangt Max-Level.
 const LEVEL_STAT_BONUS = 0.10;       // +10 % Basiswerte pro Level über 1.
-const SAVE_KEY = 'elementra_save_v1';
+// Speicherstand liegt pro Profil (profiles.js, currentSaveKey()). Ohne aktives
+// Profil wird nur im Arbeitsspeicher gespielt — persist() schreibt dann nichts.
 
 // ---------- Kampf-XP (17.07.2026: Bindung — Kreaturen wachsen durchs Kämpfen) ----------
 // Gold-Level-Up bleibt als teurer Beschleuniger (Ökonomie-Bremse: 60·Level).
@@ -100,48 +101,60 @@ const RoleInfo = {
   sustain: { name: 'Bewahrer',  icon: 'sun' },
 };
 
-// Beschreibungstexte der Fähigkeiten (Effekt-IDs aus creatures.json).
-const AbilityDescriptions = {
-  drache_passive:  'Erhält +5 % ANG je 25 % fehlender LP. +8 Energie pro Angriff.',
-  drache_active:   '300 % ANG auf den Gegner mit den meisten LP.',
-  golem_passive:   'Reduziert erlittenen Schaden um 2. +6 Energie pro erlittenem Treffer.',
-  golem_active:    'Schild (20 % Max-LP) für das ganze Team, 5 Sekunden Spott.',
-  greif_passive:   'Schnellste Energie-Ladung: +10 Energie pro Angriff.',
-  greif_active:    '2 Treffer à 150 % ANG auf die gegnerische Rückreihe.',
-  wolf_passive:    'Heilt sich um 15 % des verursachten Schadens. +7 Energie pro Angriff.',
-  wolf_active:     '250 % ANG auf den schwächsten Gegner + Blutung (3×10 %).',
-  wyrm_passive:    'Vergiftet Ziele (5 % ANG je Stapel, max. 5). +6 Energie pro Angriff.',
-  wyrm_active:     'Gift-Flächenschaden (15 %/s, 4 s) + VER −10 % auf alle Gegner.',
-  geist_passive:   'Lädt stetig: +6 Energie pro Sekunde.',
-  geist_active:    'Heilt das gesamte Team um 30 % Max-LP.',
-  phoenix_passive: 'Lädt stetig: +5 Energie pro Sekunde.',
-  phoenix_active:  'Belebt einen Gefallenen (40 % LP) oder heilt den Schwächsten (25 %).',
-  // Fusions-Archetypen
-  koloss_passive:    'Reduziert erlittenen Schaden um 3. +6 Energie pro erlittenem Treffer.',
-  koloss_active:     'Schild (25 % Max-LP) für das ganze Team, 5 Sekunden Spott.',
-  wyvern_passive:    'Schnellste Ladung: +10 Energie pro Angriff.',
-  wyvern_active:     '3 Treffer à 130 % ANG auf die gegnerische Rückreihe.',
-  leviathan_passive: 'Vergiftet Ziele (max. 5 Stapel). +7 Energie pro Angriff.',
-  leviathan_active:  '320 % ANG auf den Gegner mit den meisten LP.',
-  seraph_passive:    'Lädt stetig: +6 Energie pro Sekunde.',
-  seraph_active:     'Belebt einen Gefallenen (50 % LP) oder heilt den Schwächsten (30 %).',
-  behemoth_passive:  'Heilt sich um 18 % des verursachten Schadens. +7 Energie pro Angriff.',
-  behemoth_active:   '260 % ANG auf den schwächsten Gegner + Blutung (3×12 %).',
-  gargoyle_passive:  'Reduziert erlittenen Schaden um 2. +6 Energie pro erlittenem Treffer.',
-  gargoyle_active:   'Schild (22 % Max-LP) für das ganze Team, 5 Sekunden Spott.',
-  basilisk_passive:  'Vergiftet Ziele (max. 5 Stapel). +6 Energie pro Angriff.',
-  basilisk_active:   'Gift-Fläche (18 %/s, 4 s) + VER −15 % auf alle Gegner.',
-  chimaera_passive:  'Schnelle Ladung: +10 Energie pro Angriff.',
-  chimaera_active:   '2 Treffer à 170 % ANG auf den schwächsten Gegner.',
-  sphinx_passive:    '+8 Energie pro Angriff.',
-  sphinx_active:     'Heilt das gesamte Team um 25 % Max-LP.',
-  barghest_passive:  'Heilt sich um 18 % des verursachten Schadens. +7 Energie pro Angriff.',
-  barghest_active:   '240 % ANG auf den schwächsten Gegner + Blutung (3×12 %).',
-  ouroboros_passive: 'Lädt stetig: +6 Energie pro Sekunde.',
-  ouroboros_active:  'Gift-Fläche (15 %/s, 5 s) + VER −10 % auf alle Gegner.',
-  archon_passive:    'Lädt stetig: +7 Energie pro Sekunde.',
-  archon_active:     'Heilt das gesamte Team um 35 % Max-LP.',
+// ---------- Kurzbeschreibung der Fähigkeiten (generiert, 20.07.2026) ----------
+// Wird aus effect/params/trigger der JSON-Daten gebaut, nicht handgepflegt —
+// Balancing-Änderungen an data/*.json ziehen automatisch mit.
+// Stil: extrem knapp, Teile mit „ · " getrennt (UI-Grundsatz: so wenig Text wie möglich).
+
+const abPct = v => Math.round(v * 100) + '%';
+
+// Zielgruppe als kurzes Stichwort.
+const AbilityTargetShort = {
+  enemyHighestHp:      'meiste LP',
+  enemyLowestHp:       'wenigste LP',
+  enemyBackline:       'Rückreihe',
+  allEnemies:          'alle Gegner',
+  allAllies:           'Team',
+  fallenAllyElseLowest: '',
 };
+
+// Auslöser des Passivs als Energie-Zeile.
+const AbilityTriggerShort = { onAttack: 'je Angriff', onHit: 'je Treffer', perSecond: 'pro Sek.' };
+
+// Effekt-Kern; p = ability.params.
+function abilityEffectShort(effect, p) {
+  switch (effect) {
+    case 'atkUpWhenHurt':   return `+${abPct(p.atkPer25MissingHp)} ANG je 25% fehlende LP`;
+    case 'damageReduction': return `−${p.flatReduce} Schaden pro Treffer`;
+    case 'lifesteal':       return `${abPct(p.pctOfDamage)} Lebensraub`;
+    case 'applyPoison':     return `Gift ${abPct(p.stackPct)} ANG/s, max. ${p.maxStacks} Stapel`;
+    case 'elementalNuke':   return `${abPct(p.atkMultiplier)} ANG`;
+    case 'multiHit':        return `${p.hits}× ${abPct(p.atkMultiplier)} ANG`;
+    case 'hitPlusBleed':    return `${abPct(p.atkMultiplier)} ANG · Blutung ${p.bleedTicks}×${abPct(p.bleedPct)}`;
+    case 'teamShield':      return `Schild ${abPct(p.shieldPctMaxHp)} LP` + (p.taunt ? ` · Spott ${p.durationSec}s` : '');
+    case 'teamHeal':        return `Heilt ${abPct(p.healPctMaxHp)} LP`;
+    case 'spreadDotDebuff': return `Gift ${abPct(p.dotPct)}/s ${p.durationSec}s · VER −${abPct(p.defDown)}`;
+    case 'reviveOrHeal':    return `Belebt mit ${abPct(p.reviveHpPct)} LP, sonst Heilung ${abPct(p.healPctMaxHp)}`;
+    default:                return '';
+  }
+}
+
+// Fertige Kurzzeile für eine Fähigkeits-ID (Passiv oder Ult).
+function abilityShort(abId) {
+  const a = Abilities[abId];
+  if (!a) return '';
+  const parts = [];
+  const core = abilityEffectShort(a.effect, a.params || {});
+  const tgt = AbilityTargetShort[a.target];
+  // Gruppenziele lesen sich vorangestellt besser („Team · Heilt 30 % LP"),
+  // Einzelziele hinten dran („300 % ANG · meiste LP").
+  const groupFirst = a.target === 'allAllies' || a.target === 'allEnemies';
+  if (tgt && groupFirst) parts.push(tgt);
+  if (core) parts.push(core);
+  if (tgt && !groupFirst) parts.push(tgt);
+  if (a.energyGain) parts.push(`+${a.energyGain} EN ${AbilityTriggerShort[a.trigger] || ''}`.trim());
+  return parts.join(' · ');
+}
 
 // ---------- Fusions-Kreaturen (generiert aus fusions.json: 12 Archetypen × 6 Elemente) ----------
 // Nicht in CREATURES_DATA — Sammlung/Silhouetten zeigen sie über FusionArchetypes an.
@@ -204,7 +217,8 @@ let Save = loadSave();
 
 function loadSave() {
   try {
-    const raw = localStorage.getItem(SAVE_KEY);
+    const key = currentSaveKey();
+    const raw = key && localStorage.getItem(key);
     if (raw) {
       const s = Object.assign(defaultSave(), JSON.parse(raw));
       // Migration 17.07.2026: alte Element-Hybride (steam_/ash_/frost_<archetyp>)
@@ -234,7 +248,10 @@ function loadSave() {
 }
 
 function persist() {
-  localStorage.setItem(SAVE_KEY, JSON.stringify(Save));
+  const key = currentSaveKey();
+  if (!key) return;                       // noch kein Profil gewählt
+  try { localStorage.setItem(key, JSON.stringify(Save)); }
+  catch (e) { console.warn('Speichern fehlgeschlagen.', e); }
 }
 
 function resetSave() {

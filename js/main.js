@@ -26,6 +26,19 @@ function showSplash() {
     .then(() => setTimeout(done, 900));
 }
 
+// Tages-Bonus: einmal pro Kalendertag, nach dem Splash bzw. nach der Profilwahl.
+function showDailyBonus() {
+  claimDailyBonus();
+  updateGoldDisplay();
+  const ov = showOverlay(`
+    <div class="daily-bonus">
+      ${iconArt('sun', 40)}
+      <div class="result-gold">+ ${iconArt('coin')} ${DAILY_BONUS_GOLD}</div>
+      <div class="ov-actions"><button class="btn btn-primary" id="db-ok">Weiter</button></div>
+    </div>`);
+  ov.querySelector('#db-ok').onclick = () => { Sfx.click(); closeOverlay(); };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   showSplash();
   // Statische Emoji-Icons aus index.html durch Pixel-Icons ersetzen
@@ -44,22 +57,18 @@ document.addEventListener('DOMContentLoaded', () => {
   // (Long-Press ist im Spiel der Stat-Peek, siehe attachLongPress in ui.js).
   document.addEventListener('contextmenu', e => e.preventDefault());
 
+  initNavArrows();
   showScreen('menu');
-  initSwipe();
 
-  // Tages-Bonus: einmal pro Kalendertag, nach dem Splash.
-  if (dailyBonusAvailable()) {
-    setTimeout(() => {
-      claimDailyBonus();
-      updateGoldDisplay();
-      const ov = showOverlay(`
-        <div class="daily-bonus">
-          ${iconArt('sun', 40)}
-          <div class="result-gold">+ ${iconArt('coin')} ${DAILY_BONUS_GOLD}</div>
-          <div class="ov-actions"><button class="btn btn-primary" id="db-ok">Weiter</button></div>
-        </div>`);
-      ov.querySelector('#db-ok').onclick = () => { Sfx.click(); closeOverlay(); };
-    }, 2700);
+  // Profilauswahl beim Start (getrennte Spielstände, 20.07.): immer, wenn es
+  // etwas zu wählen gibt oder das zuletzt gespielte Profil einen PIN hat.
+  // Einzelnes Profil ohne PIN startet direkt durch.
+  // Der Tages-Bonus kommt dann erst nach dem Betreten des Profils.
+  const prof = activeProfile();
+  if (!prof || prof.pin || Profiles.list.length > 1) {
+    setTimeout(() => openProfileGate(), 1400);   // nach dem Splash-Flug
+  } else if (dailyBonusAvailable()) {
+    setTimeout(showDailyBonus, 2700);
   }
 
   // PWA: Service Worker nur über http(s) — file:// wirft SecurityError

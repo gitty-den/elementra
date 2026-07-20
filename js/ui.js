@@ -38,6 +38,7 @@ function showScreen(name) {
   // Fusion lebt jetzt als Tab in der Sammlung (ein Fenster) — alte Aufrufe umleiten.
   else if (name === 'fusion') { collMode = 'fusion'; currentScreen = 'collection'; renderCollection(s); }
   updateGoldDisplay();
+  updateNavArrows();
 }
 
 function showOverlay(html, cls = '') {
@@ -199,24 +200,36 @@ function renderChapterMap(root, chId) {
   root.scrollTop = Math.max(0, pos[idx].y - root.clientHeight / 2 + 50);
 }
 
-// ---------- Swipe-Navigation zwischen den Subscreens (links/rechts) ----------
+// ---------- Navigation zwischen den Subscreens: Pfeile am Bildschirmrand ----------
+// 20.07.2026: Swipe ersetzt durch antippbare Pfeile (entdeckbarer, kein Konflikt
+// mit dem Scrollen der Karte). Reihenfolge wie zuvor: Kampagne <-> Sammlung.
 
-const SWIPE_ORDER = ['map', 'collection'];
+const NAV_ORDER = ['map', 'collection'];
 
-function initSwipe() {
-  const s = $('#screen');
-  let x0 = 0, y0 = 0, armed = false;
-  s.addEventListener('pointerdown', e => { x0 = e.clientX; y0 = e.clientY; armed = true; });
-  s.addEventListener('pointerup', e => {
-    if (!armed) return;
-    armed = false;
-    if (B) return; // im Kampf niemals Screen wechseln
-    const dx = e.clientX - x0, dy = e.clientY - y0;
-    if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
-    const i = SWIPE_ORDER.indexOf(currentScreen);
-    if (i === -1) return;
-    const next = SWIPE_ORDER[i + (dx < 0 ? 1 : -1)];
-    if (next) { Sfx.click(); showScreen(next); }
+function navNeighbour(dir) {
+  const i = NAV_ORDER.indexOf(currentScreen);
+  return i === -1 ? null : NAV_ORDER[i + dir] || null;
+}
+
+function initNavArrows() {
+  [-1, 1].forEach(dir => {
+    const b = el('button', 'nav-arrow ' + (dir < 0 ? 'left' : 'right'));
+    b.innerHTML = iconArt('back', 22);
+    b.onclick = () => {
+      const next = navNeighbour(dir);
+      if (next) { Sfx.click(); showScreen(next); }
+    };
+    document.body.appendChild(b);
+  });
+  updateNavArrows();
+}
+
+// Sichtbar nur auf map/collection und nie im Kampf; jeder Pfeil nur, wenn es
+// in seiner Richtung einen Nachbarn gibt.
+function updateNavArrows() {
+  document.querySelectorAll('.nav-arrow').forEach(b => {
+    const dir = b.classList.contains('left') ? -1 : 1;
+    b.classList.toggle('hidden', !!B || !navNeighbour(dir));
   });
 }
 
@@ -227,87 +240,134 @@ const ELEMENT_STRONG = { fire: 'nature', nature: 'water', water: 'fire' };
 
 // Warnt vor schwachem Matchup: Front-Tank elementar gekontert ODER kein
 // Team-Mitglied stark gegen den vordersten Gegner.
+// Rückgabe: { where: 'front'|'team', text } — angezeigt wird nur ein Icon
+// (UI-Grundsatz), der Text erscheint erst beim Antippen des Warn-Icons.
 function teamWeakness(picked, stage) {
   if (picked.length < 3) return null;
   const enemyEls = stage.enemies.map(e => Creatures[e.id].element);
   const teamEls = picked.map(id => Creatures[id].element);
   const front = Creatures[picked[0]].element;
   if (enemyEls.some(en => ELEMENT_STRONG[en] === front))
-    return 'Deine vorderste Kreatur wird elementar gekontert.';
+    return { where: 'front', text: 'Deine vorderste Kreatur wird elementar gekontert.' };
   const foeFront = enemyEls[0];
   if (foeFront && !teamEls.some(te => ELEMENT_STRONG[te] === foeFront))
-    return 'Niemand im Team ist stark gegen den vordersten Gegner.';
+    return { where: 'team', text: 'Niemand im Team ist stark gegen den vordersten Gegner.' };
   return null;
 }
 
+// Empfehlungs-Score für die Vorauswahl im Team-Select: Elementvorteil gegen die
+// Gegner dieser Stage zählt am meisten, danach Level und Seltenheitsstufe.
+function stageFitScore(id, stage) {
+  const c = Creatures[id];
+  const lvl = (Save.collection[id] || {}).level || 1;
+  const enemyEls = stage.enemies.map(e => Creatures[e.id].element);
+  let s = lvl * 2 + (c.tier || 1) * 3;
+  enemyEls.forEach(en => {
+    if (ELEMENT_STRONG[c.element] === en) s += 6;     // stark gegen diesen Gegner
+    if (ELEMENT_STRONG[en] === c.element) s -= 5;     // wird von ihm gekontert
+  });
+  return s;
+}
+
+// Ruhige Einseite (Umbau 20.07.2026): schmales Gegner-Band, drei große Slots,
+// darunter das Kreaturen-Grid. Kein Stage-Name, keine Beschreibung, keine
+// Hinweiszeile — Belohnung nur als Icon+Zahl, Warnung nur als Icon.
 function openTeamSelect(stage) {
   let picked = Save.team.filter(id => Save.collection[id]).slice(0, 3);
-  let selSlot = -1; // markierter Slot für Positions-Tausch
+  let selSlot = -1;      // markierte Position für den Tausch
+  let showAll = false;   // Grid: erst Empfehlungen, auf Wunsch alles
+
+  // Zwei Taps tauschen, Reihenfolge egal: markieren -> zweites Ziel antippen.
+  // Funktioniert für Slots wie für Karten im Grid (beide laufen hier zusammen).
+  const tapPos = i => {
+    if (selSlot === -1) { if (picked[i]) selSlot = i; }
+    else if (selSlot === i) selSlot = -1;                       // Markierung lösen
+    else if (picked[i]) { [picked[selSlot], picked[i]] = [picked[i], picked[selSlot]]; selSlot = -1; }
+    else { picked.push(picked.splice(selSlot, 1)[0]); selSlot = -1; }  // in leere Position rücken
+  };
+  const tapCard = id => {
+    const idx = picked.indexOf(id);
+    if (idx >= 0) { tapPos(idx); return; }                     // schon im Team: Tausch-Logik
+    if (selSlot >= 0) picked[selSlot] = id;                    // markierte Position ersetzen
+    else if (picked.length < 3) picked.push(id);
+    else picked[picked.length - 1] = id;                       // Team voll: hinterste ersetzen
+    selSlot = -1;
+  };
+
   const render = () => {
-    const owned = ownedIds().sort((a, b) =>
-      Creatures[b].tier - Creatures[a].tier || Creatures[a].name.localeCompare(Creatures[b].name));
+    const warn = teamWeakness(picked, stage);
+    const newCreature = stage.unlockCreature && !Save.stages[stage.id];
+
     const slots = [0, 1, 2].map(i => {
       const c = picked[i] ? Creatures[picked[i]] : null;
+      const warnHere = warn && ((warn.where === 'front' && i === 0) || (warn.where === 'team' && i === 0));
       return `
         <div class="ts-slot ${c ? 'filled' : ''} ${selSlot === i ? 'sel' : ''} ${i === 0 ? 'front' : ''}" data-slot="${i}">
-          <div class="ts-slot-tag">${i === 0 ? '🛡 Vorne' : (i + 1) + '. Reihe'}</div>
+          ${i === 0 ? `<div class="ts-front-mark">${iconArt('shield', 14)}</div>` : ''}
+          ${warnHere ? `<button class="ts-warn-ico" data-warn="1">${iconArt('skull', 16)}</button>` : ''}
           ${c
-            ? `<div class="ts-slot-art">${creatureArt(c, { noAura: true })}</div><div class="ts-slot-name">${c.name}</div>`
+            ? `<div class="ts-slot-art">${creatureArt(c, { noAura: true })}</div>
+               ${levelPipsHTML(Save.collection[picked[i]].level)}`
             : '<div class="ts-slot-empty">＋</div>'}
         </div>`;
     }).join('');
+
+    // Grid: standardmäßig die sechs besten Kandidaten für diese Stage,
+    // gepickte Kreaturen bleiben immer sichtbar.
+    const owned = ownedIds().sort((a, b) => stageFitScore(b, stage) - stageFitScore(a, stage));
+    const shown = showAll ? owned
+      : Array.from(new Set([...picked, ...owned.slice(0, 6)])).filter(id => Save.collection[id]);
+
     const ov = showOverlay(`
-      <div class="ts-head">
-        <h2>Stage ${stage.id} — ${stage.name}</h2>
-        <div class="ts-desc">${stage.desc}</div>
-        <div class="ts-enemies">Gegner: ${stage.enemies.map((e, i) =>
-          `<span class="mini-foe ${i === 0 ? 'front' : ''}">${creatureArt(Creatures[e.id], { noAura: true })}<i>Lv${e.level}</i>${i === 0 ? '<b>Vorne</b>' : ''}</span>`).join('')}
+      <div class="ts-band">
+        <div class="ts-foes">${stage.enemies.map((e, i) =>
+          `<span class="mini-foe ${i === 0 ? 'front' : ''}">${creatureArt(Creatures[e.id], { noAura: true })}<i>${e.level}</i></span>`).join('')}
         </div>
-        <div class="ts-reward">Belohnung: ${iconArt('coin')} ${stage.gold}${stage.unlockCreature && !Save.stages[stage.id] ? ' + neue Kreatur ' + iconArt('egg') : ''}</div>
+        <div class="ts-loot">${iconArt('coin', 15)} ${stage.gold}${newCreature ? iconArt('egg', 15) : ''}</div>
       </div>
-      <div class="ts-label">Wähle dein Team (${picked.length}/3)</div>
       <div class="ts-slots">${slots}</div>
-      <div class="ts-slot-hint">Vorne wird zuerst angegriffen. Antippen ersetzt direkt.</div>
-      <div class="ts-grid">
-        ${owned.map(id => creatureCardHTML(id, Save.collection[id].level,
-          { cls: picked.includes(id) ? 'picked' : '' })).join('')}
+      <div class="ts-grid ${showAll ? '' : 'ts-grid-short'}">
+        ${shown.map(id => creatureCardHTML(id, Save.collection[id].level,
+          { cls: (picked.includes(id) ? 'picked ' : '') + (selSlot >= 0 && picked[selSlot] === id ? 'marked' : '') })).join('')}
       </div>
-      ${(() => { const w = teamWeakness(picked, stage); return w ? `<div class="ts-warn">${iconArt('shield', 15)} ${w}</div>` : ''; })()}
+      ${owned.length > shown.length ? `<button class="ts-more" id="ts-more">${iconArt('back', 15)}</button>` : ''}
       <div class="ov-actions">
-        <button class="btn btn-ghost" id="ts-cancel">Zurück</button>
-        <button class="btn btn-primary" id="ts-start" ${picked.length === 3 ? '' : 'disabled'}>Kampf starten ${iconArt('sword')}</button>
-      </div>`);
-    ov.querySelectorAll('.ts-slot').forEach(slotEl => slotEl.onclick = () => {
-      const i = +slotEl.dataset.slot;
-      if (selSlot === -1) {
-        if (!picked[i]) return;          // leerer Slot ohne Auswahl: nichts zu tun
-        selSlot = i;
-      } else if (selSlot === i) {
-        picked.splice(i, 1);             // zweiter Tap auf gleichen Slot = entfernen
+        <button class="btn btn-ghost" id="ts-cancel">${iconArt('back', 16)}</button>
+        <button class="btn btn-primary" id="ts-start" ${picked.length === 3 ? '' : 'disabled'}>${iconArt('sword', 18)}</button>
+      </div>`, 'ts-overlay');
+
+    ov.querySelectorAll('.ts-slot').forEach(slotEl => {
+      slotEl.onclick = e => {
+        if (e.target.closest('.ts-warn-ico')) {                 // Warn-Icon erklärt sich per Tap
+          Sfx.click();
+          floatHint(warn.text);
+          return;
+        }
+        Sfx.click();
+        tapPos(+slotEl.dataset.slot);
+        render();
+      };
+      // Long-Press auf einen belegten Slot nimmt die Kreatur aus dem Team.
+      attachLongPress(slotEl, () => {
+        const i = +slotEl.dataset.slot;
+        if (!picked[i]) return;
+        picked.splice(i, 1);
         selSlot = -1;
-      } else {
-        if (picked[i]) [picked[selSlot], picked[i]] = [picked[i], picked[selSlot]];
-        else picked.push(picked.splice(selSlot, 1)[0]); // in leeren Slot = ans Ende
-        selSlot = -1;
-      }
-      Sfx.click();
-      render();
+        Sfx.click();
+        render();
+      });
     });
     ov.querySelectorAll('.ts-grid .ccard').forEach(card => {
       card.onclick = () => {
         if (card._lpFired) { card._lpFired = false; return; }
         Sfx.click();
-        const id = card.dataset.cid;
-        if (picked.includes(id)) picked = picked.filter(x => x !== id);
-        else if (selSlot >= 0) picked[selSlot] = id;          // markierten Slot ersetzen
-        else if (picked.length < 3) picked.push(id);
-        else picked[picked.length - 1] = id;                  // Team voll: hinterste Position ersetzen
-        selSlot = -1;
+        tapCard(card.dataset.cid);
         render();
       };
-      // Long-Press = Stat-Peek, danach zurück in die Team-Auswahl
       attachLongPress(card, () => openCreatureDetail(card.dataset.cid, { onClose: render }));
     });
+    const more = ov.querySelector('#ts-more');
+    if (more) more.onclick = () => { Sfx.click(); showAll = true; render(); };
     ov.querySelector('#ts-cancel').onclick = () => { Sfx.click(); closeOverlay(); };
     ov.querySelector('#ts-start').onclick = () => {
       Save.team = picked.slice();
@@ -319,7 +379,19 @@ function openTeamSelect(stage) {
   render();
 }
 
+// Kurzer Hinweis-Streifen (z. B. Erklärung zum Warn-Icon), verschwindet von selbst.
+function floatHint(text) {
+  document.querySelectorAll('.float-hint').forEach(n => n.remove());
+  const n = el('div', 'float-hint', text);
+  document.body.appendChild(n);
+  setTimeout(() => n.remove(), 2600);
+}
+
 // ---------- Kampf ----------
+
+// Kämpfe laufen grundsätzlich in doppelter Geschwindigkeit (20.07.2026).
+// Betrifft nur den Engine-Tick; Animationen bleiben in Echtzeit (CSS kürzt sie).
+const BATTLE_SPEED = 2;
 
 // Slot-Positionen in der Arena (Prozent; x = Mitte, y = Oberkante der Figur).
 const SLOT_POS = {
@@ -330,10 +402,12 @@ const SLOT_POS = {
 function beginBattle(stage, teamIds) {
   const allyDefs = teamIds.map(id => ({ id, level: Save.collection[id].level }));
   const battle = createBattle(allyDefs, stage.enemies);
-  B = { battle, stage, raf: null, speed: 1, unitEls: {}, endShown: false };
+  // Tempo fest auf 2× (20.07.2026) — schnelleres Gameplay, kein Schalter.
+  B = { battle, stage, raf: null, speed: BATTLE_SPEED, unitEls: {}, endShown: false };
   Music.play('battle');
 
   document.body.classList.add('in-battle');
+  updateNavArrows();   // Rand-Pfeile im Kampf ausblenden
   const s = $('#screen');
   s.innerHTML = `
     <div class="battle-screen">
@@ -740,6 +814,7 @@ function endBattleUI() {
   if (B && B.raf) cancelAnimationFrame(B.raf);
   document.body.classList.remove('in-battle');
   B = null;
+  updateNavArrows();
   Music.play('map');
 }
 
@@ -937,8 +1012,10 @@ function openCreatureDetail(cid, opts = {}) {
           <div class="stat">${iconArt('bolt', 17)}<b>${st.spd}</b></div>
         </div>
         <div class="ability-box">
-          <div class="ab"><span class="ab-ico">${iconArt('orb', 20)}</span><b>${Abilities[c.passive].name}</b></div>
-          <div class="ab ab-ult"><span class="ab-ico">${iconArt(ultIconName(c), 20)}</span><b>${Abilities[c.active].name}</b></div>
+          <div class="ab"><span class="ab-ico">${iconArt('orb', 20)}</span>
+            <span class="ab-txt"><b>${Abilities[c.passive].name}</b><i>${abilityShort(c.passive)}</i></span></div>
+          <div class="ab ab-ult"><span class="ab-ico">${iconArt(ultIconName(c), 20)}</span>
+            <span class="ab-txt"><b>${Abilities[c.active].name}</b><i>${abilityShort(c.active)}</i></span></div>
         </div>
         <div class="ov-actions">
           <button class="btn btn-ghost" id="det-close">Schließen</button>
@@ -1169,6 +1246,8 @@ function openSettings() {
         <input type="range" class="pixel-range" id="set-sfx" min="0" max="100" value="${pct(Save.settings.sfxVol)}"></div>
       <div class="set-row">${iconArt('music', 26)}
         <input type="range" class="pixel-range" id="set-music" min="0" max="100" value="${pct(Save.settings.musicVol)}"></div>
+      <button class="btn btn-ghost" id="set-profile">${iconArt('lock', 14)} ${
+        activeProfile() ? activeProfile().name : 'Profil wählen'}</button>
       <button class="btn btn-ghost" id="set-dev">${iconArt('gear', 14)} Developer-Board</button>
       <button class="btn btn-danger" id="set-reset">Spielstand zurücksetzen</button>
       <div class="settings-info">Elementra — Prototyp v0.2</div>
@@ -1192,9 +1271,11 @@ function openSettings() {
     Music.setVolume(+e.target.value / 100);
     paintFill(e.target);
   };
+  ov.querySelector('#set-profile').onclick = () => { Sfx.click(); openProfileGate({ cancelable: true }); };
   ov.querySelector('#set-dev').onclick = () => { Sfx.click(); openDevBoard(); };
   ov.querySelector('#set-reset').onclick = () => {
-    if (confirm('Wirklich den kompletten Spielstand löschen?')) {
+    const p = activeProfile();
+    if (confirm(`Spielstand von „${p ? p.name : 'diesem Profil'}" wirklich löschen?`)) {
       resetSave();
       closeOverlay();
       showScreen('menu');
@@ -1346,3 +1427,133 @@ function openPixelTest() {
 
 // Logo ist fest der Element-Ring (Nutzer-Entscheidung 17.07.2026) — die frühere
 // Logo-Auswahl wurde entfernt; emblemArt() ohne Argument liefert immer 'ring'.
+
+// ---------- Profil-Auswahl (20.07.2026): getrennte Spielstände pro Person ----------
+
+// Startbildschirm nach dem Splash, wenn noch kein Profil aktiv ist. Auch aus den
+// Optionen erreichbar („Profil wechseln"). Erst nach der Wahl geht es ins Menü.
+function openProfileGate(opts = {}) {
+  const render = () => {
+    const cards = Profiles.list.map(p => {
+      const sum = profileSummary(p.id);
+      return `
+        <button class="prof-card" data-id="${p.id}">
+          <span class="prof-name">${p.name}</span>
+          <span class="prof-stats">
+            ${iconArt('egg', 14)} ${sum.creatures}
+            ${iconArt('star', 14)} ${sum.stars}
+            ${p.pin ? iconArt('lock', 14) : ''}
+          </span>
+        </button>`;
+    }).join('');
+    const ov = showOverlay(`
+      <div class="prof-gate">
+        <div class="prof-emblem">${emblemArt()}</div>
+        <div class="prof-list">${cards}</div>
+        ${Profiles.list.length < MAX_PROFILES
+          ? `<button class="btn btn-primary" id="prof-new">＋</button>` : ''}
+        ${opts.cancelable ? `<div class="ov-actions">
+          <button class="btn btn-ghost" id="prof-cancel">${iconArt('back', 16)}</button></div>` : ''}
+      </div>`, 'prof-overlay');
+
+    ov.querySelectorAll('.prof-card').forEach(card => {
+      const p = Profiles.list.find(x => x.id === card.dataset.id);
+      card.onclick = () => {
+        if (card._lpFired) { card._lpFired = false; return; }
+        Sfx.click();
+        if (p.pin) askPin(p, () => enterProfile(p.id));
+        else enterProfile(p.id);
+      };
+      // Long-Press löscht ein Profil (mit Rückfrage) — kein Extra-Button nötig.
+      attachLongPress(card, () => {
+        if (!confirm(`Profil „${p.name}" mit allem Fortschritt löschen?`)) return;
+        deleteProfile(p.id);
+        render();
+      });
+    });
+    const nw = ov.querySelector('#prof-new');
+    if (nw) nw.onclick = () => { Sfx.click(); openNewProfile(render); };
+    const cancel = ov.querySelector('#prof-cancel');
+    if (cancel) cancel.onclick = () => { Sfx.click(); closeOverlay(); };
+  };
+  render();
+}
+
+// Profil aktivieren und ins Hauptmenü springen.
+function enterProfile(id) {
+  activateProfile(id);
+  closeOverlay();
+  showScreen('menu');
+  if (typeof dailyBonusAvailable === 'function' && dailyBonusAvailable()) showDailyBonus();
+}
+
+// Neues Profil: Name (max. 12 Zeichen) + optionaler PIN. `st` überlebt den
+// Abstecher zum Ziffernblock (der baut das Overlay neu auf).
+function openNewProfile(onDone, st = { name: '', pin: '' }) {
+  const ov = showOverlay(`
+    <div class="prof-new">
+      <div class="prof-emblem small">${emblemArt()}</div>
+      <input type="text" id="prof-name" class="pixel-input" maxlength="12"
+             placeholder="Name" autocomplete="off" spellcheck="false" value="${st.name}">
+      <button class="btn btn-ghost ${st.pin ? 'on' : ''}" id="prof-pin-toggle">${iconArt('lock', 14)}</button>
+      <div class="ov-actions">
+        <button class="btn btn-ghost" id="prof-abort">${iconArt('back', 16)}</button>
+        <button class="btn btn-primary" id="prof-ok">${iconArt('sword', 16)}</button>
+      </div>
+    </div>`, 'prof-overlay');
+  const nameInput = ov.querySelector('#prof-name');
+  const toggle = ov.querySelector('#prof-pin-toggle');
+  toggle.onclick = () => {
+    Sfx.click();
+    st.name = nameInput.value;
+    if (st.pin) { st.pin = ''; toggle.classList.remove('on'); return; }   // PIN wieder abwählen
+    openPinPad('set', code => { st.pin = code; }, () => openNewProfile(onDone, st));
+  };
+  ov.querySelector('#prof-abort').onclick = () => { Sfx.click(); closeOverlay(); onDone(); };
+  ov.querySelector('#prof-ok').onclick = () => {
+    Sfx.click();
+    const p = createProfile(nameInput.value.trim() || 'Spieler', st.pin);
+    if (p) enterProfile(p.id);
+  };
+}
+
+// PIN abfragen, bevor ein geschütztes Profil geöffnet wird.
+function askPin(profile, onOk) {
+  openPinPad('check', code => {
+    if (code === profile.pin) { onOk(); return true; }
+    return false;                         // falsch: Pad zeigt Fehler und bleibt offen
+  }, () => openProfileGate());
+}
+
+// Ziffernblock. mode 'set' = neuen PIN festlegen, 'check' = prüfen.
+// onCode('1234') -> bei 'check' true/false (falsch = Pad bleibt offen).
+function openPinPad(mode, onCode, onBack) {
+  let code = '';
+  const render = (err = false) => {
+    const ov = showOverlay(`
+      <div class="pin-pad ${err ? 'err' : ''}">
+        <div class="pin-dots">${[0, 1, 2, 3].map(i =>
+          `<span class="pin-dot ${i < code.length ? 'on' : ''}"></span>`).join('')}</div>
+        <div class="pin-keys">
+          ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button class="pin-key" data-n="${n}">${n}</button>`).join('')}
+          <button class="pin-key pin-back" data-del="1">${iconArt('back', 16)}</button>
+          <button class="pin-key" data-n="0">0</button>
+          <button class="pin-key pin-exit" data-exit="1">${iconArt('giveup', 16)}</button>
+        </div>
+      </div>`, 'prof-overlay');
+    ov.querySelectorAll('.pin-key').forEach(k => k.onclick = () => {
+      Sfx.click();
+      if (k.dataset.exit) { closeOverlay(); onBack(); return; }
+      if (k.dataset.del) { code = code.slice(0, -1); render(); return; }
+      if (code.length >= 4) return;
+      code += k.dataset.n;
+      if (code.length < 4) { render(); return; }
+      // Vier Ziffern voll: auswerten.
+      if (mode === 'set') { closeOverlay(); onCode(code); onBack(); return; }
+      if (onCode(code) === true) return;   // richtig -> Aufrufer übernimmt
+      code = '';
+      render(true);
+    });
+  };
+  render();
+}

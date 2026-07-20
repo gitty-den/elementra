@@ -11,8 +11,18 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   (`campfireArt`, 2 Flacker-Frames), 2×2-Kachel-Raster: Kampagne / Sammlung /
   **Battlepass** / Optionen (Fusion-Kachel entfiel 19.07. — Fusion ist jetzt Tab
   in der Sammlung). Topbar nur in Subscreens (`body.in-menu` blendet sie aus).
-- **Swipe links/rechts** wechselt zwischen map/collection (`initSwipe`,
-  `SWIPE_ORDER` = ['map','collection']; im Kampf gesperrt via `if (B) return`).
+- **Rand-Pfeile** wechseln zwischen map/collection (`initNavArrows`/`updateNavArrows`,
+  `NAV_ORDER` = ['map','collection']). Swipe ist seit 20.07. RAUS (kollidierte mit
+  dem Scrollen der Karte). Pfeile sind fix am linken/rechten Bildschirmrand,
+  erscheinen nur, wenn es in der Richtung einen Nachbarn gibt, und nie im Kampf.
+- **App-Start = Profilauswahl** (20.07., `js/profiles.js` + `openProfileGate`):
+  mehrere Spielstände nebeneinander, je Profil ein eigener Save-Schlüssel
+  (`elementra_save_v1__<id>`), optionaler 4-stelliger PIN (Ziffernblock
+  `openPinPad`). Gate erscheint beim Start, wenn kein Profil aktiv ist, das
+  aktive Profil einen PIN hat oder es mehr als eins gibt — ein einzelnes Profil
+  ohne PIN startet durch. Wechseln in den Optionen, Löschen per Long-Press auf
+  die Profilkarte. **Der PIN ist Bequemlichkeit, kein Schutz** (Klartext im
+  localStorage).
 - **Kampagne = Welt-Übersicht (`renderWorld`) → Kapitel-Karte (`renderChapterMap`)**
   (19.07.): `CHAPTERS` (stages.js) teilen die Stages in Abteile; `renderMap` ist
   Dispatcher über `currentChapter` (null = Übersicht). Kapitel N gesperrt bis
@@ -28,7 +38,15 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   einen Umschalter (`collMode` 'coll'|'fusion', `collTabsHTML`); Fusion-Inhalt via
   `renderFusionBody(wrap)`. `showScreen('fusion')` leitet auf den Fusion-Tab um.
 - Kapitel-Karte fokussiert beim Rendern die aktuelle Stage (Scroll zentriert).
-- Teamwahl: Antippen ersetzt direkt — markierter Slot, sonst hinterste Position.
+- **Team-Auswahl = ruhige Einseite** (Umbau 20.07., Nutzer-Feedback „zu viel Text,
+  überreizt"): oben schmales Gegner-Band (Sprites + Level, vorderster Gegner mit
+  Gold-Strich) und Belohnung als Icon+Zahl — KEIN Stage-Name, KEINE Beschreibung,
+  keine Hinweiszeile, keine Labels. Darunter drei große Slots, darunter das Grid
+  mit den 6 besten Kandidaten (`stageFitScore`) und einem Aufklapp-Pfeil für alle.
+  Team-Warnung nur als Warn-Icon am Front-Slot; Text erst beim Antippen
+  (`floatHint`). **Tausch = zwei Taps, Reihenfolge egal** (`tapPos`/`tapCard`):
+  erstes Antippen markiert, zweites tauscht — funktioniert für Slots wie für
+  Karten im Grid. Long-Press auf einen Slot nimmt die Kreatur aus dem Team.
 - **Kein Zurück im Kampf** — raus nur über das Sieg/Niederlage-Overlay.
 - Niederlage zeigt EINEN kurzen rotierenden Tipp (`DEFEAT_TIPS`), keine Textwand.
 - Kampf-HUD: Kompakt-Plakette (`unit-plate`) — Level-Badge links an der HP-Bar,
@@ -93,8 +111,9 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 
 | Datei | Inhalt |
 |---|---|
+| `js/profiles.js` | **Lokale Profile** (20.07.): Profilliste + aktives Profil in `elementra_profiles_v1`, Save-Schlüssel je Profil (`currentSaveKey`), `createProfile/deleteProfile/activateProfile`, `profileSummary`. Migriert einen alten `elementra_save_v1` beim Erststart zu „Spieler 1". Wird VOR state.js geladen |
 | `js/data.js` | GENERIERT — Rohdaten aus `data/*.json` als Globals `TYPES_DATA`, `CREATURES_DATA`, `FUSIONS_DATA` |
-| `js/state.js` | Lookups (`Elements`, `Creatures`, `Abilities`), Save (localStorage `elementra_save_v1`, Migration entfernt unbekannte IDs gegen 100 Gold), Level-Logik (`MAX_LEVEL` 5, +10 %/Level, Kosten 30·Level), Fusion (`fusionResult/fusionReady/fuseCreatures`), Stage-Fortschritt |
+| `js/state.js` | Lookups (`Elements`, `Creatures`, `Abilities`), Kurzbeschreibungen `abilityShort` (GENERIERT aus effect/params — nicht handpflegen), Save (localStorage, Schlüssel kommt aus `currentSaveKey()`, Migration entfernt unbekannte IDs gegen 100 Gold), Level-Logik (`MAX_LEVEL` 5, +10 %/Level, Kosten 30·Level), Fusion (`fusionResult/fusionReady/fuseCreatures`), Stage-Fortschritt |
 | `js/svg.js` | KOMPLETT obsolet — nur die Farbtabelle `SceneThemes` wird noch von `sceneArt` (pixel.js) gelesen. Keine SVG-Funktion mehr aufrufen |
 | `js/pixel.js` | **Standard-Kreaturen-Renderer**: `creatureArt(c, {noAura,noAnim})` — `PixelArchetypes` (7 Basis + 12 Fusion Char-Maps) × `PixelPalettes`, 32×32-Canvas → dataURI, Cache. **Idle-Frames (19.07.)**: `creatureFrames(arch,el)` erzeugt prozedural Frame 1 (Augen zu via e/p→m + 1px Atem-Stauchung); globaler `setInterval` (540 ms) swappt `img.creature-sprite`-`src`. `noAnim` schaltet es ab. Tippfehler-Pixel erscheinen magenta |
 | `js/sfx.js` | WebAudio-Synth (`Sfx.hit/ulti/win/...`), kein Audio-Asset, entsperrt bei erster Interaktion |
@@ -121,6 +140,11 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   Energie-Bar drunter, leuchtet **gold bei voller Energie** (`.ult-btn.ready`), Tap
   zündet `castActive`. **Aufgeben** = prägnantes Icon (`giveup`) oben links
   (`.battle-giveup`). Enemy-KI zündet weiter automatisch (`side==='enemy'`).
+- **Kampftempo fest 2×** (20.07.): `BATTLE_SPEED = 2` in ui.js, `B.speed` daraus;
+  kein Schalter. Nur der Engine-Tick läuft doppelt (`updateBattle(dt * B.speed)`),
+  Animationen bleiben Echtzeit — deshalb kürzt CSS die Angriffs-Animationen auf
+  0,26 s (`.unit.attacking .unit-body`), sonst schneidet der nächste Angriff sie ab.
+  Achtung fürs Balancing: Sudden Death (2 min Kampfzeit) kommt real nach 1 min.
 - **Ult-Animationen (Pokemon-Stil, aufgemotzt Runde 3):** `ulti`-Event spawnt
   gerichtete Attacke — offensive = großer Projektil-Strom (34px Element-Icons +
   Glow) vom Wirker zum Ziel mit Einschlags-Blitz + Partikelregen je Treffer

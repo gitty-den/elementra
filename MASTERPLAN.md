@@ -127,6 +127,15 @@ Stil: dunkel-episch mit Element-Glow.
 - [x] 19.07. (Runde 4): **Dev-Kampf-Simulation** (Team gegen 3 Dummys, volle Energie,
       keine Belohnung) im Dev-Board. **Map-Wallpaper eigene `sceneURI`-Variante 'map'**
       (verwandt zur Arena, nicht gleich). sw.js → v5.
+- [x] 20.07. (Runde 5, Interview): **Profile mit PIN** — App-Start fragt, wer spielt;
+      getrennte Spielstände je Profil (`js/profiles.js`), 4-stelliger PIN optional,
+      Wechsel in den Optionen. **Kampf fest 2×** (`BATTLE_SPEED`, kein Schalter).
+      **Passiv/Ult-Kurztext** unter den Stats, generiert aus den JSON-Werten
+      (`abilityShort`) statt handgepflegter Liste. **Rand-Pfeile statt Swipe**
+      zwischen Kampagne und Sammlung. **Team-Auswahl beruhigt** — Stage-Name,
+      Beschreibung und Hinweiszeilen raus, Belohnung nur Icon+Zahl, Warnung nur
+      Icon, Grid zeigt zuerst 6 Empfehlungen; **Tausch per zwei Taps in beliebiger
+      Reihenfolge**. sw.js → v6.
 - [ ] Mehr Kampagnen-Kapitel (Stages 21+, weitere Fusions-Rezepte für die 9 offenen Paare)
 - [ ] Idle-/Tages-Belohnungen, Erfolge
 - [ ] Team-Positionen (Front/Backline ausbauen — Engine kennt `enemyBackline` schon)
