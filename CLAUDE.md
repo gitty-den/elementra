@@ -8,11 +8,26 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 - App startet mit **Splash** (nur rotierendes Ring-Logo, fliegt per FLIP auf die
   Emblem-Position im Menü — `showSplash` in main.js), dann **Hauptmenü**
   (`renderMenu`): Lager-Szene mit den 3 Team-Kreaturen am Pixel-Lagerfeuer
-  (`campfireArt`, 2 Flacker-Frames), 2×2-Kachel-Raster. Topbar (Gold, ⚙,
-  Zurück-Pfeil) nur in Subscreens (`body.in-menu` blendet sie aus).
-- **Swipe links/rechts** wechselt zwischen map/collection/fusion (`initSwipe`,
-  Reihenfolge `SWIPE_ORDER`; im Kampf gesperrt via `if (B) return`).
-- Map fokussiert beim Rendern immer die aktuelle Stage (Scroll zentriert).
+  (`campfireArt`, 2 Flacker-Frames), 2×2-Kachel-Raster: Kampagne / Sammlung /
+  **Battlepass** / Optionen (Fusion-Kachel entfiel 19.07. — Fusion ist jetzt Tab
+  in der Sammlung). Topbar nur in Subscreens (`body.in-menu` blendet sie aus).
+- **Swipe links/rechts** wechselt zwischen map/collection (`initSwipe`,
+  `SWIPE_ORDER` = ['map','collection']; im Kampf gesperrt via `if (B) return`).
+- **Kampagne = Welt-Übersicht (`renderWorld`) → Kapitel-Karte (`renderChapterMap`)**
+  (19.07.): `CHAPTERS` (stages.js) teilen die Stages in Abteile; `renderMap` ist
+  Dispatcher über `currentChapter` (null = Übersicht). Kapitel N gesperrt bis
+  Boss von N−1 besiegt (`chapterUnlocked`). Boss-Sieg zeigt „Nächste Karte"
+  (setzt `currentChapter` aufs Folgekapitel). Menü-Kachel „Kampagne" öffnet immer
+  die Übersicht. **Wallpaper (19.07. Runde 3):** Kampagne nutzt ein Voll-Bild-
+  Wallpaper — `#bg-layer` (fixed, `z-index:-1`, in index.html) wird per
+  `setCampaignWallpaper(theme)` mit `sceneArt` gefüllt (Welt = 'storm', Kapitel =
+  `ch.theme`, Kapitel 1 nature = Wald). KEIN gekacheltes Stern-Muster mehr auf
+  `.map-world`. `showScreen` leert `#bg-layer` außerhalb der Kampagne. Kapitel-
+  Karten zeigen zusätzlich ihr Theme als `.wc-bg`-Cover.
+- **Sammlung + Fusion in einem Fenster** (19.07.): `renderCollection` hat oben
+  einen Umschalter (`collMode` 'coll'|'fusion', `collTabsHTML`); Fusion-Inhalt via
+  `renderFusionBody(wrap)`. `showScreen('fusion')` leitet auf den Fusion-Tab um.
+- Kapitel-Karte fokussiert beim Rendern die aktuelle Stage (Scroll zentriert).
 - Teamwahl: Antippen ersetzt direkt — markierter Slot, sonst hinterste Position.
 - **Kein Zurück im Kampf** — raus nur über das Sieg/Niederlage-Overlay.
 - Niederlage zeigt EINEN kurzen rotierenden Tipp (`DEFEAT_TIPS`), keine Textwand.
@@ -30,7 +45,7 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 
 - **Kein Build-Schritt, kein Framework.** Spiel muss per `file://` UND Preview-Server laufen.
 - **Kein `import`/`export`** — klassische Script-Tags, Reihenfolge in `index.html` ist bindend
-  (data → state → svg → pixel → sfx → music → stages → battle → ui → main).
+  (data → state → svg → pixel → sfx → music → stages → battle → bp → ui → main).
 - **`data/*.json` ist die Quelle der Wahrheit** (kommt aus der Design-ZIP, Stats laut
   `data/DATA_SCHEMA.md` Platzhalter fürs Balancing). `js/data.js` wird daraus GENERIERT
   (JSON-Inhalt 1:1 in `const`-Deklarationen, wegen file://-CORS kein fetch). Nach jeder
@@ -81,12 +96,13 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 | `js/data.js` | GENERIERT — Rohdaten aus `data/*.json` als Globals `TYPES_DATA`, `CREATURES_DATA`, `FUSIONS_DATA` |
 | `js/state.js` | Lookups (`Elements`, `Creatures`, `Abilities`), Save (localStorage `elementra_save_v1`, Migration entfernt unbekannte IDs gegen 100 Gold), Level-Logik (`MAX_LEVEL` 5, +10 %/Level, Kosten 30·Level), Fusion (`fusionResult/fusionReady/fuseCreatures`), Stage-Fortschritt |
 | `js/svg.js` | KOMPLETT obsolet — nur die Farbtabelle `SceneThemes` wird noch von `sceneArt` (pixel.js) gelesen. Keine SVG-Funktion mehr aufrufen |
-| `js/pixel.js` | **Standard-Kreaturen-Renderer**: `creatureArt(c, {noAura})` — `PixelArchetypes` (7 Char-Maps) × `PixelPalettes` (6 Elemente), 32×32-Canvas → dataURI, Cache. Tippfehler-Pixel erscheinen magenta |
+| `js/pixel.js` | **Standard-Kreaturen-Renderer**: `creatureArt(c, {noAura,noAnim})` — `PixelArchetypes` (7 Basis + 12 Fusion Char-Maps) × `PixelPalettes`, 32×32-Canvas → dataURI, Cache. **Idle-Frames (19.07.)**: `creatureFrames(arch,el)` erzeugt prozedural Frame 1 (Augen zu via e/p→m + 1px Atem-Stauchung); globaler `setInterval` (540 ms) swappt `img.creature-sprite`-`src`. `noAnim` schaltet es ab. Tippfehler-Pixel erscheinen magenta |
 | `js/sfx.js` | WebAudio-Synth (`Sfx.hit/ulti/win/...`), kein Audio-Asset, entsperrt bei erster Interaktion |
 | `js/music.js` | Generative Musik (WebAudio, Lookahead-Scheduler): Themes `map`/`battle`, `Music.play(theme)`, Toggle in ⚙. Hooks: Titel-Tap, `beginBattle`, `endBattleUI` |
 | `js/stages.js` | 10 Kampagnen-Stages: Gegner, Gold, First-Clear-Bonus, Kreaturen-Unlocks, `theme` (Arena-Hintergrund) |
 | `js/battle.js` | Engine: `createBattle`, `updateBattle(battle, dtMs)`, `castActive`. Events via `battle.on((type, data) => …)`: attack, damage, heal, absorb, shieldGain, poison, ulti, die, revive, energyFull, end |
-| `js/ui.js` | Screens (menu/map/collection/fusion), Kampf-UI (rAF-Loop), Overlays, Hauptmenü (`renderMenu`), `debugBattleStep(ms)` |
+| `js/bp.js` | **Battlepass** (19.07.): Season (~30 Tage, `currentSeason()` in state.js), Stufen (`bpCompleted`, `BP_TIER_XP`), Belohnungs-Bahn (`bpReward` free/prem, `bpClaim`), Aufgaben (`bpEnsureQuests`/`bpTrack`), Kampf-Hook `bpOnBattle(won)`, Screen `renderBattlepass`. Premium = Demo-Schalter (`bpUnlockPremium`), echtes IAP erst Phase 4 |
+| `js/ui.js` | Screens (menu/map=welt+kapitel/collection+fusion), Kampf-UI (rAF-Loop), Overlays, Hauptmenü (`renderMenu`), Team-Warnung (`teamWeakness`), Aufgeben (`giveUpBattle`), Developer-Board (`openDevBoard`), `debugBattleStep(ms)` |
 | `js/main.js` | Bootstrap |
 
 ## UI-Design (Game-Look, kein Web-Look!)
@@ -99,8 +115,23 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   Text-Labels auf der Map — Details erst im Team-Select. Kein Listen-Layout!
 - **Overlays rahmenlos** (Feedback 17.07.): eine Fläche, keine Box-in-Box-Optik —
   innere Container ohne Border, Hervorhebung über Glow/Schatten.
-- Kampf-Steuerung (Tempo/Auto) unten am Rand; **Ulti-Ready = goldene blinkende
-  Sprite-Umrandung** (`ultiBlink`, Drop-Shadow-Kette), kein Bodenring, kein Hint-Text.
+- **Kampf-Steuerung (Umbau 19.07.):** KEIN Tempo-/Auto-Schalter, KEIN Tap-auf-Kreatur
+  mehr. Unten eine **Ult-Leiste** (`#ult-bar`, `B.ultBtns`) — ein Button je Team-
+  Kreatur mit ihrem **Ult-Icon** (`ultIconName`: Effekt-Typ, offensive erben Element),
+  Energie-Bar drunter, leuchtet **gold bei voller Energie** (`.ult-btn.ready`), Tap
+  zündet `castActive`. **Aufgeben** = prägnantes Icon (`giveup`) oben links
+  (`.battle-giveup`). Enemy-KI zündet weiter automatisch (`side==='enemy'`).
+- **Ult-Animationen (Pokemon-Stil, aufgemotzt Runde 3):** `ulti`-Event spawnt
+  gerichtete Attacke — offensive = großer Projektil-Strom (34px Element-Icons +
+  Glow) vom Wirker zum Ziel mit Einschlags-Blitz + Partikelregen je Treffer
+  (`spawnUltProjectile`, Feuer=Flammenwurf/Natur=Rasierblatt …). **Schild-Ult** =
+  bleibende Barriere-Blase um die Kreatur, solange Schild hält (`.unit.shielded
+  .shield-barrier`, in renderBars getoggelt). **Heil** = grünes Aufleuchten
+  (`.unit.healed`) + schwebendes Heil-Icon (`.heal-icon`) über der Kreatur.
+  **Revive/Support** = Aura-Ringe (`spawnUltAura`). Eigene Sounds je Typ
+  (`Sfx.ultShield/ultHeal/ultRevive/ultAttack(element)`). Normale Angriffe bleiben
+  Tackle (`atk*`-Anims). Ulti-Ready-Sprite-Umrandung (`ultiBlink`) bleibt.
+- **Gold-Anzeige nur in der Sammlung** (`body.gold-visible`, in showScreen gesetzt).
 - Einstellungen: **Lautstärke-Regler** `Save.settings.sfxVol`/`musicVol` (0–1,
   `Music.setVolume`), Logo fest 'ring'.
 - **Kampf = Arena-Szene**: `sceneSVG(stage.theme)` als Hintergrund, Einheiten absolut
@@ -178,6 +209,14 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 
 ## Debug/Test (wichtig — Browser-Pane-Tab ist oft `hidden`, rAF pausiert dann!)
 
+- **Dev-Board → „Kampf-Sim (Dummys)"** (`startDevBattle`, 19.07. Runde 4): Team gegen
+  3 unverwüstliche `dev_dummy` (5000 LP, kaum Schaden, zünden nie); Team startet mit
+  voller Energie → Ults/Animationen sofort testbar. Ergebnis ohne Belohnung
+  (`stage.dev` überspringt Grants/Battlepass in `showBattleResult`). Dummy hat
+  `dev:true` → aus Battlepass-Pool + Dev-Liste ausgeschlossen.
+- **Map-Wallpaper vs. Arena:** `sceneURI(theme, 'map')` = eigene Komposition (tieferer
+  Horizont, 3 Bergketten, versetzter Mond, Vordergrund-Silhouette) — verwandt, aber
+  NICHT identisch mit dem Arena-Hintergrund `sceneArt(theme)` (Variante '').
 - `debugBattleStep(ms)` tickt den laufenden Kampf synchron (16-ms-Schritte) + rendert Bars.
 - Headless-Sim für Balancing (in Konsole):
   ```js

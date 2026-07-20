@@ -103,6 +103,30 @@ Stil: dunkel-episch mit Element-Glow.
       Meilenstein-Belohnungen + Tages-Bonus (50 Gold/Kalendertag).
       **Boss-Inszenierung** — S10/S20 `boss: true`: großer roter Map-Knoten,
       Intro-Auftritt des Boss-Sprites (Kampf startet eingefroren), Sieg-Schmuck.
+- [x] 19.07.: **Feature-Paket (Interview):** (1) **Fusion + Sammlung in ein Fenster**
+      (Umschalter-Tabs, `renderFusionBody`). (2) **Battlepass** ersetzt Fusion-Kachel
+      im Menü — kostenlos + Premium-Spur, Fortschritt aus Kämpfen + Tages-/Wochen-
+      Aufgaben, feste Season ~30 Tage (`js/bp.js`; Premium = Demo, echtes IAP Phase 4).
+      (3) **Idle-Animationen** — echte Frame-Sprites (atmen + blinzeln) global über
+      `creatureFrames`/Ticker. (4) **Kampf aufgeben** (Aufgeben-Button + Bestätigung)
+      **+ Team-Warnung** vor schwachem Matchup im Team-Select. (5) **Developer-Board**
+      in Optionen (alle 93 Kreaturen als Liste + Tools: Gold/Unlock/Max/Stages/BP-XP/
+      Galerie). (6) **Kampagne = Abteile** — Welt-Übersicht → Kapitel-Karte, Boss führt
+      zur nächsten Karte (`CHAPTERS`). sw.js → v2.
+- [x] 19.07. (Runde 2): **Kampf-Steuerung** neu — Auto-Ult + Tempo-Schalter raus,
+      stattdessen **Ult-Leiste** (Button je Kreatur, Gold-Glow bei Ready), Aufgeben-
+      Icon oben in die Ecke (kräftiger). **Ults mit eigenen Icons** (`ultIconName`) +
+      **Pokemon-artigen Animationen** (Projektil-Strom je Element / Support-Aura).
+      **Sammlung-Detail** icon-basiert (Ult-Icon in Tags + Fähigkeiten, Fließtext
+      raus). **Gold nur in der Sammlung.** **Kampagne:** Sternen-Hintergrund +
+      Kapitel-Themes (Wald usw.). sw.js → v3.
+- [x] 19.07. (Runde 3): **Ult-Effekte aufgemotzt** — größere Projektile/Partikel +
+      Einschlags-Blitz, bleibende **Schild-Barriere** bis Schild leer, **Heil-Glow**
+      + Heil-Icon über der Kreatur, eigene **Ult-Sounds** je Typ. **Kampagne-
+      Hintergründe** = Voll-Wallpaper (`#bg-layer`) statt gekacheltem Muster. sw.js → v4.
+- [x] 19.07. (Runde 4): **Dev-Kampf-Simulation** (Team gegen 3 Dummys, volle Energie,
+      keine Belohnung) im Dev-Board. **Map-Wallpaper eigene `sceneURI`-Variante 'map'**
+      (verwandt zur Arena, nicht gleich). sw.js → v5.
 - [ ] Mehr Kampagnen-Kapitel (Stages 21+, weitere Fusions-Rezepte für die 9 offenen Paare)
 - [ ] Idle-/Tages-Belohnungen, Erfolge
 - [ ] Team-Positionen (Front/Backline ausbauen — Engine kennt `enemyBackline` schon)

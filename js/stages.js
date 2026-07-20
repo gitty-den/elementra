@@ -7,6 +7,13 @@
 // - S8–S10 zeigen Fusions-Kreaturen (fx_*) als Gegner — Vorgeschmack aufs eigene
 //   Fusions-Endgame; Level per Headless-Sim ausbalanciert.
 
+// Kapitel/Abteile (19.07.2026): Kampagne = Welt-Übersicht -> Kapitel-Karte.
+// Boss-Sieg schaltet das nächste Kapitel frei (neue Karte). range = [erste, letzte].
+const CHAPTERS = [
+  { id: 1, name: 'Erwachen',      range: [1, 10],  theme: 'nature', bossStage: 10 },
+  { id: 2, name: 'Fusions-Ära',   range: [11, 20], theme: 'storm',  bossStage: 20 },
+];
+
 const STAGES = [
   {
     id: 1, name: 'Waldrand', theme: 'nature', desc: 'Junge Naturkreaturen streifen umher.',

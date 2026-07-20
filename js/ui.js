@@ -23,13 +23,20 @@ function showScreen(name) {
   // Hauptmenü ist die Landingpage: keine Topbar, kein Zurück; Subscreens
   // haben den Zurück-Pfeil in der Topbar (Hub-and-Spoke statt Bottom-Nav).
   document.body.classList.toggle('in-menu', name === 'menu');
+  // Gold-Anzeige nur in der Sammlung (inkl. Fusion-Tab) — Nutzer-Wunsch 19.07.
+  document.body.classList.toggle('gold-visible', name === 'collection' || name === 'fusion');
+  // Kampagne-Wallpaper standardmäßig leeren; renderWorld/renderChapterMap setzen es.
+  const bg = document.getElementById('bg-layer');
+  if (bg && name !== 'map') bg.innerHTML = '';
   const s = $('#screen');
   s.innerHTML = '';
   s.scrollTop = 0;
   if (name === 'menu') renderMenu(s);
   else if (name === 'map') renderMap(s);
   else if (name === 'collection') renderCollection(s);
-  else if (name === 'fusion') renderFusion(s);
+  else if (name === 'battlepass') renderBattlepass(s);
+  // Fusion lebt jetzt als Tab in der Sammlung (ein Fenster) — alte Aufrufe umleiten.
+  else if (name === 'fusion') { collMode = 'fusion'; currentScreen = 'collection'; renderCollection(s); }
   updateGoldDisplay();
 }
 
@@ -74,6 +81,17 @@ function starsHTML(n) {
   return [1, 2, 3].map(i => `<span class="star ${i <= n ? 'on' : ''}">${iconArt('star')}</span>`).join('');
 }
 
+// Ult-Icon je Effekt-Typ; offensive Nuke/MultiHit erben das Element-Icon
+// (Feuer = Flammenwurf, Natur = Rasierblatt …).
+const ULT_ICON_BY_EFFECT = {
+  teamShield: 'shield', teamHeal: 'heal', reviveOrHeal: 'revive',
+  spreadDotDebuff: 'skull', hitPlusBleed: 'fang',
+};
+function ultIconName(c) {
+  const eff = Abilities[c.active].effect;
+  return ULT_ICON_BY_EFFECT[eff] || c.element; // elementalNuke, multiHit -> Element
+}
+
 // ---------- Screen: Kampagnen-Weltkarte ----------
 // Vertikaler Zickzack-Pfad (Stage 1 unten, Weg führt nach oben), Scrollbar
 // unsichtbar. Medaillons mit Theme-Icons statt Nummern — sprachunabhängig,
@@ -85,23 +103,78 @@ const MAP_NODE_SPACING = 128;
 const MapThemeIcon = { fire: 'fire', nature: 'nature', water: 'water', storm: 'bolt', ash: 'ash', frost: 'frost' };
 const MapThemeGlow = { fire: '#ff7a3c', nature: '#7dff8a', water: '#5ab8ff', storm: '#b18aff', ash: '#e0965a', frost: '#a8e8ff' };
 
+// Kampagne = Welt-Übersicht (Kapitel-Auswahl) -> Kapitel-Karte. null = Übersicht.
+let currentChapter = null;
+
+function chapterUnlocked(ch) {
+  if (ch.id === 1) return true;
+  const prev = CHAPTERS.find(c => c.id === ch.id - 1);
+  return prev && Save.stages[prev.bossStage] > 0;
+}
+
+// Voll-Wallpaper hinter der Kampagne (#bg-layer, fixed über den Viewport) —
+// eine gefüllte Szene, kein gekacheltes Muster. Cache je Theme via Sprite-URI.
+function setCampaignWallpaper(theme) {
+  const bg = document.getElementById('bg-layer');
+  if (bg) bg.innerHTML = sceneArt(theme, 'map'); // 'map'-Variante: verwandt zur Arena, nicht gleich
+}
+
 function renderMap(root) {
+  if (currentChapter == null) renderWorld(root);
+  else renderChapterMap(root, currentChapter);
+}
+
+// Welt-Übersicht: eine Karte pro Kapitel (gesperrt bis Vorgänger-Boss besiegt).
+function renderWorld(root) {
+  setCampaignWallpaper('storm'); // Voll-Wallpaper (epischer Nachthimmel) hinter der Übersicht
+  const wrap = el('div', 'world-screen');
+  wrap.appendChild(el('div', 'screen-title', 'Kampagne'));
+  const list = el('div', 'world-list');
+  CHAPTERS.forEach(ch => {
+    const stages = STAGES.filter(s => s.id >= ch.range[0] && s.id <= ch.range[1]);
+    const unlocked = chapterUnlocked(ch);
+    const stars = stages.reduce((a, s) => a + (Save.stages[s.id] || 0), 0);
+    const maxStars = stages.length * 3;
+    const done = Save.stages[ch.bossStage] > 0;
+    const card = el('div', `world-card ${unlocked ? '' : 'locked'} ${done ? 'done' : ''}`);
+    card.style.setProperty('--theme-glow', MapThemeGlow[ch.theme] || '#b18aff');
+    card.innerHTML = `
+      <div class="wc-bg">${sceneArt(ch.theme, 'map')}</div>
+      <div class="wc-medal">${unlocked ? iconArt(MapThemeIcon[ch.theme] || 'bolt', 34) : iconArt('lock', 26)}</div>
+      <div class="wc-info">
+        <b>Kapitel ${ch.id}</b>
+        <span class="wc-name">${unlocked ? ch.name : '???'}</span>
+        <div class="bar wc-bar"><div class="fill" style="width:${maxStars ? stars / maxStars * 100 : 0}%"></div></div>
+        <span class="wc-prog">${iconArt('star', 13)} ${stars}/${maxStars}</span>
+      </div>
+      ${done ? `<div class="wc-check">${iconArt('star', 22)}</div>` : ''}`;
+    if (unlocked) card.onclick = () => { Sfx.click(); currentChapter = ch.id; showScreen('map'); };
+    list.appendChild(card);
+  });
+  wrap.appendChild(list);
+  root.appendChild(wrap);
+}
+
+function renderChapterMap(root, chId) {
+  const ch = CHAPTERS.find(c => c.id === chId) || CHAPTERS[0];
+  const stages = STAGES.filter(s => s.id >= ch.range[0] && s.id <= ch.range[1]);
+  setCampaignWallpaper(ch.theme); // Voll-Wallpaper im Kapitel-Theme (Wald/…) hinter der Karte
   const wrap = el('div', 'map-screen');
-  const height = STAGES.length * MAP_NODE_SPACING + 170;
+  const head = el('div', 'chapter-head');
+  head.innerHTML = `<button class="btn btn-ghost btn-sm" id="ch-world">${iconArt('back', 14)} Welt</button>
+    <span class="ch-title">Kapitel ${ch.id} — ${ch.name}</span>`;
+  wrap.appendChild(head);
+
+  const height = stages.length * MAP_NODE_SPACING + 170;
   const world = el('div', 'map-world');
   world.style.height = height + 'px';
-
-  const pos = STAGES.map((s, i) => ({
-    x: i % 2 === 0 ? 28 : 64,                    // Prozent der Breite
-    y: height - 140 - i * MAP_NODE_SPACING,      // px, Stage 1 unten
-  }));
-  // Gepixelter Pfad durch die Knoten-Mittelpunkte (Referenzbreite 390)
+  const pos = stages.map((s, i) => ({ x: i % 2 === 0 ? 28 : 64, y: height - 140 - i * MAP_NODE_SPACING }));
   const pts = pos.map(p => ({ x: p.x * 3.9, y: p.y + 36 }));
   world.innerHTML = `<img class="map-trail pixel-sprite" src="${mapTrailURI(pts, 390, height)}" alt="" draggable="false">`;
-  world.style.backgroundImage = `url(${starTileURI()})`;
+  // Kein gekacheltes Stern-Muster mehr — Hintergrund liefert das Voll-Wallpaper (#bg-layer).
 
   const current = highestClearedStage() + 1;
-  STAGES.forEach((stage, i) => {
+  stages.forEach((stage, i) => {
     const cleared = Save.stages[stage.id] || 0;
     const unlocked = stageUnlocked(stage.id);
     const node = el('div', `map-node ${cleared ? 'cleared' : ''} ${unlocked ? '' : 'locked'} ${stage.id === current ? 'current' : ''} ${stage.boss ? 'boss' : ''}`);
@@ -118,14 +191,17 @@ function renderMap(root) {
 
   wrap.appendChild(world);
   root.appendChild(wrap);
-  // Aktuelle Stage in die Bildmitte (nach Kampf & beim Öffnen gleich im Fokus)
-  const idx = Math.min(current, STAGES.length) - 1;
+  head.querySelector('#ch-world').onclick = () => { Sfx.click(); currentChapter = null; showScreen('map'); };
+
+  // Fokus auf die aktuelle Stage im Kapitel (sonst unterste).
+  let idx = stages.findIndex(s => s.id === current);
+  if (idx < 0) idx = 0;
   root.scrollTop = Math.max(0, pos[idx].y - root.clientHeight / 2 + 50);
 }
 
 // ---------- Swipe-Navigation zwischen den Subscreens (links/rechts) ----------
 
-const SWIPE_ORDER = ['map', 'collection', 'fusion'];
+const SWIPE_ORDER = ['map', 'collection'];
 
 function initSwipe() {
   const s = $('#screen');
@@ -145,6 +221,24 @@ function initSwipe() {
 }
 
 // ---------- Team-Auswahl ----------
+
+// Element-Konter (Feuer>Natur>Wasser>Feuer); Hybride sind neutral.
+const ELEMENT_STRONG = { fire: 'nature', nature: 'water', water: 'fire' };
+
+// Warnt vor schwachem Matchup: Front-Tank elementar gekontert ODER kein
+// Team-Mitglied stark gegen den vordersten Gegner.
+function teamWeakness(picked, stage) {
+  if (picked.length < 3) return null;
+  const enemyEls = stage.enemies.map(e => Creatures[e.id].element);
+  const teamEls = picked.map(id => Creatures[id].element);
+  const front = Creatures[picked[0]].element;
+  if (enemyEls.some(en => ELEMENT_STRONG[en] === front))
+    return 'Deine vorderste Kreatur wird elementar gekontert.';
+  const foeFront = enemyEls[0];
+  if (foeFront && !teamEls.some(te => ELEMENT_STRONG[te] === foeFront))
+    return 'Niemand im Team ist stark gegen den vordersten Gegner.';
+  return null;
+}
 
 function openTeamSelect(stage) {
   let picked = Save.team.filter(id => Save.collection[id]).slice(0, 3);
@@ -178,6 +272,7 @@ function openTeamSelect(stage) {
         ${owned.map(id => creatureCardHTML(id, Save.collection[id].level,
           { cls: picked.includes(id) ? 'picked' : '' })).join('')}
       </div>
+      ${(() => { const w = teamWeakness(picked, stage); return w ? `<div class="ts-warn">${iconArt('shield', 15)} ${w}</div>` : ''; })()}
       <div class="ov-actions">
         <button class="btn btn-ghost" id="ts-cancel">Zurück</button>
         <button class="btn btn-primary" id="ts-start" ${picked.length === 3 ? '' : 'disabled'}>Kampf starten ${iconArt('sword')}</button>
@@ -243,14 +338,12 @@ function beginBattle(stage, teamIds) {
   s.innerHTML = `
     <div class="battle-screen">
       <div class="battle-bg">${sceneArt(stage.theme)}</div>
+      <button class="battle-giveup" id="bt-giveup" title="Aufgeben">${iconArt('giveup', 26)}</button>
       <div class="battle-top">
         <div class="battle-stage-name">${stage.name}</div>
       </div>
       <div class="arena" id="arena"></div>
-      <div class="battle-bottom">
-        <button class="btn btn-ghost" id="bt-speed">1×</button>
-        <button class="btn btn-ghost" id="bt-auto">${iconArt('bolt', 16)} Auto</button>
-      </div>
+      <div class="battle-bottom" id="ult-bar"></div>
       <div id="ulti-banner"></div>
     </div>`;
 
@@ -268,20 +361,26 @@ function beginBattle(stage, teamIds) {
     setTimeout(() => intro.remove(), 2000);
   }
 
-  // Kein Zurück/Aufgeben im Kampf — raus geht es erst über das Ergebnis-Overlay.
-  $('#bt-speed').onclick = e => {
-    B.speed = B.speed === 1 ? 2 : 1;
-    e.target.textContent = B.speed + '×';
-    Sfx.click();
-  };
-  $('#bt-auto').onclick = e => {
-    battle.autoUlti = !battle.autoUlti;
-    e.target.classList.toggle('on', battle.autoUlti);
-    if (battle.autoUlti) battle.allies.forEach(u => {
-      if (u.alive && u.energy >= 100) u.ultiPlannedAt = battle.time;
-    });
-    Sfx.click();
-  };
+  // Aufgeben (oben in der Ecke, prägnantes Icon).
+  $('#bt-giveup').onclick = () => { Sfx.click(); showGiveUpConfirm(); };
+
+  // Ult-Leiste: ein Button je Team-Kreatur mit ihrem Ult-Icon; leuchtet gold bei
+  // voller Energie. Kein Auto-Ult, kein Tempo-Schalter mehr (Nutzer-Wunsch 19.07.).
+  B.ultBtns = {};
+  const ultBar = $('#ult-bar');
+  battle.allies.forEach(u => {
+    const btn = el('button', 'ult-btn', `
+      <div class="ult-btn-ico">${iconArt(ultIconName(u.c), 26)}</div>
+      <div class="bar ult-btn-energy"><div class="fill"></div></div>`);
+    btn.onclick = () => {
+      if (!B || B.battle.over || !u.alive || u.energy < 100) return;
+      Sfx.click();
+      castActive(B.battle, u);
+      renderBars();
+    };
+    B.ultBtns[u.uid] = btn;
+    ultBar.appendChild(btn);
+  });
 
   battle.on(onBattleEvent);
 
@@ -296,6 +395,31 @@ function beginBattle(stage, teamIds) {
     else renderBars();
   };
   B.raf = requestAnimationFrame(frame);
+}
+
+// Aufgeben: bestätigen, dann als Niederlage werten und Ergebnis zeigen.
+function showGiveUpConfirm() {
+  const ov = showOverlay(`
+    <div class="giveup-confirm">
+      <div class="gu-icon">${iconArt('flag', 40)}</div>
+      <div class="gu-q">Kampf aufgeben?</div>
+      <div class="gu-sub">Zählt als Niederlage — zurück zur Karte.</div>
+      <div class="ov-actions">
+        <button class="btn btn-ghost" id="gu-no">Weiter kämpfen</button>
+        <button class="btn btn-danger" id="gu-yes">Aufgeben</button>
+      </div>
+    </div>`, 'giveup-ov');
+  ov.querySelector('#gu-no').onclick = () => { Sfx.click(); closeOverlay(); };
+  ov.querySelector('#gu-yes').onclick = () => { Sfx.click(); closeOverlay(); giveUpBattle(); };
+}
+
+function giveUpBattle() {
+  if (!B || B.battle.over) return;
+  B.battle.over = true;
+  B.battle.winner = 'enemy';
+  B.endShown = true;               // verhindert doppeltes Ende über das 'end'-Event
+  if (B.raf) cancelAnimationFrame(B.raf);
+  showBattleResult('enemy');
 }
 
 // Debug: tickt den laufenden Kampf synchron um ms Millisekunden (16-ms-Schritte).
@@ -327,17 +451,11 @@ function buildUnitEl(u) {
     <div class="unit-body">
       <div class="unit-ring"></div>
       <div class="unit-shadow"></div>
+      <div class="shield-barrier"></div>
       <div class="unit-art">${creatureArt(u.c)}</div>
       <div class="fx-layer"></div>
     </div>`;
-  if (u.side === 'ally') {
-    card.onclick = () => {
-      if (B && !B.battle.over && u.alive && u.energy >= 100) {
-        castActive(B.battle, u);
-        renderBars();
-      }
-    };
-  }
+  // Ults werden über die Ult-Leiste gezündet, nicht mehr per Kreatur-Tap.
   B.unitEls[u.uid] = card;
   return card;
 }
@@ -351,9 +469,19 @@ function renderBars() {
     const sh = u.shield && u.shield.expiresAt > B.battle.time ? u.shield.amount : 0;
     card.querySelector('.shield-fill').style.width = Math.min(100, sh / u.maxHp * 100) + '%';
     card.querySelector('.energy-fill').style.width = u.energy + '%';
+    card.classList.toggle('shielded', sh > 0 && u.alive); // Barriere bleibt bis Schild leer
     card.classList.toggle('dead', !u.alive);
     card.classList.toggle('ulti-ready', u.alive && u.energy >= 100 && u.side === 'ally');
     card.classList.toggle('taunting', u.alive && u.tauntUntil > B.battle.time);
+  });
+  // Ult-Buttons: Energie-Füllstand + Gold-Glow bei Bereitschaft.
+  if (B.ultBtns) B.battle.allies.forEach(u => {
+    const btn = B.ultBtns[u.uid];
+    if (!btn) return;
+    const ready = u.alive && u.energy >= 100;
+    btn.querySelector('.ult-btn-energy .fill').style.width = u.energy + '%';
+    btn.classList.toggle('ready', ready);
+    btn.classList.toggle('spent', !u.alive);
   });
 }
 
@@ -418,6 +546,55 @@ function spawnUltiBurst(u) {
   setTimeout(() => wave.remove(), 700);
 }
 
+// Pokemon-artige Ult-Attacke: ein Strom von Element-Projektilen fliegt vom Wirker
+// zum Ziel (Feuer=Flammenwurf, Natur=Rasierblatt, Wasser=Wasserstrahl …).
+function spawnUltProjectile(u, target, count) {
+  const arena = document.querySelector('#arena');
+  const a = B && B.unitEls[u.uid], t = B && B.unitEls[target.uid];
+  if (!arena || !a || !t) return;
+  const ar = arena.getBoundingClientRect();
+  const as = a.getBoundingClientRect(), ts = t.getBoundingClientRect();
+  const x0 = as.left + as.width / 2 - ar.left, y0 = as.top + as.height * 0.42 - ar.top;
+  const x1 = ts.left + ts.width / 2 - ar.left, y1 = ts.top + ts.height * 0.46 - ar.top;
+  const elId = u.c.element;
+  const pal = PixelPalettes[elId];
+  const dir = u.side === 'enemy' ? -1 : 1;
+  for (let i = 0; i < count; i++) {
+    const p = el('div', 'ult-proj ult-proj-' + elId);
+    p.innerHTML = iconArt(elId, 34);
+    p.style.left = x0 + 'px';
+    p.style.top = y0 + 'px';
+    p.style.setProperty('--dx', (x1 - x0) + 'px');
+    p.style.setProperty('--dy', (y1 - y0) + 'px');
+    p.style.setProperty('--glow', pal.g);
+    p.style.setProperty('--spin', (dir * (elId === 'nature' ? 720 : 200)) + 'deg');
+    p.style.animationDelay = (i * 60) + 'ms';
+    arena.appendChild(p);
+    // Einschlag am Ziel, wenn das Projektil ankommt: großer Blitz + Partikelregen.
+    setTimeout(() => {
+      spawnParticles(target, pal.l, 12);
+      const tc = B && B.unitEls[target.uid];
+      if (tc) {
+        const imp = el('span', 'impact impact-ult');
+        tc.querySelector('.fx-layer').appendChild(imp);
+        setTimeout(() => imp.remove(), 420);
+      }
+      p.remove();
+    }, 300 + i * 60);
+  }
+}
+
+// Support-Ult (Schild/Heal/Wiedergeburt): Licht-Aura pulst auf der Zieleinheit.
+function spawnUltAura(unit, color) {
+  const card = B && B.unitEls[unit.uid];
+  if (!card) return;
+  const fx = card.querySelector('.fx-layer');
+  const ring = el('span', 'ult-aura');
+  ring.style.borderColor = color;
+  fx.appendChild(ring);
+  setTimeout(() => ring.remove(), 800);
+}
+
 function onBattleEvent(type, d) {
   switch (type) {
     case 'attack': {
@@ -459,11 +636,21 @@ function onBattleEvent(type, d) {
       }
       break;
     }
-    case 'heal':
+    case 'heal': {
       floatText(d.target, '+' + d.amount, 'healtxt');
-      spawnParticles(d.target, '#7dedb2', 7);
+      spawnParticles(d.target, '#7dedb2', 10);
+      const hc = B.unitEls[d.target.uid];
+      if (hc) {
+        hc.classList.remove('healed'); void hc.offsetWidth; hc.classList.add('healed');
+        setTimeout(() => hc.classList.remove('healed'), 750);
+        const ico = el('span', 'heal-icon');
+        ico.innerHTML = iconArt('heal', 22);
+        hc.querySelector('.fx-layer').appendChild(ico);
+        setTimeout(() => ico.remove(), 950);
+      }
       Sfx.heal();
       break;
+    }
     case 'absorb': floatText(d.target, '🛡 ' + d.amount, 'absorb'); break;
     case 'shieldGain': floatText(d.target, '🛡 Schild', 'absorb'); break;
     case 'poison': floatText(d.target, '☠ ×' + d.stacks, 'poison'); break;
@@ -472,6 +659,19 @@ function onBattleEvent(type, d) {
       // Kurzer Hit-Stop: Kampf friert ~260 ms ein, Ulti bekommt ihren Moment.
       B.freezeUntil = performance.now() + 260;
       spawnUltiBurst(d.unit);
+      // Gerichtete Ult-Animation je Effekt (Projektil-Strom bzw. Support-Aura).
+      const eff = d.ability.effect;
+      if (eff === 'teamShield' || eff === 'teamHeal' || eff === 'reviveOrHeal') {
+        aliveOnly(matesOf(B.battle, d.unit)).forEach(m => spawnUltAura(m, glow));
+      } else if (eff === 'spreadDotDebuff') {
+        aliveOnly(foesOf(B.battle, d.unit)).forEach(t => spawnUltProjectile(d.unit, t, 2));
+      } else {
+        const tgt = pickTarget(B.battle, d.unit, d.ability.target);
+        if (tgt) {
+          const count = eff === 'multiHit' ? d.ability.params.hits : 4;
+          spawnUltProjectile(d.unit, tgt, count);
+        }
+      }
       const caster = B.unitEls[d.unit.uid];
       if (caster) {
         caster.classList.remove('casting');
@@ -496,7 +696,11 @@ function onBattleEvent(type, d) {
           <b>${d.unit.c.name}</b> — ${d.ability.name}!</div>`;
         setTimeout(() => { banner.innerHTML = ''; }, 1300);
       }
-      Sfx.ulti();
+      // Eigener Ult-Sound je Effekt-Typ.
+      if (eff === 'teamShield') Sfx.ultShield();
+      else if (eff === 'teamHeal') Sfx.ultHeal();
+      else if (eff === 'reviveOrHeal') Sfx.ultRevive();
+      else Sfx.ultAttack(d.unit.c.element);
       break;
     }
     case 'die':
@@ -556,10 +760,15 @@ function xpRowHTML(gains) {
 
 function showBattleResult(winner) {
   if (!B) return; // Kampf wurde bereits verlassen (z. B. Aufgeben im Endmoment)
+  if (B.stage && B.stage.dev) { showDevBattleResult(winner); return; } // Sim: keine Belohnung
   const stage = B.stage;
   const teamIds = B.battle.allies.map(u => u.cid);
   const alive = B.battle.allies.filter(u => u.alive).length;
   const xpGains = grantTeamXp(stage, teamIds, winner === 'ally');
+  bpOnBattle(winner === 'ally'); // Battlepass-Punkte + Sieg/Kampf-Aufgaben
+  // Boss besiegt und nächstes Kapitel existiert -> Angebot „Nächste Karte".
+  const nextCh = (winner === 'ally' && stage.boss)
+    ? CHAPTERS.find(c => c.range[0] === stage.id + 1) : null;
   if (winner === 'ally') {
     Sfx.win();
     const rewards = grantStageRewards(stage, alive);
@@ -580,7 +789,9 @@ function showBattleResult(winner) {
         ${unlockHTML}
         <div class="ov-actions">
           <button class="btn btn-ghost" id="res-again">Nochmal</button>
-          <button class="btn btn-primary" id="res-next">Weiter</button>
+          ${nextCh
+            ? `<button class="btn btn-primary" id="res-nextch">Nächste Karte ${iconArt('map', 14)}</button>`
+            : `<button class="btn btn-primary" id="res-next">Weiter</button>`}
         </div>
       </div>`, 'result-ov');
   } else {
@@ -597,7 +808,13 @@ function showBattleResult(winner) {
       </div>`, 'result-ov');
   }
   const stageRef = stage;
-  $('#res-next').onclick = () => { Sfx.click(); closeOverlay(); endBattleUI(); showScreen('map'); };
+  const nextBtn = $('#res-next');
+  if (nextBtn) nextBtn.onclick = () => { Sfx.click(); closeOverlay(); endBattleUI(); showScreen('map'); };
+  const nextChBtn = $('#res-nextch');
+  if (nextChBtn) nextChBtn.onclick = () => {
+    Sfx.click(); closeOverlay(); endBattleUI();
+    currentChapter = nextCh.id; showScreen('map');
+  };
   $('#res-again').onclick = () => { Sfx.click(); closeOverlay(); endBattleUI(); openTeamSelect(stageRef); };
 }
 
@@ -628,9 +845,27 @@ function goalsPanelHTML() {
   }).join('')}</div>`;
 }
 
+// Sammlung + Fusion teilen sich ein Fenster (Nutzer-Wunsch 19.07.). Umschalter oben.
+let collMode = 'coll'; // 'coll' | 'fusion'
+
+function collTabsHTML() {
+  return `<div class="coll-tabs">
+    <button class="coll-tab ${collMode === 'coll' ? 'on' : ''}" data-m="coll">${iconArt('book', 18)} Sammlung</button>
+    <button class="coll-tab ${collMode === 'fusion' ? 'on' : ''}" data-m="fusion">${iconArt('orb', 18)} Fusion</button>
+  </div>`;
+}
+
 function renderCollection(root) {
   const wrap = el('div', 'coll-screen');
-  wrap.appendChild(el('div', 'screen-title', 'Sammlung'));
+  const tabs = el('div', '', collTabsHTML());
+  wrap.appendChild(tabs);
+  tabs.querySelectorAll('.coll-tab').forEach(t => t.onclick = () => {
+    if (collMode === t.dataset.m) return;
+    collMode = t.dataset.m; Sfx.click(); showScreen('collection');
+  });
+
+  if (collMode === 'fusion') { renderFusionBody(wrap); root.appendChild(wrap); return; }
+
   wrap.appendChild(el('div', '', goalsPanelHTML()));
   wrap.querySelectorAll('.goal-chip.ready').forEach(chip => chip.onclick = () => {
     const m = MILESTONES.find(x => x.id === chip.dataset.mid);
@@ -689,6 +924,7 @@ function openCreatureDetail(cid, opts = {}) {
         <div class="detail-tags">
           <span class="tag">${ElementIcons[c.element]}</span>
           <span class="tag">${iconArt(RoleInfo[c.role].icon, 16)}</span>
+          <span class="tag tag-ult">${iconArt(ultIconName(c), 16)}</span>
           <span class="tag">${isMax ? iconArt('star', 15) + ' MAX' : levelPipsHTML(entry.level)}</span>
         </div>
         ${isMax ? '' : `<div class="detail-xp"><div class="bar xp-bar">
@@ -701,8 +937,8 @@ function openCreatureDetail(cid, opts = {}) {
           <div class="stat">${iconArt('bolt', 17)}<b>${st.spd}</b></div>
         </div>
         <div class="ability-box">
-          <div class="ab">${iconArt('orb', 14)} <b>${Abilities[c.passive].name}:</b> ${AbilityDescriptions[c.passive]}</div>
-          <div class="ab">${iconArt('bolt', 14)} <b>${Abilities[c.active].name}:</b> ${AbilityDescriptions[c.active]}</div>
+          <div class="ab"><span class="ab-ico">${iconArt('orb', 20)}</span><b>${Abilities[c.passive].name}</b></div>
+          <div class="ab ab-ult"><span class="ab-ico">${iconArt(ultIconName(c), 20)}</span><b>${Abilities[c.active].name}</b></div>
         </div>
         <div class="ov-actions">
           <button class="btn btn-ghost" id="det-close">Schließen</button>
@@ -754,9 +990,9 @@ function levelPipsHTML(level) {
 
 let fusionPick = [];
 
-function renderFusion(root) {
+// Fusion-Inhalt in die Sammlung eingebettet (Tab „Fusion"). parent = coll-screen.
+function renderFusionBody(parent) {
   const wrap = el('div', 'fusion-screen');
-  wrap.appendChild(el('div', 'screen-title', 'Fusion'));
 
   fusionPick = fusionPick.filter(id => Save.collection[id]);
   const [a, b] = fusionPick;
@@ -823,11 +1059,11 @@ function renderFusion(root) {
     wrap.appendChild(g);
   }
 
-  root.appendChild(wrap);
+  parent.appendChild(wrap);
 
   row.querySelectorAll('.fx-slot').forEach(s => s.onclick = () => {
     const i = +s.dataset.slot;
-    if (fusionPick[i] !== undefined) { fusionPick.splice(i, 1); Sfx.click(); showScreen('fusion'); }
+    if (fusionPick[i] !== undefined) { fusionPick.splice(i, 1); Sfx.click(); showScreen('collection'); }
   });
   const fuseBtn = row.querySelector('.btn-fuse');
   if (fuseBtn) fuseBtn.onclick = () => { Sfx.click(); playFusion(fusionPick[0], fusionPick[1]); };
@@ -838,9 +1074,9 @@ function renderFusion(root) {
       if (fusionPick.includes(id)) fusionPick = fusionPick.filter(x => x !== id);
       else if (fusionPick.length < 2) fusionPick.push(id);
       Sfx.click();
-      showScreen('fusion');
+      showScreen('collection');
     };
-    attachLongPress(card, () => openCreatureDetail(card.dataset.cid, { onClose: () => showScreen('fusion') }));
+    attachLongPress(card, () => openCreatureDetail(card.dataset.cid, { onClose: () => showScreen('collection') }));
   });
 }
 
@@ -906,13 +1142,18 @@ function renderMenu(root) {
       <div class="menu-grid">
         <button class="menu-tile primary" data-goto="map">${iconArt('map', 36)}<span>Kampagne</span></button>
         <button class="menu-tile" data-goto="collection">${iconArt('book', 36)}<span>Sammlung</span></button>
-        <button class="menu-tile" data-goto="fusion">${iconArt('orb', 36)}<span>Fusion</span></button>
+        <button class="menu-tile" data-goto="battlepass">${iconArt('star', 36)}<span>Battlepass</span></button>
         <button class="menu-tile" id="menu-settings">${iconArt('gear', 36)}<span>Optionen</span></button>
       </div>
     </div>`;
   root.appendChild(wrap);
   wrap.querySelectorAll('[data-goto]').forEach(b =>
-    b.onclick = () => { Sfx.click(); showScreen(b.dataset.goto); });
+    b.onclick = () => {
+      Sfx.click();
+      if (b.dataset.goto === 'map') currentChapter = null; // Kampagne startet in der Welt-Übersicht
+      if (b.dataset.goto === 'collection') collMode = 'coll';
+      showScreen(b.dataset.goto);
+    });
   wrap.querySelector('#menu-settings').onclick = () => { Sfx.click(); openSettings(); };
 }
 
@@ -928,6 +1169,7 @@ function openSettings() {
         <input type="range" class="pixel-range" id="set-sfx" min="0" max="100" value="${pct(Save.settings.sfxVol)}"></div>
       <div class="set-row">${iconArt('music', 26)}
         <input type="range" class="pixel-range" id="set-music" min="0" max="100" value="${pct(Save.settings.musicVol)}"></div>
+      <button class="btn btn-ghost" id="set-dev">${iconArt('gear', 14)} Developer-Board</button>
       <button class="btn btn-danger" id="set-reset">Spielstand zurücksetzen</button>
       <div class="settings-info">Elementra — Prototyp v0.2</div>
       <div class="ov-actions">
@@ -950,6 +1192,7 @@ function openSettings() {
     Music.setVolume(+e.target.value / 100);
     paintFill(e.target);
   };
+  ov.querySelector('#set-dev').onclick = () => { Sfx.click(); openDevBoard(); };
   ov.querySelector('#set-reset').onclick = () => {
     if (confirm('Wirklich den kompletten Spielstand löschen?')) {
       resetSave();
@@ -958,6 +1201,109 @@ function openSettings() {
     }
   };
   ov.querySelector('#set-close').onclick = () => { Sfx.click(); closeOverlay(); };
+}
+
+// ---------- Dev-Kampf-Simulation: Team gegen unverwüstliche Dummys (Ults testen) ----------
+
+// Trainings-Dummy: viel LP, kaum Schaden, zündet nie eine Ult (trigger 'none' =
+// bekommt nie Energie). Nur zur Laufzeit registriert, taucht nirgends sonst auf (dev-Flag).
+Abilities.dummy_passive = { name: 'Reglos', trigger: 'none', effect: 'none', energyGain: 0, params: {} };
+Abilities.dummy_active = { name: '—', effect: 'elementalNuke', target: 'default', params: { atkMultiplier: 0 } };
+Creatures.dev_dummy = {
+  id: 'dev_dummy', name: 'Dummy', archetype: 'golem', element: 'steam',
+  rarity: 'common', tier: 1, baseStats: { hp: 5000, atk: 2, def: 0, spd: 1 },
+  passive: 'dummy_passive', active: 'dummy_active', dev: true,
+};
+
+function startDevBattle() {
+  const team = Save.team.filter(id => Save.collection[id]).slice(0, 3);
+  if (!team.length) { alert('Kein Team vorhanden — erst Kreaturen ins Team legen.'); return; }
+  closeOverlay();
+  const stage = {
+    id: 'dev', name: 'Dummy-Arena', theme: 'storm', dev: true,
+    enemies: [{ id: 'dev_dummy', level: 1 }, { id: 'dev_dummy', level: 1 }, { id: 'dev_dummy', level: 1 }],
+    gold: 0, firstClearBonus: 0, unlockCreature: null,
+  };
+  beginBattle(stage, team);
+  B.battle.allies.forEach(u => { u.energy = 100; }); // sofort volle Energie -> alle Ults testbar
+  renderBars();
+}
+
+function showDevBattleResult(winner) {
+  const overText = winner === 'ally' ? 'Dummies besiegt' : 'Sim beendet';
+  showOverlay(`
+    <div class="result ${winner === 'ally' ? 'victory' : 'defeat'}">
+      <h1>${overText}</h1>
+      <p class="defeat-tip">${iconArt('gear', 15)} Trainings-Simulation — keine Belohnung.</p>
+      <div class="ov-actions">
+        <button class="btn btn-ghost" id="res-devexit">Zurück</button>
+        <button class="btn btn-primary" id="res-devagain">Nochmal</button>
+      </div>
+    </div>`, 'result-ov');
+  $('#res-devexit').onclick = () => { Sfx.click(); closeOverlay(); endBattleUI(); openDevBoard(); };
+  $('#res-devagain').onclick = () => { Sfx.click(); closeOverlay(); endBattleUI(); startDevBattle(); };
+}
+
+// ---------- Developer-Board (Optionen -> Developer-Board): alle Kreaturen + Tools ----------
+
+function openDevBoard() {
+  const all = Object.values(Creatures).filter(c => !c.dev); // Dummy nicht listen
+  const base = all.filter(c => !c.fusion);
+  const fus = all.filter(c => c.fusion);
+  const rowHTML = c => {
+    const owned = Save.collection[c.id];
+    return `<div class="dev-row ${owned ? 'owned' : ''}">
+      <div class="dev-art">${creatureArt(c, { noAura: true })}</div>
+      <div class="dev-info">
+        <b>${c.name}</b>
+        <span>${ElementIcons[c.element]} ${c.archetype} · ${(RoleInfo[c.role] || {}).name || c.role}${owned ? ' · Lv ' + owned.level : ''}</span>
+        <span class="dev-stats">${iconArt('heart', 12)}${c.baseStats.hp} ${iconArt('sword', 12)}${c.baseStats.atk} ${iconArt('shield', 12)}${c.baseStats.def} ${iconArt('bolt', 12)}${c.baseStats.spd}</span>
+      </div>
+      <button class="btn btn-sm btn-ghost dev-add" data-cid="${c.id}">${owned ? 'MAX' : '+'}</button>
+    </div>`;
+  };
+  const ov = showOverlay(`
+    <div class="dev-board">
+      <h2>Developer-Board</h2>
+      <div class="dev-tools">
+        <button class="btn btn-sm btn-primary" id="dev-sim">${iconArt('sword', 13)} Kampf-Sim (Dummys)</button>
+        <button class="btn btn-sm" id="dev-gold">+1000 ${iconArt('coin', 13)}</button>
+        <button class="btn btn-sm" id="dev-unlock">Alle freischalten</button>
+        <button class="btn btn-sm" id="dev-max">Alle Max-Level</button>
+        <button class="btn btn-sm" id="dev-stage">Alle Stages</button>
+        <button class="btn btn-sm" id="dev-bpxp">+500 BP-XP</button>
+        <button class="btn btn-sm" id="dev-gallery">Sprite-Galerie</button>
+      </div>
+      <div class="dev-sub">Basis-Kreaturen (${base.length})</div>
+      <div class="dev-list">${base.map(rowHTML).join('')}</div>
+      <div class="dev-sub">Fusionen (${fus.length})</div>
+      <div class="dev-list">${fus.map(rowHTML).join('')}</div>
+      <div class="ov-actions"><button class="btn btn-primary" id="dev-close">Schließen</button></div>
+    </div>`, 'dev-ov');
+  const after = () => { persist(); updateGoldDisplay(); };
+  ov.querySelector('#dev-sim').onclick = () => { Sfx.click(); startDevBattle(); };
+  ov.querySelector('#dev-gold').onclick = () => { Save.gold += 1000; after(); Sfx.win(); openDevBoard(); };
+  ov.querySelector('#dev-unlock').onclick = () => {
+    Object.keys(Creatures).forEach(id => { if (!Save.collection[id]) Save.collection[id] = { level: 1, xp: 0 }; });
+    after(); Sfx.win(); openDevBoard();
+  };
+  ov.querySelector('#dev-max').onclick = () => {
+    Object.values(Save.collection).forEach(e => { e.level = MAX_LEVEL; e.xp = 0; });
+    after(); Sfx.win(); openDevBoard();
+  };
+  ov.querySelector('#dev-stage').onclick = () => {
+    STAGES.forEach(s => { if (!Save.stages[s.id]) Save.stages[s.id] = 1; });
+    after(); Sfx.win(); openDevBoard();
+  };
+  ov.querySelector('#dev-bpxp').onclick = () => { Save.bp.xp += 500; after(); Sfx.win(); openDevBoard(); };
+  ov.querySelector('#dev-gallery').onclick = () => { Sfx.click(); openPixelTest(); };
+  ov.querySelectorAll('.dev-add').forEach(b => b.onclick = () => {
+    const id = b.dataset.cid;
+    if (!Save.collection[id]) Save.collection[id] = { level: 1, xp: 0 };
+    else Save.collection[id].level = MAX_LEVEL;
+    after(); Sfx.click(); openDevBoard();
+  });
+  ov.querySelector('#dev-close').onclick = () => { Sfx.click(); openSettings(); };
 }
 
 // ---------- Sprite-Galerie (Debug/Design-Review, nur noch per Konsole: openPixelTest()) ----------

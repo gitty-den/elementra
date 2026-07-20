@@ -477,8 +477,64 @@ function creatureArt(c, opts = {}) {
   if (!uri) return '';
   const glow = opts.noAura ? '' :
     ` style="filter: drop-shadow(0 0 5px ${Elements[c.element].color}66)"`;
-  return `<img class="pixel-sprite" src="${uri}"${glow} alt="${c.name}" draggable="false">`;
+  // Idle-Frames: data-arch/-el markieren den Sprite für den globalen Atmen/Blinzeln-Ticker.
+  const anim = opts.noAnim ? '' : ` data-arch="${c.archetype}" data-el="${c.element}"`;
+  const cls = 'pixel-sprite' + (opts.noAnim ? '' : ' creature-sprite');
+  return `<img class="${cls}" src="${uri}"${glow}${anim} alt="${c.name}" draggable="false">`;
 }
+
+// ---- Idle-Animation (19.07.2026): echte Frame-Sprites, prozedural aus dem Basis-
+// Sprite erzeugt. Frame 0 = Ruhe; Frame 1 = ausatmen (1px flacher, nach unten
+// gesetzt) + Augen zu (e/p -> Körperton m). Ein globaler Ticker swappt img.src
+// zwischen den zwei gecachten dataURIs — Kreaturen atmen/blinzeln überall.
+
+function _charCanvas(def, pal, rows) {
+  const canvas = document.createElement('canvas');
+  canvas.width = PIXEL_SIZE; canvas.height = PIXEL_SIZE;
+  const ctx = canvas.getContext('2d');
+  rows.forEach((r, i) => {
+    const row = def.symmetric ? r + [...r].reverse().join('') : r;
+    for (let x = 0; x < row.length; x++) {
+      const ch = row[x];
+      if (ch === '.') continue;
+      ctx.fillStyle = pal[ch] || '#ff00ff';
+      ctx.fillRect(x, (def.top || 0) + i, 1, 1);
+    }
+  });
+  return canvas;
+}
+
+const _creatureFrameCache = {};
+function creatureFrames(archetype, element) {
+  const key = archetype + '_' + element;
+  if (_creatureFrameCache[key]) return _creatureFrameCache[key];
+  const def = PixelArchetypes[archetype];
+  const pal = PixelPalettes[element];
+  if (!def || !pal) return null;
+  const base = pixelSpriteURI(archetype, element);
+  // Frame 1: Augen zu (Blinzeln) + gestauchter Körper (Atmen), scharf skaliert.
+  const blinkRows = def.rows.map(r => r.replace(/[ep]/g, 'm'));
+  const src = _charCanvas(def, pal, blinkRows);
+  const f1 = document.createElement('canvas');
+  f1.width = PIXEL_SIZE; f1.height = PIXEL_SIZE;
+  const ctx = f1.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(src, 0, 0, PIXEL_SIZE, PIXEL_SIZE, 0, 2, PIXEL_SIZE, PIXEL_SIZE - 2);
+  _creatureFrameCache[key] = [base, f1.toDataURL()];
+  return _creatureFrameCache[key];
+}
+
+// Globaler Ruhe-Ticker: langsamer als Angriffs-/Ulti-Animationen, damit es lebt
+// ohne zu zappeln. Läuft auch bei verstecktem Tab weiter (billig).
+let _idleTick = 0;
+setInterval(() => {
+  _idleTick ^= 1;
+  const imgs = document.querySelectorAll('img.creature-sprite');
+  for (const img of imgs) {
+    const f = creatureFrames(img.dataset.arch, img.dataset.el);
+    if (f) img.src = f[_idleTick];
+  }
+}, 540);
 
 // ===================== Pixel-Icons (ersetzen alle Emoji/Vektor-Icons) =====================
 // 12×12-Char-Maps, eigene Mini-Palette je Icon.
@@ -609,6 +665,30 @@ const PixelIcons = {
     'mmmlhhhlmmm.', '..mllhllm...', '...mlllm....', '..m.mlm.m...', '.m...m...m..',
     '.....m......', '............',
   ] },
+  // Weiße Aufgabe-Fahne am Mast (Kampf aufgeben).
+  flag: { pal: { o: '#1a1a22', m: '#8a8fa8', l: '#eef2ff' }, rows: [
+    '..o.........', '..ollllo....', '..ollllllo..', '..olllllllo.', '..ollllllo..',
+    '..olllllo...', '..ollo......', '..o.........', '..o.........', '..o.........',
+    '.ooo........', '............',
+  ] },
+  // Kräftige Aufgeben-Fahne (dickes Tuch + fetter Mast) — prägnanter als flag.
+  giveup: { pal: { o: '#141019', d: '#b3352f', m: '#e8564a', l: '#ff8a80' }, rows: [
+    '.ooo........', '.ollllllo...', '.olmmmmllo..', '.olmllmmllo.', '.olmmmmmllo.',
+    '.olmllmmllo.', '.ollllllllo.', '.oooooooooo.', '.oo.........', '.oo.........',
+    '.oo.........', 'oooo........',
+  ] },
+  // Heil-Kreuz (Team-Heal-Ult).
+  heal: { pal: { o: '#0f3a1a', m: '#37c76f', l: '#b6ffcf' }, rows: [
+    '............', '....mmmm....', '....mllm....', '.mmmmllmmmm.', '.mlllllllllm',
+    '.mlllllllllm', '.mmmmllmmmm.', '....mllm....', '....mmmm....', '............',
+    '............', '............',
+  ] },
+  // Wiedergeburt/Aufrichten (Revive-Ult): Lichtpfeil nach oben.
+  revive: { pal: { m: '#e0a72c', l: '#fff3b0' }, rows: [
+    '.....ll.....', '....llll....', '...ll..ll...', '..ll.ll.ll..', '.ll..ll..ll.',
+    'll...ll...ll', '.....ll.....', '.....ll.....', '.....ll.....', '....llll....',
+    '............', '............',
+  ] },
 };
 
 // ===================== Lagerfeuer (Hauptmenü-Szene, 2 Flacker-Frames) =====================
@@ -710,18 +790,24 @@ function _hexLerp(a, b, t) {
 
 const sceneURICache = {};
 
-function sceneURI(themeName) {
-  if (sceneURICache[themeName]) return sceneURICache[themeName];
+// variant '' = Kampf-Arena (Standard). variant 'map' = Kampagne-Wallpaper: gleiche
+// Palette/Stimmung, aber andere Komposition (tieferer Horizont, drei Bergketten,
+// zweiter versetzter Mond, mehr Sterne, dunkle Vordergrund-Silhouette) — verwandt,
+// nicht identisch mit dem Arena-Hintergrund.
+function sceneURI(themeName, variant = '') {
+  const key = themeName + '|' + variant;
+  if (sceneURICache[key]) return sceneURICache[key];
   const t = SceneThemes[themeName] || SceneThemes.storm;
+  const isMap = variant === 'map';
   const w = 96, h = 160;
-  const rnd = _rng(_hashStr(themeName));
+  const rnd = _rng(_hashStr(themeName + variant));
   const canvas = document.createElement('canvas');
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d');
 
   // Himmel: 4 Farbstufen mit 2×2-Dithering
   const skyLevels = [0, 1, 2, 3].map(i => _hexLerp(t.sky1, t.sky2, i / 3));
-  const horizon = Math.round(h * 0.66);
+  const horizon = Math.round(h * (isMap ? 0.74 : 0.66));
   for (let y = 0; y < horizon; y++) {
     const q = (y / horizon) * 3;
     const base = Math.floor(q), frac = q - base;
@@ -731,19 +817,23 @@ function sceneURI(themeName) {
       ctx.fillRect(x, y, 1, 1);
     }
   }
-  // Sterne
+  // Sterne (auf der Map mehr, für weiten Vista-Himmel)
   ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  for (let i = 0; i < 22; i++) ctx.fillRect(Math.floor(rnd() * w), Math.floor(rnd() * horizon * 0.7), 1, 1);
-  // Mond/Orb mit Halo
-  const ox = Math.round(w * 0.72), oy = Math.round(h * 0.15), orad = 8;
+  for (let i = 0; i < (isMap ? 36 : 22); i++) ctx.fillRect(Math.floor(rnd() * w), Math.floor(rnd() * horizon * 0.7), 1, 1);
+  // Mond/Orb mit Halo (auf der Map größer und nach links versetzt)
+  const ox = Math.round(w * (isMap ? 0.26 : 0.72)), oy = Math.round(h * (isMap ? 0.12 : 0.15));
+  const orad = isMap ? 11 : 8;
   for (let y = oy - orad - 4; y <= oy + orad + 4; y++) for (let x = ox - orad - 4; x <= ox + orad + 4; x++) {
     const d = Math.hypot(x - ox, y - oy);
     if (d <= orad) { ctx.globalAlpha = Math.min(1, t.orbOp * 3); ctx.fillStyle = t.orb; ctx.fillRect(x, y, 1, 1); }
     else if (d <= orad + 4) { ctx.globalAlpha = t.orbOp * 0.6; ctx.fillStyle = t.orb; ctx.fillRect(x, y, 1, 1); }
   }
   ctx.globalAlpha = 1;
-  // Zwei Bergketten (Random Walk, deterministisch je Theme)
-  [[t.far, 0.44], [t.near, 0.55]].forEach(([col, fy]) => {
+  // Bergketten (Random Walk); Map hat eine dritte, dunstig-ferne Kette dahinter.
+  const ranges = isMap
+    ? [[_hexLerp(t.far, t.sky2, 0.45), 0.34], [t.far, 0.48], [t.near, 0.6]]
+    : [[t.far, 0.44], [t.near, 0.55]];
+  ranges.forEach(([col, fy]) => {
     ctx.fillStyle = col;
     let ry = Math.round(h * fy);
     for (let x = 0; x < w; x++) {
@@ -765,13 +855,23 @@ function sceneURI(themeName) {
   }
   ctx.fillStyle = _hexLerp(t.ground1, '#ffffff', 0.12);
   ctx.fillRect(0, horizon, w, 1);
+  // Map: dunkle Vordergrund-Silhouette (Hügelkamm) am unteren Rand für Tiefe.
+  if (isMap) {
+    ctx.fillStyle = _hexLerp(t.ground2, '#000000', 0.55);
+    let ry = Math.round(h * 0.9);
+    for (let x = 0; x < w; x++) {
+      ry += Math.round((rnd() - 0.5) * 7);
+      ry = Math.max(Math.round(h * 0.85), Math.min(h - 2, ry));
+      ctx.fillRect(x, ry, 1, h - ry);
+    }
+  }
 
-  sceneURICache[themeName] = canvas.toDataURL();
-  return sceneURICache[themeName];
+  sceneURICache[key] = canvas.toDataURL();
+  return sceneURICache[key];
 }
 
-function sceneArt(themeName) {
-  return `<img class="pixel-sprite scene-art" src="${sceneURI(themeName)}" alt="" draggable="false">`;
+function sceneArt(themeName, variant = '') {
+  return `<img class="pixel-sprite scene-art" src="${sceneURI(themeName, variant)}" alt="" draggable="false">`;
 }
 
 // ===================== Titel-Emblem: 4 Varianten, Auswahl in ⚙ → Logo =====================

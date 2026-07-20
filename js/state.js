@@ -178,6 +178,25 @@ function defaultSave() {
     milestones: {},        // milestoneId -> true (abgeholt)
     lastLogin: null,       // 'YYYY-MM-DD' des letzten Tages-Bonus
     settings: { sfxVol: 1, musicVol: 1 }, // Regler 0–1 statt An/Aus (17.07.2026)
+    bp: defaultBP(),       // Battlepass (Season, XP, Quests, abgeholte Stufen)
+  };
+}
+
+// Season-Rhythmus ~30 Tage ab fester Epoche (bp.js nutzt dieselbe Funktion).
+const SEASON_EPOCH = Date.UTC(2026, 6, 1);   // 01.07.2026
+const SEASON_MS = 30 * 24 * 60 * 60 * 1000;
+function currentSeason() { return Math.floor((Date.now() - SEASON_EPOCH) / SEASON_MS) + 1; }
+
+// Battlepass-Grunddaten (19.07.2026). Season ~30 Tage, danach Reset der Bahn.
+function defaultBP() {
+  return {
+    season: currentSeason(),
+    xp: 0,                 // Battlepass-Punkte
+    premium: false,        // Premium-Spur freigeschaltet (Prototyp: Demo-Schalter)
+    claimedFree: {},       // tier -> true
+    claimedPrem: {},       // tier -> true
+    cosmetics: {},         // cosmeticId -> true
+    quests: null,          // { day, week, daily:[...], weekly:[...] } — lazy in bp.js
   };
 }
 
@@ -203,6 +222,11 @@ function loadSave() {
       delete s.settings.sfx; delete s.settings.music; delete s.settings.emblem;
       // Migration Kampf-XP: alten Einträgen xp-Feld geben.
       Object.values(s.collection).forEach(e => { if (typeof e.xp !== 'number') e.xp = 0; });
+      // Migration Battlepass: Feld anlegen; neue Season -> Bahn zurücksetzen.
+      if (!s.bp) s.bp = defaultBP();
+      if (s.bp.season !== currentSeason()) {
+        s.bp = Object.assign(defaultBP(), { premium: false });
+      }
       return s;
     }
   } catch (e) { console.warn('Speicherstand unlesbar, starte neu.', e); }
@@ -244,6 +268,7 @@ function levelUp(id) {
   Save.gold -= levelUpCost(Save.collection[id].level);
   Save.collection[id].level++;
   Save.collection[id].xp = 0; // Gold-Kauf startet das neue Level frisch
+  if (typeof bpTrack === 'function') bpTrack('levelup');
   persist();
   return true;
 }
@@ -300,6 +325,7 @@ function fuseCreatures(cidA, cidB) {
     if (!spare) break;
     Save.team.push(spare);
   }
+  if (typeof bpTrack === 'function') bpTrack('fusion');
   persist();
   return out;
 }

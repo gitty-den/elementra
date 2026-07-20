@@ -45,6 +45,25 @@ const Sfx = {
   },
   ulti()  { this.tone(220, 0.35, 'sawtooth', 0.1, 880); },
   heal()  { this.tone(520, 0.18, 'sine', 0.09, 780); },
+  // Eigene Ult-Sounds je Typ (auffälliger als der generische ulti-Sweep).
+  ultShield() {
+    [294, 392, 587].forEach((f, i) => this.tone(f, 0.32, 'triangle', 0.1, null, i * 0.05));
+    this.tone(160, 0.5, 'sine', 0.06, 320);           // tiefes Brummen der Barriere
+  },
+  ultHeal()   { [523, 659, 880, 1175].forEach((f, i) => this.tone(f, 0.26, 'sine', 0.1, null, i * 0.05)); },
+  ultRevive() { [392, 523, 659, 784, 1047, 1319].forEach((f, i) => this.tone(f, 0.3, 'triangle', 0.11, null, i * 0.07)); },
+  ultAttack(el) {
+    switch (el) {
+      case 'fire': case 'ash':
+        this.tone(90, 0.38, 'sawtooth', 0.13, 260); this.tone(1500, 0.28, 'square', 0.05, 180, 0.03); break;
+      case 'nature':
+        this.tone(150, 0.3, 'triangle', 0.12, 950); this.tone(2200, 0.14, 'square', 0.035, 3200, 0.02); break;
+      case 'water': case 'frost':
+        this.tone(300, 0.32, 'sine', 0.12, 1250); this.tone(1600, 0.2, 'triangle', 0.045, 600, 0.05); break;
+      default:
+        this.tone(180, 0.36, 'sawtooth', 0.12, 720);
+    }
+  },
   die()   { this.tone(300, 0.4, 'sawtooth', 0.08, 60); },
   win()   { [523, 659, 784, 1047].forEach((f, i) => this.tone(f, 0.22, 'triangle', 0.1, null, i * 0.13)); },
   lose()  { [400, 330, 262].forEach((f, i) => this.tone(f, 0.3, 'sine', 0.1, null, i * 0.2)); },
