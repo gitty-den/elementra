@@ -29,6 +29,52 @@ const Sfx = {
     osc.start(t0);
     osc.stop(t0 + dur + 0.02);
   },
+  // ---- Rausch-Kanal (20.07.2026) ----
+  // Echte 8-Bit-Chips (NES/Game Boy) hatten neben den Ton-Kanälen einen Noise-
+  // Kanal — genau der fehlte hier. Damit klingen Feuer (Fauchen), Dampf (Zischen)
+  // und Frost (Klirren) endlich unterscheidbar, ohne den Chiptune-Charakter zu
+  // verlieren: die Melodie-Anteile bleiben Square/Triangle/Saw.
+  noiseBuf: null,
+  getNoise(ctx) {
+    if (!this.noiseBuf) {
+      const len = ctx.sampleRate * 2;
+      this.noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
+      const d = this.noiseBuf.getChannelData(0);
+      // Grobkörniges Rauschen: Wert nur alle paar Samples neu (klingt „digital",
+      // nicht wie sauberes weißes Rauschen aus einer Wave-Datei).
+      let v = 0;
+      for (let i = 0; i < len; i++) {
+        if (i % 3 === 0) v = Math.random() * 2 - 1;
+        d[i] = v;
+      }
+    }
+    return this.noiseBuf;
+  },
+  // Gefiltertes Rauschen mit Filter-Sweep. o.type: 'lowpass'|'highpass'|'bandpass'.
+  noise(dur, o = {}) {
+    if (!this.enabled) return;
+    const ctx = this.ensure();
+    if (!ctx) return;
+    const t0 = ctx.currentTime + (o.delay || 0);
+    const src = ctx.createBufferSource();
+    src.buffer = this.getNoise(ctx);
+    src.loop = true;
+    const f = ctx.createBiquadFilter();
+    f.type = o.type || 'bandpass';
+    f.frequency.setValueAtTime(o.freq || 1000, t0);
+    if (o.freqTo) f.frequency.exponentialRampToValueAtTime(o.freqTo, t0 + dur);
+    f.Q.value = o.q == null ? 1 : o.q;
+    const g = ctx.createGain();
+    const vol = (o.vol == null ? 0.1 : o.vol) * this.volume;
+    const atk = o.attack == null ? 0.012 : o.attack;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + atk);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(f).connect(g).connect(ctx.destination);
+    src.start(t0);
+    src.stop(t0 + dur + 0.02);
+  },
+
   click() { this.tone(660, 0.06, 'triangle', 0.08); },
   // Angriffs-Sound je Element: Feuer knistert, Wasser ploppt, Natur schlägt dumpf,
   // Dampf zischt, Asche grollt, Frost klirrt. Ohne Element: alter Einheits-Hit.
@@ -45,22 +91,65 @@ const Sfx = {
   },
   ulti()  { this.tone(220, 0.35, 'sawtooth', 0.1, 880); },
   heal()  { this.tone(520, 0.18, 'sine', 0.09, 780); },
-  // Eigene Ult-Sounds je Typ (auffälliger als der generische ulti-Sweep).
+  // ---- Ult-Sounds (überarbeitet 20.07.2026) ----
+  // Bauplan je Ult: 1 Ton-Kern (Chiptune-Charakter) + 1 Rausch-Schicht (Textur)
+  // + 1 Akzent (Transiente). Dadurch klingt jede Ult nach dem, was sie TUT.
+
+  // Schild: Metall rastet ein, danach summt die Barriere.
   ultShield() {
-    [294, 392, 587].forEach((f, i) => this.tone(f, 0.32, 'triangle', 0.1, null, i * 0.05));
-    this.tone(160, 0.5, 'sine', 0.06, 320);           // tiefes Brummen der Barriere
+    [294, 392, 587].forEach((f, i) => this.tone(f, 0.34, 'triangle', 0.1, null, i * 0.045));
+    this.tone(160, 0.55, 'sine', 0.07, 320);                                  // Brummen der Barriere
+    this.noise(0.09, { type: 'bandpass', freq: 2600, freqTo: 1400, q: 6, vol: 0.09 }); // „Klong"
   },
-  ultHeal()   { [523, 659, 880, 1175].forEach((f, i) => this.tone(f, 0.26, 'sine', 0.1, null, i * 0.05)); },
-  ultRevive() { [392, 523, 659, 784, 1047, 1319].forEach((f, i) => this.tone(f, 0.3, 'triangle', 0.11, null, i * 0.07)); },
+  // Heilung: weiche Glocke, aufsteigend, mit Luft-Schimmer statt Kratzen.
+  ultHeal() {
+    [523, 659, 880, 1175].forEach((f, i) => this.tone(f, 0.3, 'sine', 0.09, null, i * 0.055));
+    [1047, 1319].forEach((f, i) => this.tone(f, 0.5, 'triangle', 0.035, null, 0.12 + i * 0.06));
+    this.noise(0.5, { type: 'highpass', freq: 3200, freqTo: 7000, q: 0.6, vol: 0.03, attack: 0.15 });
+  },
+  // Wiedergeburt: Chor steigt auf, am Schluss ein heller Funke.
+  ultRevive() {
+    [392, 523, 659, 784, 1047, 1319].forEach((f, i) => this.tone(f, 0.34, 'triangle', 0.1, null, i * 0.065));
+    this.tone(1568, 0.5, 'sine', 0.06, null, 0.4);
+    this.noise(0.55, { type: 'highpass', freq: 2400, freqTo: 8000, q: 0.7, vol: 0.045, attack: 0.2 });
+  },
   ultAttack(el) {
     switch (el) {
-      case 'fire': case 'ash':
-        this.tone(90, 0.38, 'sawtooth', 0.13, 260); this.tone(1500, 0.28, 'square', 0.05, 180, 0.03); break;
+      case 'fire':
+        // Flammenwurf: langes Fauchen (breitbandiges Rauschen) über tiefem Grollen.
+        this.noise(0.62, { type: 'bandpass', freq: 480, freqTo: 1800, q: 0.8, vol: 0.13, attack: 0.06 });
+        this.tone(70, 0.5, 'sawtooth', 0.11, 180);
+        this.tone(1200, 0.07, 'square', 0.04, 300);                     // Zündfunke
+        break;
+      case 'ash':
+        // Aschesturm: dumpfer, körniger, ohne die hellen Spitzen des Feuers.
+        this.noise(0.7, { type: 'lowpass', freq: 900, freqTo: 260, q: 1, vol: 0.13, attack: 0.09 });
+        this.tone(58, 0.6, 'square', 0.1, 130);
+        break;
       case 'nature':
-        this.tone(150, 0.3, 'triangle', 0.12, 950); this.tone(2200, 0.14, 'square', 0.035, 3200, 0.02); break;
-      case 'water': case 'frost':
-        this.tone(300, 0.32, 'sine', 0.12, 1250); this.tone(1600, 0.2, 'triangle', 0.045, 600, 0.05); break;
+        // Rasierblatt: scharfer Schnitt-Whoosh, danach das Zischen der Klinge.
+        this.noise(0.18, { type: 'bandpass', freq: 3400, freqTo: 900, q: 4, vol: 0.12 });
+        this.tone(160, 0.28, 'triangle', 0.1, 1100);
+        this.noise(0.14, { type: 'highpass', freq: 5200, q: 1, vol: 0.05, delay: 0.16 });
+        break;
+      case 'water':
+        // Wasserstrahl: Schwall aus dunklem Rauschen, Tonhöhe steigt mit dem Druck.
+        this.noise(0.5, { type: 'lowpass', freq: 700, freqTo: 2600, q: 2, vol: 0.12, attack: 0.05 });
+        this.tone(260, 0.36, 'sine', 0.1, 1100);
+        break;
+      case 'frost':
+        // Frost: splitterndes Klirren oben, kalter Ton drunter.
+        this.noise(0.34, { type: 'highpass', freq: 4200, freqTo: 9000, q: 1.5, vol: 0.1 });
+        [1568, 2093, 2637].forEach((f, i) => this.tone(f, 0.16, 'triangle', 0.05, null, i * 0.05));
+        this.tone(300, 0.3, 'sine', 0.07, 190);
+        break;
+      case 'steam':
+        // Dampf: reines Zischen, kaum Tonhöhe — Druck entweicht.
+        this.noise(0.6, { type: 'highpass', freq: 2200, freqTo: 5200, q: 0.7, vol: 0.12, attack: 0.04 });
+        this.tone(420, 0.3, 'sine', 0.05, 900);
+        break;
       default:
+        this.noise(0.4, { type: 'bandpass', freq: 1200, freqTo: 500, q: 1.2, vol: 0.09 });
         this.tone(180, 0.36, 'sawtooth', 0.12, 720);
     }
   },

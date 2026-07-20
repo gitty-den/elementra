@@ -71,8 +71,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(showDailyBonus, 2700);
   }
 
-  // PWA: Service Worker nur über http(s) — file:// wirft SecurityError
-  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  // PWA: Service Worker nur über http(s) — file:// wirft SecurityError.
+  // Auf localhost NICHT registrieren: der Offline-Cache lieferte beim Entwickeln
+  // hartnäckig alten Code (stale-while-revalidate). Vorhandene Registrierungen
+  // dort wieder abräumen, sonst hängt der Cache aus früheren Sitzungen fest.
+  const isDevHost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  if ('serviceWorker' in navigator && isDevHost) {
+    navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister()));
+    if (window.caches) caches.keys().then(ks => ks.forEach(k => caches.delete(k)));
+  } else if ('serviceWorker' in navigator && location.protocol !== 'file:') {
     navigator.serviceWorker.register('sw.js').catch((err) => console.warn('SW-Registrierung fehlgeschlagen:', err));
   }
 });

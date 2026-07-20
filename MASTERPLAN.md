@@ -136,6 +136,11 @@ Stil: dunkel-episch mit Element-Glow.
       Beschreibung und Hinweiszeilen raus, Belohnung nur Icon+Zahl, Warnung nur
       Icon, Grid zeigt zuerst 6 Empfehlungen; **Tausch per zwei Taps in beliebiger
       Reihenfolge**. sw.js → v6.
+- [x] 20.07. (Runde 6): **Ult-Feedback nachgeschärft** — Flammenwurf als dicker,
+      flackernder Strahl mit dreifachem Projektil-Strom (`UltStreamStyle`),
+      Heilung als leuchtender Boden-Kreis unter dem Team (`spawnHealField`),
+      und **Rausch-Kanal im Synth** (`Sfx.noise`): Feuer faucht, Dampf zischt,
+      Frost klirrt, Natur schneidet — vorher klangen alle Ults gleich.
 - [ ] Mehr Kampagnen-Kapitel (Stages 21+, weitere Fusions-Rezepte für die 9 offenen Paare)
 - [ ] Idle-/Tages-Belohnungen, Erfolge
 - [ ] Team-Positionen (Front/Backline ausbauen — Engine kennt `enemyBackline` schon)

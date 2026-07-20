@@ -620,6 +620,18 @@ function spawnUltiBurst(u) {
   setTimeout(() => wave.remove(), 700);
 }
 
+// Wie dicht/dick ein Element seinen Strom schießt (20.07.2026). `beam` legt einen
+// durchgehenden Strahl unter die Projektile — Feuer/Asche/Dampf sind ein Schwall,
+// kein Wurfgeschoss, und wirkten als Einzelbrocken zu dünn.
+const UltStreamStyle = {
+  fire:   { size: 46, mult: 3, gap: 32, beam: 30 },
+  ash:    { size: 42, mult: 3, gap: 34, beam: 26 },
+  steam:  { size: 40, mult: 3, gap: 34, beam: 24 },
+  water:  { size: 38, mult: 2, gap: 44, beam: 18 },
+  frost:  { size: 36, mult: 2, gap: 48, beam: 0 },
+  nature: { size: 36, mult: 2, gap: 52, beam: 0 },
+};
+
 // Pokemon-artige Ult-Attacke: ein Strom von Element-Projektilen fliegt vom Wirker
 // zum Ziel (Feuer=Flammenwurf, Natur=Rasierblatt, Wasser=Wasserstrahl …).
 function spawnUltProjectile(u, target, count) {
@@ -633,20 +645,47 @@ function spawnUltProjectile(u, target, count) {
   const elId = u.c.element;
   const pal = PixelPalettes[elId];
   const dir = u.side === 'enemy' ? -1 : 1;
-  for (let i = 0; i < count; i++) {
+  const st = UltStreamStyle[elId] || { size: 34, mult: 1, gap: 60, beam: 0 };
+  const shots = count * st.mult;
+  const lastAt = 300 + (shots - 1) * st.gap;
+
+  // Strahl-Körper: ein flackernder Balken vom Wirker zum Ziel, solange der
+  // Schwall läuft. Liegt unter den Projektilen (z-index in style.css).
+  if (st.beam) {
+    const len = Math.hypot(x1 - x0, y1 - y0);
+    const beam = el('div', 'ult-beam ult-beam-' + elId);
+    beam.style.left = x0 + 'px';
+    beam.style.top = y0 + 'px';
+    beam.style.width = len + 'px';
+    beam.style.height = st.beam + 'px';
+    // Winkel als Variable — die Flacker-Animation setzt transform selbst neu.
+    beam.style.setProperty('--rot', Math.atan2(y1 - y0, x1 - x0) + 'rad');
+    beam.style.setProperty('--glow', pal.g);
+    beam.style.setProperty('--core', pal.h);
+    beam.style.setProperty('--edge', pal.m);
+    beam.style.setProperty('--life', (lastAt + 260) + 'ms');
+    arena.appendChild(beam);
+    setTimeout(() => beam.remove(), lastAt + 300);
+  }
+
+  for (let i = 0; i < shots; i++) {
     const p = el('div', 'ult-proj ult-proj-' + elId);
-    p.innerHTML = iconArt(elId, 34);
+    p.innerHTML = iconArt(elId, st.size);
+    p.style.width = p.style.height = st.size + 'px';
+    p.style.margin = `${-st.size / 2}px 0 0 ${-st.size / 2}px`;
     p.style.left = x0 + 'px';
     p.style.top = y0 + 'px';
+    // Streuung quer zur Flugbahn, damit der Strom Breite bekommt statt einer Linie.
+    const spread = st.beam ? (Math.random() - 0.5) * st.beam * 1.6 : 0;
     p.style.setProperty('--dx', (x1 - x0) + 'px');
-    p.style.setProperty('--dy', (y1 - y0) + 'px');
+    p.style.setProperty('--dy', (y1 - y0 + spread) + 'px');
     p.style.setProperty('--glow', pal.g);
     p.style.setProperty('--spin', (dir * (elId === 'nature' ? 720 : 200)) + 'deg');
-    p.style.animationDelay = (i * 60) + 'ms';
+    p.style.animationDelay = (i * st.gap) + 'ms';
     arena.appendChild(p);
     // Einschlag am Ziel, wenn das Projektil ankommt: großer Blitz + Partikelregen.
     setTimeout(() => {
-      spawnParticles(target, pal.l, 12);
+      spawnParticles(target, pal.l, st.beam ? 8 : 12);
       const tc = B && B.unitEls[target.uid];
       if (tc) {
         const imp = el('span', 'impact impact-ult');
@@ -654,8 +693,46 @@ function spawnUltProjectile(u, target, count) {
         setTimeout(() => imp.remove(), 420);
       }
       p.remove();
-    }, 300 + i * 60);
+    }, 300 + i * st.gap);
   }
+}
+
+// Heil-Ult: ein Kreis am Boden unter dem eigenen Team leuchtet auf und pulst,
+// dazu steigen Funken daraus hoch (20.07.2026 — vorher nur Glow je Kreatur,
+// zu unauffällig; der Effekt soll so klar lesbar sein wie die Schild-Blase).
+function spawnHealField(units, color = '#6dffa6') {
+  const arena = document.querySelector('#arena');
+  if (!arena || !units.length) return;
+  const ar = arena.getBoundingClientRect();
+  // Bounding-Box über alle Team-Mitglieder, damit der Kreis wirklich alle umfasst.
+  let x0 = Infinity, x1 = -Infinity, yb = -Infinity;
+  units.forEach(u => {
+    const c = B && B.unitEls[u.uid];
+    if (!c) return;
+    const r = c.getBoundingClientRect();
+    x0 = Math.min(x0, r.left - ar.left);
+    x1 = Math.max(x1, r.right - ar.left);
+    yb = Math.max(yb, r.bottom - ar.top);
+  });
+  if (!isFinite(x0)) return;
+  const pad = 26;
+  const w = (x1 - x0) + pad * 2;
+  const field = el('div', 'heal-field');
+  field.style.left = (x0 - pad) + 'px';
+  field.style.top = (yb - w * 0.17) + 'px';
+  field.style.width = w + 'px';
+  field.style.height = (w * 0.34) + 'px';       // flache Ellipse = liegt am Boden
+  field.style.setProperty('--glow', color);
+  arena.appendChild(field);
+  // Funken steigen aus dem Kreis auf
+  for (let i = 0; i < 16; i++) {
+    const s = el('span', 'heal-spark');
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.background = color;
+    s.style.animationDelay = (Math.random() * 500) + 'ms';
+    field.appendChild(s);
+  }
+  setTimeout(() => field.remove(), 1500);
 }
 
 // Support-Ult (Schild/Heal/Wiedergeburt): Licht-Aura pulst auf der Zieleinheit.
@@ -735,7 +812,12 @@ function onBattleEvent(type, d) {
       spawnUltiBurst(d.unit);
       // Gerichtete Ult-Animation je Effekt (Projektil-Strom bzw. Support-Aura).
       const eff = d.ability.effect;
-      if (eff === 'teamShield' || eff === 'teamHeal' || eff === 'reviveOrHeal') {
+      if (eff === 'teamHeal' || eff === 'reviveOrHeal') {
+        // Heilung: Boden-Kreis unter dem ganzen Team + Aura je Kreatur.
+        const mates = aliveOnly(matesOf(B.battle, d.unit));
+        spawnHealField(mates.length ? mates : [d.unit]);
+        mates.forEach(m => spawnUltAura(m, '#6dffa6'));
+      } else if (eff === 'teamShield') {
         aliveOnly(matesOf(B.battle, d.unit)).forEach(m => spawnUltAura(m, glow));
       } else if (eff === 'spreadDotDebuff') {
         aliveOnly(foesOf(B.battle, d.unit)).forEach(t => spawnUltProjectile(d.unit, t, 2));

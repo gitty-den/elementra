@@ -102,7 +102,9 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   UI-Look: kantige Ecken, harte Stufen-Schatten, CSS-Scanlines (style.css „Pixel-Look" + „Pixel-Typografie").
 - Testen: Preview-Server `elementra` (`..\.claude\launch.json`, Port 8124) oder `index.html` doppelklicken.
 - **PWA:** `manifest.webmanifest` + `sw.js` (Offline-Cache, stale-while-revalidate —
-  Deploy-Updates greifen erst beim ZWEITEN App-Start). **Jede neue Datei (JS/CSS/Font/
+  Deploy-Updates greifen erst beim ZWEITEN App-Start). **Auf localhost registriert
+  main.js den SW NICHT** und räumt alte Registrierungen ab (20.07.) — der Cache
+  lieferte beim Entwickeln sonst hartnäckig alten Code. **Jede neue Datei (JS/CSS/Font/
   Icon) in `sw.js` ASSETS eintragen**, sonst offline kaputt. SW registriert nur über
   http(s), nicht file:// (Guard in main.js). App-Icons in `icons/` sind aus dem
   Emblem gepixelt (192/512/180, Hintergrund #0b0e1a) — bei Emblem-Änderung neu erzeugen.
@@ -116,7 +118,7 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 | `js/state.js` | Lookups (`Elements`, `Creatures`, `Abilities`), Kurzbeschreibungen `abilityShort` (GENERIERT aus effect/params — nicht handpflegen), Save (localStorage, Schlüssel kommt aus `currentSaveKey()`, Migration entfernt unbekannte IDs gegen 100 Gold), Level-Logik (`MAX_LEVEL` 5, +10 %/Level, Kosten 30·Level), Fusion (`fusionResult/fusionReady/fuseCreatures`), Stage-Fortschritt |
 | `js/svg.js` | KOMPLETT obsolet — nur die Farbtabelle `SceneThemes` wird noch von `sceneArt` (pixel.js) gelesen. Keine SVG-Funktion mehr aufrufen |
 | `js/pixel.js` | **Standard-Kreaturen-Renderer**: `creatureArt(c, {noAura,noAnim})` — `PixelArchetypes` (7 Basis + 12 Fusion Char-Maps) × `PixelPalettes`, 32×32-Canvas → dataURI, Cache. **Idle-Frames (19.07.)**: `creatureFrames(arch,el)` erzeugt prozedural Frame 1 (Augen zu via e/p→m + 1px Atem-Stauchung); globaler `setInterval` (540 ms) swappt `img.creature-sprite`-`src`. `noAnim` schaltet es ab. Tippfehler-Pixel erscheinen magenta |
-| `js/sfx.js` | WebAudio-Synth (`Sfx.hit/ulti/win/...`), kein Audio-Asset, entsperrt bei erster Interaktion |
+| `js/sfx.js` | WebAudio-Synth (`Sfx.hit/ulti/win/...`), kein Audio-Asset, entsperrt bei erster Interaktion. **Rausch-Kanal seit 20.07.** (`Sfx.noise(dur, {type,freq,freqTo,q,vol,attack,delay})`: gefiltertes Rauschen, grobkörniger Buffer) — das Gegenstück zum Noise-Kanal echter 8-Bit-Chips. Ult-Sounds sind nach dem Muster **Ton-Kern + Rausch-Schicht + Transiente** gebaut; neue Sounds bitte genauso, sonst klingen sie wieder austauschbar |
 | `js/music.js` | Generative Musik (WebAudio, Lookahead-Scheduler): Themes `map`/`battle`, `Music.play(theme)`, Toggle in ⚙. Hooks: Titel-Tap, `beginBattle`, `endBattleUI` |
 | `js/stages.js` | 10 Kampagnen-Stages: Gegner, Gold, First-Clear-Bonus, Kreaturen-Unlocks, `theme` (Arena-Hintergrund) |
 | `js/battle.js` | Engine: `createBattle`, `updateBattle(battle, dtMs)`, `castActive`. Events via `battle.on((type, data) => …)`: attack, damage, heal, absorb, shieldGain, poison, ulti, die, revive, energyFull, end |
@@ -148,7 +150,13 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 - **Ult-Animationen (Pokemon-Stil, aufgemotzt Runde 3):** `ulti`-Event spawnt
   gerichtete Attacke — offensive = großer Projektil-Strom (34px Element-Icons +
   Glow) vom Wirker zum Ziel mit Einschlags-Blitz + Partikelregen je Treffer
-  (`spawnUltProjectile`, Feuer=Flammenwurf/Natur=Rasierblatt …). **Schild-Ult** =
+  (`spawnUltProjectile`, Feuer=Flammenwurf/Natur=Rasierblatt …). Wie dick der
+  Strom ist, steht in `UltStreamStyle` (20.07.): Größe, Anzahl-Multiplikator,
+  Abstand und `beam` = Dicke des durchgehenden Strahls (`.ult-beam`, flackert in
+  zwei harten Stufen). Feuer/Asche/Dampf/Wasser haben einen Strahl, Natur/Frost
+  bleiben Einzelgeschosse. **Heil-Ult** = Boden-Kreis unter dem ganzen Team
+  (`spawnHealField`, `.heal-field` mit aufsteigenden Funken) + Aura je Kreatur —
+  soll so klar lesbar sein wie die Schild-Blase. **Schild-Ult** =
   bleibende Barriere-Blase um die Kreatur, solange Schild hält (`.unit.shielded
   .shield-barrier`, in renderBars getoggelt). **Heil** = grünes Aufleuchten
   (`.unit.healed`) + schwebendes Heil-Icon (`.heal-icon`) über der Kreatur.
