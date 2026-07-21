@@ -20,7 +20,11 @@ Kampagne (2 Kapitel, 20 Stages), Sammlung, Fusion, Battlepass, **Items**,
 - Ref `kdldlxwkwqmbtttuwxbq`, URL `https://kdldlxwkwqmbtttuwxbq.supabase.co`
 - Publishable Key liegt in `js/net.js` (öffentlich, gehört dorthin).
   **service_role-Key und DB-Passwort dürfen NIE in den Client oder in den Chat.**
-- Migration **0001 und 0002 sind eingespielt** ✅
+- Migration **0001, 0002 und 0003 (Cloud-Save) sind eingespielt** ✅
+  Cloud-Save am 21.07. end-to-end getestet: hochladen, herunterladen, falsche PIN
+  und unbekannter Code werden korrekt abgewiesen.
+  Test-Zeile aufräumen bei Bedarf (SQL Editor):
+  `delete from public.cloud_saves where name = 'Cloud-Test';`
 - **Anonymous Sign-ins sind aktiviert** ✅
 - Testdaten in der DB: Spieler „._." (der Nutzer) und ein Dummy „Test-Gegner".
   Wertung des Nutzers steht durch Testkämpfe bei ~957 statt 1000.
@@ -28,12 +32,6 @@ Kampagne (2 Kapitel, 20 Stages), Sammlung, Fusion, Battlepass, **Items**,
   bzw. `delete from public.players where name = 'Test-Gegner';`
 
 ### Offen (in dieser Reihenfolge sinnvoll)
-0. **Migration `0003_cloud_save.sql` einspielen** (NEU, Runde 9) — sonst meldet die
-   App bei ⚙ → „Spielstand-Cloud": „Die Cloud ist im Server noch nicht eingerichtet".
-   Weg: supabase.com öffnen → Projekt `kdldlxwkwqmbtttuwxbq` → linke Leiste
-   **SQL Editor** → **New query** → Inhalt von
-   `supabase/migrations/0003_cloud_save.sql` hineinkopieren → **Run**.
-   (Das ist das Web-Dashboard im Browser, NICHT das schwarze Terminal.)
 1. **Edge Function `verify-match` deployen** — geht NICHT über den SQL-Editor:
    ```
    cd C:\005-Kellerwohnung\elementra
@@ -43,10 +41,10 @@ Kampagne (2 Kapitel, 20 Stages), Sammlung, Fusion, Battlepass, **Items**,
    ```
    Bis dahin steht in `matches.verified` überall `false` — der Client meldet den
    Sieger ungeprüft. Unkritisch, solange nur bekannte Spieler mitspielen.
-2. **Push nach GitHub** (noch NICHT passiert, 2 Commits liegen lokal auf `main`).
-   Push aktualisiert automatisch `gitty-den.github.io/elementra`. Erst danach kann
-   ein Freund mitspielen.
-3. Danach: die zwei geplanten PVP-Features unten.
+2. Danach: die zwei geplanten PVP-Features unten.
+
+**Push-Stand:** Runde 9 ist am 21.07.2026 nach GitHub gepusht (`main` = `origin/main`,
+Commit `7150fe5`). GitHub Pages aktualisiert sich daraus in ~1 Minute selbst.
 
 ### Sicherungs-Zweige (lokal, nicht gepusht)
 | Zweig | Zeigt auf |
