@@ -9,6 +9,96 @@ Mobile-Game (iOS + Android, App Store / Play Store). Kernloop: Autobattler
 3 vs 3, Element-Kreislauf 🔥→🌿→💧→🔥, Hybride durch Fusion.
 Stil: dunkel-episch mit Element-Glow.
 
+## STAND & NÄCHSTE SCHRITTE (Stand 21.07.2026) — hier zuerst lesen
+
+### Was fertig ist und läuft
+Kampagne (2 Kapitel, 20 Stages), Sammlung, Fusion, Battlepass, **Items**,
+**Aufstieg + Wochen-Modifikatoren**, Profile mit PIN, Rundenstart-Countdown,
+**Arena (asynchrones PVP) — live und getestet** gegen Supabase.
+
+### Supabase-Projekt
+- Ref `kdldlxwkwqmbtttuwxbq`, URL `https://kdldlxwkwqmbtttuwxbq.supabase.co`
+- Publishable Key liegt in `js/net.js` (öffentlich, gehört dorthin).
+  **service_role-Key und DB-Passwort dürfen NIE in den Client oder in den Chat.**
+- Migration **0001 und 0002 sind eingespielt** ✅
+- **Anonymous Sign-ins sind aktiviert** ✅
+- Testdaten in der DB: Spieler „._." (der Nutzer) und ein Dummy „Test-Gegner".
+  Wertung des Nutzers steht durch Testkämpfe bei ~957 statt 1000.
+  Aufräumen bei Bedarf: `delete from public.ladder; delete from public.matches;`
+  bzw. `delete from public.players where name = 'Test-Gegner';`
+
+### Offen (in dieser Reihenfolge sinnvoll)
+1. **Edge Function `verify-match` deployen** — geht NICHT über den SQL-Editor:
+   ```
+   cd C:\005-Kellerwohnung\elementra
+   npx supabase login
+   npx supabase link --project-ref kdldlxwkwqmbtttuwxbq
+   npx supabase functions deploy verify-match
+   ```
+   Bis dahin steht in `matches.verified` überall `false` — der Client meldet den
+   Sieger ungeprüft. Unkritisch, solange nur bekannte Spieler mitspielen.
+2. **Push nach GitHub** (noch NICHT passiert, 2 Commits liegen lokal auf `main`).
+   Push aktualisiert automatisch `gitty-den.github.io/elementra`. Erst danach kann
+   ein Freund mitspielen.
+3. Danach: die zwei geplanten PVP-Features unten.
+
+### Sicherungs-Zweige (lokal, nicht gepusht)
+| Zweig | Zeigt auf |
+|---|---|
+| `backup/2026-07-21-vor-items-und-arena` | Stand VOR Items/Aufstieg/Arena |
+| `backup/2026-07-21-stand-heute` | aktueller Stand |
+| `main` | Arbeitsstand |
+
+### Wichtig für den Nutzer-Umgang
+Der Nutzer ist **kein Entwickler**. Fachbegriffe (Branch, Migration, Edge Function,
+RLS) IMMER in einfachen Worten erklären, mit Alltagsvergleichen, und Schritt für
+Schritt durch Oberflächen führen (Supabase-Dashboard verwechselt er z. B. leicht mit
+dem Terminal). Nie Befehle „einfach hinwerfen".
+
+## GEPLANT, NOCH NICHT GEBAUT — PVP-Ausbau
+
+### A) Duell per Einladungscode (Echtzeit, gegen Freund) — vom Nutzer gewünscht
+Nicht die Rangliste umbauen, sondern **ergänzen**: Code erzeugen, Freund gibt ihn
+ein, beide kämpfen live gegeneinander und zünden ihre Ults selbst.
+
+- **Technik: Lockstep, nicht Server-Simulation.** Beide Geräte rechnen denselben
+  Kampf und tauschen nur Eingaben mit Taktnummer aus („Ult in Tick 312"). Das geht,
+  weil `battle.js` deterministisch ist. Supabase Realtime reicht als Nachrichten-
+  Kanal — **kein Mietserver nötig**. Ein Server-autoritatives Modell scheidet aus:
+  Supabase Edge Functions sind für kurze Anfragen gebaut, nicht für laufende Kämpfe.
+- **Nötige Umbauten:** feste Taktrate statt variablem `dt` (heute
+  `updateBattle(dt * B.speed)` im rAF-Loop); Kanal + Eingaben mit Tick-Nummer;
+  Eingabe-Verzögerung (~3 Ticks Puffer gegen Latenz); Desync-Erkennung
+  (Prüfsumme alle N Ticks); Abbruch-/Aufgabe-Regeln.
+- **Aufwand:** größter Brocken bisher, grob so viel wie die ganze Session vom
+  21.07. zusammen. Der Einladungscode spart aber die komplette Lobby-/
+  Warteschlangen-Baustelle (~halber Aufwand gegenüber echtem Matchmaking).
+- **Warum kein Matchmaking:** bei kleiner Spielerbasis wartet man in einer leeren
+  Schlange — genau deshalb ist die Rangliste asynchron.
+
+### B) Verteidigungs-Anweisungen für die asynchrone Rangliste — offene Fairness-Lücke
+**Problem (vom Nutzer erkannt):** Im asynchronen PVP ist der Verteidiger offline.
+Sein Team wird heute von derselben simplen KI gespielt wie Kampagnen-Gegner —
+sie zündet die Ult **sofort** bei voller Energie (`gainEnergy` setzt
+`ultiPlannedAt` für `side === 'enemy'`). Der Angreifer darf dagegen taktisch
+timen. **Also hat der Angreifer einen systematischen Vorteil und die Rangliste
+ist verzerrt.**
+
+Ursache: Der MASTERPLAN sah ursprünglich vollautomatische Kämpfe vor; die
+manuellen Ult-Buttons (Wunsch vom 19.07.) haben diese Schieflage erzeugt.
+
+Drei Wege (Nutzer tendiert zu Weg 2):
+1. **Arena vollautomatisch** — auch das eigene Team zündet selbst. Sofort fair,
+   Aufwand ~ein Schalter. Kampagne behält manuelle Ults. (Das SAP-Modell.)
+2. **Verteidigungs-Anweisung je Kreatur**, wird im Team-Schnappschuss gespeichert:
+   z. B. *sofort* / *erst unter 50 % LP* / *erst wenn 2 Gegner stehen*. Beide Seiten
+   spielen dann nach hinterlegtem Plan — symmetrisch. Aufwand mittel, passt exakt
+   zum Pfeiler „Vorbereitung IST das Spiel".
+3. Angreifer-Sieg gibt weniger Wertung. Billig, löst das Problem aber nicht.
+
+**Empfehlung:** Weg 2 für die Rangliste, manuelle Ults im Live-Duell (A).
+Dann belohnt die Rangliste Vorbereitung, das Duell Reaktion.
+
 ## Design-Pfeiler (21.07.2026) — BINDEND, gegen Scope-Creep
 
 Diese vier Regeln entscheiden jede neue Idee. Passt eine Idee nicht rein, kommt sie

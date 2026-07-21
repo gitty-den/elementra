@@ -313,8 +313,14 @@ Langzeit-Hebel 2: die Map ist endlich, die Herausforderung nicht.
 - Ergebnis läuft über `showPvpBattleResult` (eigener Zweig in `showBattleResult`,
   wie die Dev-Sim) — keine Stage-Belohnungen, stattdessen `submit_match`.
 - **Voraussetzungen im Supabase-Projekt:** Migration eingespielt UND
-  Auth → Providers → **Anonymous sign-ins aktiviert** (sonst meldet die App
-  „Anonymous sign-ins are disabled" und bleibt sonst voll spielbar).
+  Auth → Providers → **Anonymous sign-ins aktiviert**. Beides ist seit 21.07.
+  erledigt; fehlt eines, meldet die App es sauber und bleibt voll spielbar.
+- **BEKANNTE FAIRNESS-LÜCKE (offen):** Der Verteidiger ist offline, sein Team wird
+  von der Kampagnen-KI gespielt — die zündet Ults **sofort** bei voller Energie
+  (`gainEnergy` setzt `ultiPlannedAt` für `side === 'enemy'`). Der Angreifer darf
+  dagegen manuell timen. **Der Angreifer hat dadurch einen systematischen Vorteil,
+  die Rangliste ist verzerrt.** Lösungswege stehen im MASTERPLAN unter
+  „GEPLANT — PVP-Ausbau, B)". Vor öffentlichem Betrieb reparieren.
 
 ## Edge Function `verify-match` (Anti-Cheat, 21.07.2026)
 
