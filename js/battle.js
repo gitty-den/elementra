@@ -5,8 +5,18 @@
 const ATTACK_INTERVAL_BASE = 2400;   // ms; sinkt mit Tempo (spd).
 const ATTACK_INTERVAL_MIN = 700;
 const DEF_MITIGATION = 0.4;          // Schaden = ANG·Mult − VER·0.4
+// Kampfdauer-Stellschraube (Runde 10): ALLE Lebenspunkte werden mit diesem
+// Faktor multipliziert. Vorher dauerte ein Kampf im Median 15 s Kampfzeit, bei
+// Tempo 2× also gut 7 echte Sekunden — zu kurz, als dass Heilung, Schilde oder
+// Ults etwas ausrichten könnten (Teams mit zwei Geistern: 0 von 12 Siegen).
+//
+// Bewusst LP hoch statt Schaden runter: Verteidigung und Steinhaut sind FLACHE
+// Abzüge. Bremst man den Schaden, werden sie relativ stärker und Tanks
+// dominieren alles (gemessen: Golem in 24 von 60 Plätzen der besten Teams).
+// Mehr LP lässt jedes Verhältnis unangetastet und streckt nur die Zeitachse.
+const HP_SCALE = 1.7;
 const ENEMY_ULTI_DELAY = 400;        // KI zündet Ulti kurz nach voller Energie.
-const SUDDEN_DEATH_AT = 120000;      // ab 2 min steigt aller Schaden (verhindert Heiler-Patt)
+const SUDDEN_DEATH_AT = 75000;       // Runde 10: Kaempfe laufen jetzt laenger, Deckel entsprechend frueher
 
 // Globaler Schadens-Multiplikator: 1× bis 2 min, danach linear bis 3× (Minute 4+).
 function suddenDeathMult(battle) {
@@ -15,9 +25,14 @@ function suddenDeathMult(battle) {
   return 1 + Math.min(2, (battle.time - at) / 60000);
 }
 
+// Zwei getrennte Konter-Räder (Runde 10): Feuer>Natur>Wasser>Feuer und
+// Dampf>Asche>Frost>Dampf. Zwischen Basis und Hybrid gibt es keine Kante —
+// `strongVs`/`weakVs` zeigen nie über das eigene Rad hinaus, das ergibt
+// automatisch neutral. Vorher waren Hybride pauschal neutral, wodurch das
+// Endgame die Kernmechanik verlor.
 function elementMult(attEl, defEl) {
-  const a = Elements[attEl], d = Elements[defEl];
-  if (a.neutral || d.neutral) return TYPES_DATA.multipliers.neutral;
+  const a = Elements[attEl];
+  if (!a) return TYPES_DATA.multipliers.neutral;
   if (a.strongVs === defEl) return TYPES_DATA.multipliers.advantage;
   if (a.weakVs === defEl) return TYPES_DATA.multipliers.disadvantage;
   return TYPES_DATA.multipliers.neutral;
@@ -39,10 +54,19 @@ function createUnit(cid, level, side, slot, itemId, mod) {
   // das Keyword wird in doAttack/dealDamage ausgewertet (items.js).
   const item = (itemId && typeof Items !== 'undefined') ? (Items[itemId] || null) : null;
   const stats = applyItemStats(statsAtLevel(c, level), item);
+  // Keyword-Liste (Runde 10): erst das Element-Keyword, dann das des Items.
+  // Beide wirken gleichzeitig und werden überall generisch über `u.kws`
+  // ausgewertet — ein neues Keyword braucht nur einen Eintrag, keinen Sonderweg.
+  const kws = [];
+  if (typeof elementKeyword === 'function') {
+    const ek = elementKeyword(c);
+    if (ek) kws.push(ek);
+  }
+  if (item && item.keyword) kws.push(item.keyword);
   const u = {
     uid: 'u' + (++_unitUid),
-    cid, c, side, slot, level, stats, item,
-    hp: stats.hp, maxHp: stats.hp,
+    cid, c, side, slot, level, stats, item, kws,
+    hp: Math.round(stats.hp * HP_SCALE), maxHp: Math.round(stats.hp * HP_SCALE),
     energy: 0, alive: true,
     nextAttackAt: 0,
     passive: Abilities[c.passive],
@@ -71,6 +95,7 @@ function createBattle(allyDefs, enemyDefs, modIds) {
     allies: allyDefs.map((d, i) => createUnit(d.id, d.level, 'ally', i, d.item, d.mod)),
     enemies: enemyDefs.map((d, i) => createUnit(d.id, d.level, 'enemy', i, d.item, d.mod)),
     autoUlti: false,
+    hpScale: HP_SCALE,
     listeners: [],
     on(fn) { this.listeners.push(fn); },
     emit(type, data) { this.listeners.forEach(fn => fn(type, data)); },
@@ -97,14 +122,29 @@ function createBattle(allyDefs, enemyDefs, modIds) {
     });
   });
 
+  // Passiv 'teamAura' (Runde 10): Unterstützer wirken ab der ersten Sekunde,
+  // nicht erst beim Ult. Vorher war das Geist-Passiv leer (`effect: 'none'`) —
+  // ein Geist im Team hieß faktisch 2 gegen 3.
+  [battle.allies, battle.enemies].forEach(side => {
+    side.forEach(src => {
+      if (!src.passive || src.passive.effect !== 'teamAura') return;
+      const p = src.passive.params || {};
+      side.forEach(u => applyStatMod(u, { atk: p.atk || 0, def: p.def || 0 }));
+    });
+  });
+
   // Erste Angriffe staffeln, damit nicht alles gleichzeitig zuschlägt.
   [...battle.allies, ...battle.enemies].forEach(u => {
     u.nextAttackAt = attackInterval(u) * (0.35 + u.slot * 0.18);
-    // Keyword 'shieldStart': Kampfbeginn mit Schild (Aegis-Siegel).
-    const k = u.item && u.item.keyword;
-    if (k && k.type === 'shieldStart') {
-      u.shield = { amount: Math.round(u.maxHp * k.pct), expiresAt: k.sec * 1000 };
+    // Keyword 'shieldStart': Kampfbeginn mit Schild (Frost-Element, Aegis-Siegel).
+    // Mehrere Quellen addieren sich, die längere Dauer gewinnt.
+    let amount = 0, until = 0;
+    for (const k of u.kws) {
+      if (k.type !== 'shieldStart') continue;
+      amount += Math.round(u.maxHp * k.pct);
+      until = Math.max(until, k.sec * 1000);
     }
+    if (amount > 0) u.shield = { amount, expiresAt: until };
   });
   return battle;
 }
@@ -172,11 +212,20 @@ function dealDamage(battle, source, target, rawAmount, kind, elMult) {
   // Keyword 'thorns': normaler Treffer wird flach zurückgespiegelt (kein Loop,
   // weil der Rückschlag mit kind 'thorns' läuft).
   if (kind === 'hit' && source && source.alive && target.alive) {
-    const tk = target.item && target.item.keyword;
-    const flat = (tk && tk.type === 'thorns' ? tk.flat : 0) + (target.thorns || 0);
+    const flat = target.kws.reduce((s, k) => s + (k.type === 'thorns' ? k.flat : 0), 0)
+               + (target.thorns || 0);
     if (flat > 0) dealDamage(battle, null, source, flat, 'thorns');
   }
   if (target.hp <= 0) {
+    // Passiv 'selfRevive' (Runde 10): einmal pro Kampf wieder aufstehen.
+    // Macht den Bewahrer zur echten Rolle statt zu einem Passiv mit `none`.
+    if (target.passive && target.passive.effect === 'selfRevive' && !target.selfRevived) {
+      target.selfRevived = true;
+      target.hp = Math.max(1, Math.round(target.maxHp * (target.passive.params.hpPct || 0.35)));
+      target.poison = null; target.bleeds = []; target.dots = [];
+      battle.emit('revive', { unit: target, self: true });
+      return dmg;
+    }
     target.hp = 0;
     target.alive = false;
     battle.emit('die', { unit: target });
@@ -219,9 +268,18 @@ function doAttack(battle, u) {
   if (!target) return;
   const mult = elementMult(u.c.element, target.c.element);
   battle.emit('attack', { attacker: u, target });
-  const dealt = dealDamage(battle, u, target, effAtk(u) * mult, 'hit', mult);
+  let dealt = dealDamage(battle, u, target, effAtk(u) * mult, 'hit', mult);
 
   const p = u.passive;
+  // Passiv 'everyNthAttackDouble' (Runde 10): jeder N-te Angriff trifft doppelt.
+  // Zähler statt Zufall — battle.js muss deterministisch bleiben (Server-Prüfung).
+  if (p.effect === 'everyNthAttackDouble') {
+    u.atkCount = (u.atkCount || 0) + 1;
+    if (u.atkCount % p.params.every === 0 && target.alive) {
+      dealt += dealDamage(battle, u, target, effAtk(u) * mult * (p.params.mult || 1), 'hit', mult);
+      battle.emit('doubleHit', { attacker: u, target });
+    }
+  }
   if (p.trigger === 'onAttack') {
     gainEnergy(battle, u, p.energyGain);
     if (p.effect === 'lifesteal') heal(battle, u, dealt * p.params.pctOfDamage);
@@ -235,29 +293,28 @@ function doAttack(battle, u) {
 
   if (battle.lifestealAll) heal(battle, u, dealt * battle.lifestealAll); // 'Blutrausch'
 
-  // Item-Keyword (items.js): Thema über Mechanik statt über neue Elemente.
-  const k = u.item && u.item.keyword;
-  if (k) {
+  // Keywords (Element + Item, items.js): Thema über Mechanik statt über neue
+  // Elemente. Beide Quellen laufen durch dieselbe Schleife.
+  for (const k of u.kws) {
     if (k.type === 'lifesteal') heal(battle, u, dealt * k.pct);
     if (k.type === 'energy') gainEnergy(battle, u, k.bonus);
-    if (target.alive) {
-      if (k.type === 'poison') {
-        if (!target.poison) target.poison = { stacks: 0, srcAtk: 0, nextTickAt: battle.time + 1000 };
-        target.poison.stacks = Math.min(k.maxStacks, target.poison.stacks + 1);
-        target.poison.srcAtk = effAtk(u);
-        battle.emit('poison', { target, stacks: target.poison.stacks });
-      }
-      if (k.type === 'burn') {
-        target.dots.push({ dps: effAtk(u) * k.pct,
-                           expiresAt: battle.time + k.sec * 1000,
-                           nextTickAt: battle.time + 1000 });
-        battle.emit('burn', { target });
-      }
-      if (k.type === 'chill') {
-        target.chillUntil = battle.time + k.sec * 1000;
-        target.chillPct = k.pct;
-        battle.emit('chill', { target });
-      }
+    if (!target.alive) continue;
+    if (k.type === 'poison') {
+      if (!target.poison) target.poison = { stacks: 0, srcAtk: 0, nextTickAt: battle.time + 1000 };
+      target.poison.stacks = Math.min(k.maxStacks, target.poison.stacks + 1);
+      target.poison.srcAtk = effAtk(u);
+      battle.emit('poison', { target, stacks: target.poison.stacks });
+    }
+    if (k.type === 'burn') {
+      target.dots.push({ dps: effAtk(u) * k.pct,
+                         expiresAt: battle.time + k.sec * 1000,
+                         nextTickAt: battle.time + 1000 });
+      battle.emit('burn', { target });
+    }
+    if (k.type === 'chill') {
+      target.chillUntil = battle.time + k.sec * 1000;
+      target.chillPct = k.pct;
+      battle.emit('chill', { target });
     }
   }
 }

@@ -1,4 +1,5 @@
 {
+  "_hinweis": "Zwei Konter-Räder statt einem. Basis: Feuer > Natur > Wasser > Feuer. Hybrid: Dampf > Asche > Frost > Dampf. Basis und Hybrid schlagen sich gegenseitig NIE (neutral zueinander) — dadurch bleibt jedes Rad für sich auswendig lernbar. Vor Runde 10 waren Hybride komplett neutral; damit löschte das Endgame (2 von 3 Fusionen sind hybrid) die Kernmechanik.",
   "multipliers": {
     "advantage": 1.5,
     "disadvantage": 0.75,
@@ -11,6 +12,7 @@
       "tier": 1,
       "strongVs": "nature",
       "weakVs": "water",
+      "keyword": "burn",
       "color": "#e8552d"
     },
     {
@@ -19,6 +21,7 @@
       "tier": 1,
       "strongVs": "water",
       "weakVs": "fire",
+      "keyword": "poison",
       "color": "#4caf50"
     },
     {
@@ -27,6 +30,7 @@
       "tier": 1,
       "strongVs": "fire",
       "weakVs": "nature",
+      "keyword": "chill",
       "color": "#2f80ed"
     },
     {
@@ -37,7 +41,9 @@
         "fire",
         "water"
       ],
-      "neutral": true,
+      "strongVs": "ash",
+      "weakVs": "frost",
+      "keyword": "energy",
       "color": "#b0bec5"
     },
     {
@@ -48,7 +54,9 @@
         "fire",
         "nature"
       ],
-      "neutral": true,
+      "strongVs": "frost",
+      "weakVs": "steam",
+      "keyword": "thorns",
       "color": "#8d6e63"
     },
     {
@@ -59,7 +67,9 @@
         "nature",
         "water"
       ],
-      "neutral": true,
+      "strongVs": "steam",
+      "weakVs": "ash",
+      "keyword": "shieldStart",
       "color": "#81d4fa"
     }
   ]

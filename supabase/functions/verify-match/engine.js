@@ -122,6 +122,7 @@ function profileSummary(id) {
 // ================= js/data.js =================
 // Auto-generiert aus data/*.json
 const TYPES_DATA = {
+  "_hinweis": "Zwei Konter-RÃƒÂ¤der statt einem. Basis: Feuer > Natur > Wasser > Feuer. Hybrid: Dampf > Asche > Frost > Dampf. Basis und Hybrid schlagen sich gegenseitig NIE (neutral zueinander) Ã¢â‚¬â€ dadurch bleibt jedes Rad fÃƒÂ¼r sich auswendig lernbar. Vor Runde 10 waren Hybride komplett neutral; damit lÃƒÂ¶schte das Endgame (2 von 3 Fusionen sind hybrid) die Kernmechanik.",
   "multipliers": {
     "advantage": 1.5,
     "disadvantage": 0.75,
@@ -134,6 +135,7 @@ const TYPES_DATA = {
       "tier": 1,
       "strongVs": "nature",
       "weakVs": "water",
+      "keyword": "burn",
       "color": "#e8552d"
     },
     {
@@ -142,6 +144,7 @@ const TYPES_DATA = {
       "tier": 1,
       "strongVs": "water",
       "weakVs": "fire",
+      "keyword": "poison",
       "color": "#4caf50"
     },
     {
@@ -150,6 +153,7 @@ const TYPES_DATA = {
       "tier": 1,
       "strongVs": "fire",
       "weakVs": "nature",
+      "keyword": "chill",
       "color": "#2f80ed"
     },
     {
@@ -160,7 +164,9 @@ const TYPES_DATA = {
         "fire",
         "water"
       ],
-      "neutral": true,
+      "strongVs": "ash",
+      "weakVs": "frost",
+      "keyword": "energy",
       "color": "#b0bec5"
     },
     {
@@ -171,7 +177,9 @@ const TYPES_DATA = {
         "fire",
         "nature"
       ],
-      "neutral": true,
+      "strongVs": "frost",
+      "weakVs": "steam",
+      "keyword": "thorns",
       "color": "#8d6e63"
     },
     {
@@ -182,11 +190,14 @@ const TYPES_DATA = {
         "nature",
         "water"
       ],
-      "neutral": true,
+      "strongVs": "steam",
+      "weakVs": "ash",
+      "keyword": "shieldStart",
       "color": "#81d4fa"
     }
   ]
-};
+}
+;
 const CREATURES_DATA = {
   "energyModel": {
     "max": 100,
@@ -232,7 +243,7 @@ const CREATURES_DATA = {
       "target": "allAllies",
       "effect": "teamShield",
       "params": {
-        "shieldPctMaxHp": 0.2,
+        "shieldPctMaxHp": 0.15,
         "durationSec": 5,
         "taunt": true
       }
@@ -241,8 +252,11 @@ const CREATURES_DATA = {
       "name": "Windschnitt",
       "trigger": "onAttack",
       "energyGain": 10,
-      "effect": "none",
-      "params": {}
+      "effect": "everyNthAttackDouble",
+      "params": {
+        "every": 3,
+        "mult": 1
+      }
     },
     "greif_active": {
       "name": "Sturzflug",
@@ -260,7 +274,7 @@ const CREATURES_DATA = {
       "energyGain": 7,
       "effect": "lifesteal",
       "params": {
-        "pctOfDamage": 0.15
+        "pctOfDamage": 0.1
       }
     },
     "wolf_active": {
@@ -269,7 +283,7 @@ const CREATURES_DATA = {
       "target": "enemyLowestHp",
       "effect": "hitPlusBleed",
       "params": {
-        "atkMultiplier": 2.5,
+        "atkMultiplier": 2.2,
         "bleedPct": 0.1,
         "bleedTicks": 3
       }
@@ -280,7 +294,7 @@ const CREATURES_DATA = {
       "energyGain": 6,
       "effect": "applyPoison",
       "params": {
-        "stackPct": 0.05,
+        "stackPct": 0.06,
         "maxStacks": 5
       }
     },
@@ -292,15 +306,18 @@ const CREATURES_DATA = {
       "params": {
         "dotPct": 0.15,
         "durationSec": 4,
-        "defDown": 0.1
+        "defDown": 0.18
       }
     },
     "geist_passive": {
       "name": "Lebensquell",
       "trigger": "perSecond",
       "energyGain": 6,
-      "effect": "none",
-      "params": {}
+      "effect": "teamAura",
+      "params": {
+        "atk": 0.08,
+        "def": 0.06
+      }
     },
     "geist_active": {
       "name": "Segen",
@@ -308,15 +325,17 @@ const CREATURES_DATA = {
       "target": "allAllies",
       "effect": "teamHeal",
       "params": {
-        "healPctMaxHp": 0.3
+        "healPctMaxHp": 0.35
       }
     },
     "phoenix_passive": {
       "name": "Ewige Glut",
       "trigger": "perSecond",
       "energyGain": 5,
-      "effect": "none",
-      "params": {}
+      "effect": "selfRevive",
+      "params": {
+        "hpPct": 0.35
+      }
     },
     "phoenix_active": {
       "name": "Wiedergeburt",
@@ -564,7 +583,7 @@ const CREATURES_DATA = {
       "target": "allAllies",
       "effect": "teamShield",
       "params": {
-        "shieldPctMaxHp": 0.28,
+        "shieldPctMaxHp": 0.22,
         "durationSec": 6,
         "taunt": true
       }
@@ -817,8 +836,8 @@ const CREATURES_DATA = {
       "rarity": "rare",
       "tier": 1,
       "baseStats": {
-        "hp": 85,
-        "atk": 16,
+        "hp": 97,
+        "atk": 18,
         "def": 9,
         "spd": 14
       },
@@ -835,8 +854,8 @@ const CREATURES_DATA = {
       "rarity": "rare",
       "tier": 1,
       "baseStats": {
-        "hp": 94,
-        "atk": 15,
+        "hp": 106,
+        "atk": 17,
         "def": 9,
         "spd": 14
       },
@@ -853,8 +872,8 @@ const CREATURES_DATA = {
       "rarity": "rare",
       "tier": 1,
       "baseStats": {
-        "hp": 85,
-        "atk": 15,
+        "hp": 97,
+        "atk": 17,
         "def": 10,
         "spd": 14
       },
@@ -979,9 +998,9 @@ const CREATURES_DATA = {
       "rarity": "legendary",
       "tier": 3,
       "baseStats": {
-        "hp": 230,
-        "atk": 23,
-        "def": 22,
+        "hp": 200,
+        "atk": 20,
+        "def": 20,
         "spd": 9
       },
       "passive": "titan_passive",
@@ -998,9 +1017,9 @@ const CREATURES_DATA = {
       "rarity": "legendary",
       "tier": 3,
       "baseStats": {
-        "hp": 185,
-        "atk": 29,
-        "def": 16,
+        "hp": 165,
+        "atk": 25,
+        "def": 15,
         "spd": 14
       },
       "passive": "schlange_passive",
@@ -1286,26 +1305,52 @@ const ITEM_KEYWORDS = {
   shieldStart: { name: 'Startschild', icon: 'shield' },
 };
 
+// ---------- Element-Keywords (Runde 10, 21.07.2026) ----------
+// KERNÃ„NDERUNG: Jedes Element bringt seine eigene Mechanik mit. Vorher waren
+// die 21 Basis-Kreaturen nur 7 Archetypen in 3 Farben â€” gleiche FÃ¤higkeiten,
+// Â±10 % Werte. Jetzt spielt sich fire_wolf (brennt) anders als water_wolf
+// (friert ein) und nature_wolf (vergiftet), ohne einen einzigen neuen Sprite.
+//
+// Werte bewusst KLEIN: jede Kreatur im Spiel hat eines davon, Item-Keywords
+// sind deutlich stÃ¤rker und bleiben dadurch eine echte Entscheidung.
+// `keyword` je Element steht in data/types.json.
+const ELEMENT_KEYWORD_PARAMS = {
+  burn:        { pct: 0.05, sec: 3 },              // Feuer: Brand-DoT
+  poison:      { maxStacks: 3 },                   // Natur: Giftstapel (5 % ANG/s je Stapel)
+  chill:       { pct: 0.15, sec: 2.5 },            // Wasser: Ziel schlÃ¤gt langsamer
+  energy:      { bonus: 2 },                       // Dampf: schneller zur Ulti
+  thorns:      { flat: 2 },                        // Asche: RÃ¼ckschlag bei Treffern
+  shieldStart: { pct: 0.10, sec: 10 },             // Frost: Startschild
+};
+
+// Liefert das Keyword-Objekt einer Kreatur (aus ihrem Element) oder null.
+function elementKeyword(creature) {
+  const el = creature && Elements[creature.element];
+  const type = el && el.keyword;
+  if (!type || !ELEMENT_KEYWORD_PARAMS[type]) return null;
+  return Object.assign({ type }, ELEMENT_KEYWORD_PARAMS[type]);
+}
+
 const ITEMS_DATA = [
   // --- GewÃ¶hnlich: reine Werte ---
   { id: 'steinherz',     name: 'Steinherz',     icon: 'heart',  rarity: 'common', price: 120, stats: { hp: 0.18 } },
-  { id: 'scharfzahn',    name: 'Scharfzahn',    icon: 'fang',   rarity: 'common', price: 120, stats: { atk: 0.15 } },
+  { id: 'scharfzahn',    name: 'Scharfzahn',    icon: 'fang',   rarity: 'common', price: 130, stats: { atk: 0.24 } },
   { id: 'schuppenpanzer',name: 'Schuppenpanzer',icon: 'shield', rarity: 'common', price: 120, stats: { def: 0.25 } },
-  { id: 'windfeder',     name: 'Windfeder',     icon: 'bolt',   rarity: 'common', price: 140, stats: { spd: 3 } },
+  { id: 'windfeder',     name: 'Windfeder',     icon: 'bolt',   rarity: 'common', price: 130, stats: { spd: 10 } },
   // --- Selten: Werte + Keyword ---
   { id: 'toxinzahn',     name: 'Toxin-Zahn',    icon: 'skull',  rarity: 'rare', price: 260,
-    stats: { atk: 0.10 }, keyword: { type: 'poison', maxStacks: 5 } },
+    stats: { atk: 0.20 }, keyword: { type: 'poison', maxStacks: 8 } },
   { id: 'glutkern',      name: 'Glutkern',      icon: 'fire',   rarity: 'rare', price: 260,
-    stats: { atk: 0.10 }, keyword: { type: 'burn', pct: 0.10, sec: 3 } },
+    stats: { atk: 0.12 }, keyword: { type: 'burn', pct: 0.16, sec: 4 } },
   { id: 'frostsplitter', name: 'Frostsplitter', icon: 'frost',  rarity: 'rare', price: 260,
-    stats: { def: 0.10 }, keyword: { type: 'chill', pct: 0.25, sec: 3 } },
+    stats: { def: 0.14 }, keyword: { type: 'chill', pct: 0.35, sec: 4 } },
   { id: 'blutkelch',     name: 'Blutkelch',     icon: 'heart',  rarity: 'rare', price: 280,
-    stats: { atk: 0.08 }, keyword: { type: 'lifesteal', pct: 0.15 } },
+    stats: { atk: 0.12 }, keyword: { type: 'lifesteal', pct: 0.25 } },
   { id: 'dornenhaut',    name: 'Dornenhaut',    icon: 'nature', rarity: 'rare', price: 260,
-    stats: { def: 0.15 }, keyword: { type: 'thorns', flat: 3 } },
+    stats: { def: 0.12 }, keyword: { type: 'thorns', flat: 3 } },
   // --- Episch ---
   { id: 'energieprisma', name: 'Energieprisma', icon: 'orb',    rarity: 'epic', price: 460,
-    stats: { atk: 0.05 }, keyword: { type: 'energy', bonus: 4 } },
+    stats: { atk: 0.12 }, keyword: { type: 'energy', bonus: 22 } },
   { id: 'aegissiegel',   name: 'Aegis-Siegel',  icon: 'shield', rarity: 'epic', price: 480,
     stats: { hp: 0.10 }, keyword: { type: 'shieldStart', pct: 0.20, sec: 8 } },
   { id: 'titanenmark',   name: 'Titanenmark',   icon: 'star',   rarity: 'epic', price: 520,
@@ -1578,6 +1623,10 @@ function abilityEffectShort(effect, p) {
     case 'teamHeal':        return `Heilt ${abPct(p.healPctMaxHp)} LP`;
     case 'spreadDotDebuff': return `Gift ${abPct(p.dotPct)}/s ${p.durationSec}s Â· VER âˆ’${abPct(p.defDown)}`;
     case 'reviveOrHeal':    return `Belebt mit ${abPct(p.reviveHpPct)} LP, sonst Heilung ${abPct(p.healPctMaxHp)}`;
+    // Runde 10: die drei neuen Passive, die vorher `effect: 'none'` waren.
+    case 'teamAura':        return `Team +${abPct(p.atk)} ANG Â· +${abPct(p.def)} VER`;
+    case 'everyNthAttackDouble': return `Jeder ${p.every}. Angriff trifft doppelt`;
+    case 'selfRevive':      return `Steht einmal mit ${abPct(p.hpPct)} LP wieder auf`;
     default:                return '';
   }
 }
@@ -1629,10 +1678,13 @@ function defaultSave() {
       nature_golem: { level: 1, xp: 0 },
       water_geist:  { level: 1, xp: 0 },
     },
-    team: ['fire_drache', 'nature_golem', 'water_geist'],
+    // Tank steht vorn (Runde 10): Slot 0 wird zuerst angegriffen. Die alte
+    // Reihenfolge stellte den Drachen an die Front â€” ein neuer Spieler verlor
+    // dadurch KÃ¤mpfe, ohne zu verstehen, warum.
+    team: ['nature_golem', 'fire_drache', 'water_geist'],
     // Arena-Team (Runde 9): eigenstÃ¤ndige Aufstellung fÃ¼rs PVP. Es greift auf
     // DIESELBE Sammlung zu â€” nur die drei PlÃ¤tze sind unabhÃ¤ngig von der Kampagne.
-    arenaTeam: ['fire_drache', 'nature_golem', 'water_geist'],
+    arenaTeam: ['nature_golem', 'fire_drache', 'water_geist'],
     stages: {},            // stageId -> Sterne (1â€“3)
     milestones: {},        // milestoneId -> true (abgeholt)
     lastLogin: null,       // 'YYYY-MM-DD' des letzten Tages-Bonus
@@ -1644,6 +1696,7 @@ function defaultSave() {
     ascension: 0,          // gewÃ¤hlte Aufstiegsstufe (0 = normale Kampagne)
     ascHigh: 0,            // hÃ¶chste Stufe, auf der der Endboss fiel
     ascStages: {},         // stageId -> hÃ¶chste dort geschaffte Aufstiegsstufe
+    tips: {},              // tipId -> true (Ersthilfe-Hinweis wurde gezeigt, Runde 10)
   };
 }
 
@@ -1702,6 +1755,7 @@ function loadSave() {
       if (typeof s.ascension !== 'number') s.ascension = 0;
       if (typeof s.ascHigh !== 'number') s.ascHigh = 0;
       if (!s.ascStages) s.ascStages = {};
+      if (!s.tips) s.tips = {};                    // Migration Runde 10
       Object.keys(s.equipped).forEach(cid => {
         if (!s.collection[cid] || typeof Items === 'undefined' || !Items[s.equipped[cid]]) delete s.equipped[cid];
       });
@@ -1789,23 +1843,40 @@ function fusionResult(cidA, cidB) {
   return f && elId ? 'fx_' + f.id + '_' + elId : null;
 }
 
-// Wie fusionResult, prÃ¼ft zusÃ¤tzlich Besitz + Max-Level + noch nicht vorhanden.
+// Fusions-Regeln ab Runde 10 (21.07.2026):
+// Vorher brauchte Fusion ZWEI Max-Level-Kreaturen (zusammen 700 XP â€” mehr, als
+// die ganze Kampagne hergibt) und das Ergebnis startete auf Level 1. Gemessen:
+// bei 8 von 12 Rezepten verlor die frische Fusion gegen eine der Zutaten, die
+// man dafÃ¼r gelÃ¶scht hat. Fusion war also eine Falle.
+// Jetzt: ab Level 3 mÃ¶glich, und das Ergebnis erbt das NIEDRIGERE Zutat-Level.
+// Damit ist Fusion immer ein Aufstieg und wird zur echten Entscheidung â€”
+// frÃ¼h fusionieren (schwÃ¤cher, aber sofort) oder auf Level 5 warten.
+const FUSION_MIN_LEVEL = 3;
+
+function fusionLevelFor(cidA, cidB) {
+  const ea = Save.collection[cidA], eb = Save.collection[cidB];
+  if (!ea || !eb) return 0;
+  return Math.min(ea.level, eb.level);
+}
+
+// Wie fusionResult, prÃ¼ft zusÃ¤tzlich Besitz + Mindestlevel + noch nicht vorhanden.
 function fusionReady(cidA, cidB) {
   const out = fusionResult(cidA, cidB);
   if (!out || Save.collection[out]) return null;
   const ea = Save.collection[cidA], eb = Save.collection[cidB];
-  return ea && eb && ea.level >= MAX_LEVEL && eb.level >= MAX_LEVEL ? out : null;
+  return ea && eb && ea.level >= FUSION_MIN_LEVEL && eb.level >= FUSION_MIN_LEVEL ? out : null;
 }
 
 // Verbraucht beide Zutaten, fÃ¼gt die Fusions-Kreatur (Level 1) hinzu, flickt das Team.
 function fuseCreatures(cidA, cidB) {
   const out = fusionReady(cidA, cidB);
   if (!out) return null;
+  const outLevel = fusionLevelFor(cidA, cidB);   // erbt das niedrigere Zutat-Level
   delete Save.collection[cidA];
   delete Save.collection[cidB];
   delete Save.equipped[cidA];   // Items der Zutaten wandern zurÃ¼ck ins Inventar
   delete Save.equipped[cidB];
-  Save.collection[out] = { level: 1, xp: 0 };
+  Save.collection[out] = { level: outLevel, xp: 0 };
   // Kampagnen- UND Arena-Team flicken (beide greifen auf dieselbe Sammlung zu).
   ['team', 'arenaTeam'].forEach(key => {
     if (!Array.isArray(Save[key])) return;
@@ -1829,6 +1900,18 @@ function highestClearedStage() {
 
 function stageUnlocked(n) { return n <= highestClearedStage() + 1; }
 
+// Neu freigeschaltete Kreaturen starten auf dem Level des aktuellen Teams,
+// nicht auf 1 (Runde 10). Vorher war eine Belohnung aus Kapitel 2 mit Level 1
+// gegen ein Level-4-Team wertlos â€” der Spieler bekam etwas geschenkt, das er
+// sofort wieder wegsteckte. Ein Level unter dem Team-Schnitt bleibt als Anreiz,
+// sie hochzuspielen.
+function unlockLevel() {
+  const levels = Object.values(Save.collection).map(e => e.level).sort((a, b) => a - b);
+  if (!levels.length) return 1;
+  const mid = levels[Math.floor(levels.length / 2)];
+  return Math.max(1, Math.min(MAX_LEVEL, mid - 1));
+}
+
 function grantStageRewards(stage, stars) {
   const first = !Save.stages[stage.id];
   const prev = Save.stages[stage.id] || 0;
@@ -1845,14 +1928,14 @@ function grantStageRewards(stage, stars) {
   if (first) {
     gold += stage.firstClearBonus;
     if (stage.unlockCreature && !Save.collection[stage.unlockCreature]) {
-      Save.collection[stage.unlockCreature] = { level: 1, xp: 0 };
+      Save.collection[stage.unlockCreature] = { level: unlockLevel(), xp: 0 };
       unlocked = stage.unlockCreature;
     }
   }
   // Endboss-Belohnung (Runde 9): einmalig, eigener Archetyp, nicht fusionierbar.
   // Auch auf hÃ¶heren Aufstiegsstufen gibt es sie nur, wenn man sie noch nicht hat.
   if (stage.bossCreature && Creatures[stage.bossCreature] && !Save.collection[stage.bossCreature]) {
-    Save.collection[stage.bossCreature] = { level: 1, xp: 0 };
+    Save.collection[stage.bossCreature] = { level: unlockLevel(), xp: 0 };
     bossUnlocked = stage.bossCreature;
   }
   Save.gold += gold;
@@ -1970,8 +2053,18 @@ function markAscClear(stageId) {
 const ATTACK_INTERVAL_BASE = 2400;   // ms; sinkt mit Tempo (spd).
 const ATTACK_INTERVAL_MIN = 700;
 const DEF_MITIGATION = 0.4;          // Schaden = ANGÂ·Mult âˆ’ VERÂ·0.4
+// Kampfdauer-Stellschraube (Runde 10): ALLE Lebenspunkte werden mit diesem
+// Faktor multipliziert. Vorher dauerte ein Kampf im Median 15 s Kampfzeit, bei
+// Tempo 2Ã— also gut 7 echte Sekunden â€” zu kurz, als dass Heilung, Schilde oder
+// Ults etwas ausrichten kÃ¶nnten (Teams mit zwei Geistern: 0 von 12 Siegen).
+//
+// Bewusst LP hoch statt Schaden runter: Verteidigung und Steinhaut sind FLACHE
+// AbzÃ¼ge. Bremst man den Schaden, werden sie relativ stÃ¤rker und Tanks
+// dominieren alles (gemessen: Golem in 24 von 60 PlÃ¤tzen der besten Teams).
+// Mehr LP lÃ¤sst jedes VerhÃ¤ltnis unangetastet und streckt nur die Zeitachse.
+const HP_SCALE = 1.7;
 const ENEMY_ULTI_DELAY = 400;        // KI zÃ¼ndet Ulti kurz nach voller Energie.
-const SUDDEN_DEATH_AT = 120000;      // ab 2 min steigt aller Schaden (verhindert Heiler-Patt)
+const SUDDEN_DEATH_AT = 75000;       // Runde 10: Kaempfe laufen jetzt laenger, Deckel entsprechend frueher
 
 // Globaler Schadens-Multiplikator: 1Ã— bis 2 min, danach linear bis 3Ã— (Minute 4+).
 function suddenDeathMult(battle) {
@@ -1980,9 +2073,14 @@ function suddenDeathMult(battle) {
   return 1 + Math.min(2, (battle.time - at) / 60000);
 }
 
+// Zwei getrennte Konter-RÃ¤der (Runde 10): Feuer>Natur>Wasser>Feuer und
+// Dampf>Asche>Frost>Dampf. Zwischen Basis und Hybrid gibt es keine Kante â€”
+// `strongVs`/`weakVs` zeigen nie Ã¼ber das eigene Rad hinaus, das ergibt
+// automatisch neutral. Vorher waren Hybride pauschal neutral, wodurch das
+// Endgame die Kernmechanik verlor.
 function elementMult(attEl, defEl) {
-  const a = Elements[attEl], d = Elements[defEl];
-  if (a.neutral || d.neutral) return TYPES_DATA.multipliers.neutral;
+  const a = Elements[attEl];
+  if (!a) return TYPES_DATA.multipliers.neutral;
   if (a.strongVs === defEl) return TYPES_DATA.multipliers.advantage;
   if (a.weakVs === defEl) return TYPES_DATA.multipliers.disadvantage;
   return TYPES_DATA.multipliers.neutral;
@@ -2004,10 +2102,19 @@ function createUnit(cid, level, side, slot, itemId, mod) {
   // das Keyword wird in doAttack/dealDamage ausgewertet (items.js).
   const item = (itemId && typeof Items !== 'undefined') ? (Items[itemId] || null) : null;
   const stats = applyItemStats(statsAtLevel(c, level), item);
+  // Keyword-Liste (Runde 10): erst das Element-Keyword, dann das des Items.
+  // Beide wirken gleichzeitig und werden Ã¼berall generisch Ã¼ber `u.kws`
+  // ausgewertet â€” ein neues Keyword braucht nur einen Eintrag, keinen Sonderweg.
+  const kws = [];
+  if (typeof elementKeyword === 'function') {
+    const ek = elementKeyword(c);
+    if (ek) kws.push(ek);
+  }
+  if (item && item.keyword) kws.push(item.keyword);
   const u = {
     uid: 'u' + (++_unitUid),
-    cid, c, side, slot, level, stats, item,
-    hp: stats.hp, maxHp: stats.hp,
+    cid, c, side, slot, level, stats, item, kws,
+    hp: Math.round(stats.hp * HP_SCALE), maxHp: Math.round(stats.hp * HP_SCALE),
     energy: 0, alive: true,
     nextAttackAt: 0,
     passive: Abilities[c.passive],
@@ -2036,6 +2143,7 @@ function createBattle(allyDefs, enemyDefs, modIds) {
     allies: allyDefs.map((d, i) => createUnit(d.id, d.level, 'ally', i, d.item, d.mod)),
     enemies: enemyDefs.map((d, i) => createUnit(d.id, d.level, 'enemy', i, d.item, d.mod)),
     autoUlti: false,
+    hpScale: HP_SCALE,
     listeners: [],
     on(fn) { this.listeners.push(fn); },
     emit(type, data) { this.listeners.forEach(fn => fn(type, data)); },
@@ -2062,14 +2170,29 @@ function createBattle(allyDefs, enemyDefs, modIds) {
     });
   });
 
+  // Passiv 'teamAura' (Runde 10): UnterstÃ¼tzer wirken ab der ersten Sekunde,
+  // nicht erst beim Ult. Vorher war das Geist-Passiv leer (`effect: 'none'`) â€”
+  // ein Geist im Team hieÃŸ faktisch 2 gegen 3.
+  [battle.allies, battle.enemies].forEach(side => {
+    side.forEach(src => {
+      if (!src.passive || src.passive.effect !== 'teamAura') return;
+      const p = src.passive.params || {};
+      side.forEach(u => applyStatMod(u, { atk: p.atk || 0, def: p.def || 0 }));
+    });
+  });
+
   // Erste Angriffe staffeln, damit nicht alles gleichzeitig zuschlÃ¤gt.
   [...battle.allies, ...battle.enemies].forEach(u => {
     u.nextAttackAt = attackInterval(u) * (0.35 + u.slot * 0.18);
-    // Keyword 'shieldStart': Kampfbeginn mit Schild (Aegis-Siegel).
-    const k = u.item && u.item.keyword;
-    if (k && k.type === 'shieldStart') {
-      u.shield = { amount: Math.round(u.maxHp * k.pct), expiresAt: k.sec * 1000 };
+    // Keyword 'shieldStart': Kampfbeginn mit Schild (Frost-Element, Aegis-Siegel).
+    // Mehrere Quellen addieren sich, die lÃ¤ngere Dauer gewinnt.
+    let amount = 0, until = 0;
+    for (const k of u.kws) {
+      if (k.type !== 'shieldStart') continue;
+      amount += Math.round(u.maxHp * k.pct);
+      until = Math.max(until, k.sec * 1000);
     }
+    if (amount > 0) u.shield = { amount, expiresAt: until };
   });
   return battle;
 }
@@ -2137,11 +2260,20 @@ function dealDamage(battle, source, target, rawAmount, kind, elMult) {
   // Keyword 'thorns': normaler Treffer wird flach zurÃ¼ckgespiegelt (kein Loop,
   // weil der RÃ¼ckschlag mit kind 'thorns' lÃ¤uft).
   if (kind === 'hit' && source && source.alive && target.alive) {
-    const tk = target.item && target.item.keyword;
-    const flat = (tk && tk.type === 'thorns' ? tk.flat : 0) + (target.thorns || 0);
+    const flat = target.kws.reduce((s, k) => s + (k.type === 'thorns' ? k.flat : 0), 0)
+               + (target.thorns || 0);
     if (flat > 0) dealDamage(battle, null, source, flat, 'thorns');
   }
   if (target.hp <= 0) {
+    // Passiv 'selfRevive' (Runde 10): einmal pro Kampf wieder aufstehen.
+    // Macht den Bewahrer zur echten Rolle statt zu einem Passiv mit `none`.
+    if (target.passive && target.passive.effect === 'selfRevive' && !target.selfRevived) {
+      target.selfRevived = true;
+      target.hp = Math.max(1, Math.round(target.maxHp * (target.passive.params.hpPct || 0.35)));
+      target.poison = null; target.bleeds = []; target.dots = [];
+      battle.emit('revive', { unit: target, self: true });
+      return dmg;
+    }
     target.hp = 0;
     target.alive = false;
     battle.emit('die', { unit: target });
@@ -2184,9 +2316,18 @@ function doAttack(battle, u) {
   if (!target) return;
   const mult = elementMult(u.c.element, target.c.element);
   battle.emit('attack', { attacker: u, target });
-  const dealt = dealDamage(battle, u, target, effAtk(u) * mult, 'hit', mult);
+  let dealt = dealDamage(battle, u, target, effAtk(u) * mult, 'hit', mult);
 
   const p = u.passive;
+  // Passiv 'everyNthAttackDouble' (Runde 10): jeder N-te Angriff trifft doppelt.
+  // ZÃ¤hler statt Zufall â€” battle.js muss deterministisch bleiben (Server-PrÃ¼fung).
+  if (p.effect === 'everyNthAttackDouble') {
+    u.atkCount = (u.atkCount || 0) + 1;
+    if (u.atkCount % p.params.every === 0 && target.alive) {
+      dealt += dealDamage(battle, u, target, effAtk(u) * mult * (p.params.mult || 1), 'hit', mult);
+      battle.emit('doubleHit', { attacker: u, target });
+    }
+  }
   if (p.trigger === 'onAttack') {
     gainEnergy(battle, u, p.energyGain);
     if (p.effect === 'lifesteal') heal(battle, u, dealt * p.params.pctOfDamage);
@@ -2200,29 +2341,28 @@ function doAttack(battle, u) {
 
   if (battle.lifestealAll) heal(battle, u, dealt * battle.lifestealAll); // 'Blutrausch'
 
-  // Item-Keyword (items.js): Thema Ã¼ber Mechanik statt Ã¼ber neue Elemente.
-  const k = u.item && u.item.keyword;
-  if (k) {
+  // Keywords (Element + Item, items.js): Thema Ã¼ber Mechanik statt Ã¼ber neue
+  // Elemente. Beide Quellen laufen durch dieselbe Schleife.
+  for (const k of u.kws) {
     if (k.type === 'lifesteal') heal(battle, u, dealt * k.pct);
     if (k.type === 'energy') gainEnergy(battle, u, k.bonus);
-    if (target.alive) {
-      if (k.type === 'poison') {
-        if (!target.poison) target.poison = { stacks: 0, srcAtk: 0, nextTickAt: battle.time + 1000 };
-        target.poison.stacks = Math.min(k.maxStacks, target.poison.stacks + 1);
-        target.poison.srcAtk = effAtk(u);
-        battle.emit('poison', { target, stacks: target.poison.stacks });
-      }
-      if (k.type === 'burn') {
-        target.dots.push({ dps: effAtk(u) * k.pct,
-                           expiresAt: battle.time + k.sec * 1000,
-                           nextTickAt: battle.time + 1000 });
-        battle.emit('burn', { target });
-      }
-      if (k.type === 'chill') {
-        target.chillUntil = battle.time + k.sec * 1000;
-        target.chillPct = k.pct;
-        battle.emit('chill', { target });
-      }
+    if (!target.alive) continue;
+    if (k.type === 'poison') {
+      if (!target.poison) target.poison = { stacks: 0, srcAtk: 0, nextTickAt: battle.time + 1000 };
+      target.poison.stacks = Math.min(k.maxStacks, target.poison.stacks + 1);
+      target.poison.srcAtk = effAtk(u);
+      battle.emit('poison', { target, stacks: target.poison.stacks });
+    }
+    if (k.type === 'burn') {
+      target.dots.push({ dps: effAtk(u) * k.pct,
+                         expiresAt: battle.time + k.sec * 1000,
+                         nextTickAt: battle.time + 1000 });
+      battle.emit('burn', { target });
+    }
+    if (k.type === 'chill') {
+      target.chillUntil = battle.time + k.sec * 1000;
+      target.chillPct = k.pct;
+      battle.emit('chill', { target });
     }
   }
 }
@@ -2385,4 +2525,4 @@ function updateBattle(battle, dt) {
 }
 
 
-export { createBattle, updateBattle, castActive, Creatures, Items };
+export { createBattle, updateBattle, castActive, Creatures, Items, Elements, statsAtLevel };

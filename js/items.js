@@ -15,26 +15,52 @@ const ITEM_KEYWORDS = {
   shieldStart: { name: 'Startschild', icon: 'shield' },
 };
 
+// ---------- Element-Keywords (Runde 10, 21.07.2026) ----------
+// KERNÄNDERUNG: Jedes Element bringt seine eigene Mechanik mit. Vorher waren
+// die 21 Basis-Kreaturen nur 7 Archetypen in 3 Farben — gleiche Fähigkeiten,
+// ±10 % Werte. Jetzt spielt sich fire_wolf (brennt) anders als water_wolf
+// (friert ein) und nature_wolf (vergiftet), ohne einen einzigen neuen Sprite.
+//
+// Werte bewusst KLEIN: jede Kreatur im Spiel hat eines davon, Item-Keywords
+// sind deutlich stärker und bleiben dadurch eine echte Entscheidung.
+// `keyword` je Element steht in data/types.json.
+const ELEMENT_KEYWORD_PARAMS = {
+  burn:        { pct: 0.05, sec: 3 },              // Feuer: Brand-DoT
+  poison:      { maxStacks: 3 },                   // Natur: Giftstapel (5 % ANG/s je Stapel)
+  chill:       { pct: 0.15, sec: 2.5 },            // Wasser: Ziel schlägt langsamer
+  energy:      { bonus: 2 },                       // Dampf: schneller zur Ulti
+  thorns:      { flat: 2 },                        // Asche: Rückschlag bei Treffern
+  shieldStart: { pct: 0.10, sec: 10 },             // Frost: Startschild
+};
+
+// Liefert das Keyword-Objekt einer Kreatur (aus ihrem Element) oder null.
+function elementKeyword(creature) {
+  const el = creature && Elements[creature.element];
+  const type = el && el.keyword;
+  if (!type || !ELEMENT_KEYWORD_PARAMS[type]) return null;
+  return Object.assign({ type }, ELEMENT_KEYWORD_PARAMS[type]);
+}
+
 const ITEMS_DATA = [
   // --- Gewöhnlich: reine Werte ---
   { id: 'steinherz',     name: 'Steinherz',     icon: 'heart',  rarity: 'common', price: 120, stats: { hp: 0.18 } },
-  { id: 'scharfzahn',    name: 'Scharfzahn',    icon: 'fang',   rarity: 'common', price: 120, stats: { atk: 0.15 } },
+  { id: 'scharfzahn',    name: 'Scharfzahn',    icon: 'fang',   rarity: 'common', price: 130, stats: { atk: 0.24 } },
   { id: 'schuppenpanzer',name: 'Schuppenpanzer',icon: 'shield', rarity: 'common', price: 120, stats: { def: 0.25 } },
-  { id: 'windfeder',     name: 'Windfeder',     icon: 'bolt',   rarity: 'common', price: 140, stats: { spd: 3 } },
+  { id: 'windfeder',     name: 'Windfeder',     icon: 'bolt',   rarity: 'common', price: 130, stats: { spd: 10 } },
   // --- Selten: Werte + Keyword ---
   { id: 'toxinzahn',     name: 'Toxin-Zahn',    icon: 'skull',  rarity: 'rare', price: 260,
-    stats: { atk: 0.10 }, keyword: { type: 'poison', maxStacks: 5 } },
+    stats: { atk: 0.20 }, keyword: { type: 'poison', maxStacks: 8 } },
   { id: 'glutkern',      name: 'Glutkern',      icon: 'fire',   rarity: 'rare', price: 260,
-    stats: { atk: 0.10 }, keyword: { type: 'burn', pct: 0.10, sec: 3 } },
+    stats: { atk: 0.12 }, keyword: { type: 'burn', pct: 0.16, sec: 4 } },
   { id: 'frostsplitter', name: 'Frostsplitter', icon: 'frost',  rarity: 'rare', price: 260,
-    stats: { def: 0.10 }, keyword: { type: 'chill', pct: 0.25, sec: 3 } },
+    stats: { def: 0.14 }, keyword: { type: 'chill', pct: 0.35, sec: 4 } },
   { id: 'blutkelch',     name: 'Blutkelch',     icon: 'heart',  rarity: 'rare', price: 280,
-    stats: { atk: 0.08 }, keyword: { type: 'lifesteal', pct: 0.15 } },
+    stats: { atk: 0.12 }, keyword: { type: 'lifesteal', pct: 0.25 } },
   { id: 'dornenhaut',    name: 'Dornenhaut',    icon: 'nature', rarity: 'rare', price: 260,
-    stats: { def: 0.15 }, keyword: { type: 'thorns', flat: 3 } },
+    stats: { def: 0.12 }, keyword: { type: 'thorns', flat: 3 } },
   // --- Episch ---
   { id: 'energieprisma', name: 'Energieprisma', icon: 'orb',    rarity: 'epic', price: 460,
-    stats: { atk: 0.05 }, keyword: { type: 'energy', bonus: 4 } },
+    stats: { atk: 0.12 }, keyword: { type: 'energy', bonus: 22 } },
   { id: 'aegissiegel',   name: 'Aegis-Siegel',  icon: 'shield', rarity: 'epic', price: 480,
     stats: { hp: 0.10 }, keyword: { type: 'shieldStart', pct: 0.20, sec: 8 } },
   { id: 'titanenmark',   name: 'Titanenmark',   icon: 'star',   rarity: 'epic', price: 520,

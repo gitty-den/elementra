@@ -137,6 +137,10 @@ function abilityEffectShort(effect, p) {
     case 'teamHeal':        return `Heilt ${abPct(p.healPctMaxHp)} LP`;
     case 'spreadDotDebuff': return `Gift ${abPct(p.dotPct)}/s ${p.durationSec}s · VER −${abPct(p.defDown)}`;
     case 'reviveOrHeal':    return `Belebt mit ${abPct(p.reviveHpPct)} LP, sonst Heilung ${abPct(p.healPctMaxHp)}`;
+    // Runde 10: die drei neuen Passive, die vorher `effect: 'none'` waren.
+    case 'teamAura':        return `Team +${abPct(p.atk)} ANG · +${abPct(p.def)} VER`;
+    case 'everyNthAttackDouble': return `Jeder ${p.every}. Angriff trifft doppelt`;
+    case 'selfRevive':      return `Steht einmal mit ${abPct(p.hpPct)} LP wieder auf`;
     default:                return '';
   }
 }
@@ -188,10 +192,13 @@ function defaultSave() {
       nature_golem: { level: 1, xp: 0 },
       water_geist:  { level: 1, xp: 0 },
     },
-    team: ['fire_drache', 'nature_golem', 'water_geist'],
+    // Tank steht vorn (Runde 10): Slot 0 wird zuerst angegriffen. Die alte
+    // Reihenfolge stellte den Drachen an die Front — ein neuer Spieler verlor
+    // dadurch Kämpfe, ohne zu verstehen, warum.
+    team: ['nature_golem', 'fire_drache', 'water_geist'],
     // Arena-Team (Runde 9): eigenständige Aufstellung fürs PVP. Es greift auf
     // DIESELBE Sammlung zu — nur die drei Plätze sind unabhängig von der Kampagne.
-    arenaTeam: ['fire_drache', 'nature_golem', 'water_geist'],
+    arenaTeam: ['nature_golem', 'fire_drache', 'water_geist'],
     stages: {},            // stageId -> Sterne (1–3)
     milestones: {},        // milestoneId -> true (abgeholt)
     lastLogin: null,       // 'YYYY-MM-DD' des letzten Tages-Bonus
@@ -203,6 +210,7 @@ function defaultSave() {
     ascension: 0,          // gewählte Aufstiegsstufe (0 = normale Kampagne)
     ascHigh: 0,            // höchste Stufe, auf der der Endboss fiel
     ascStages: {},         // stageId -> höchste dort geschaffte Aufstiegsstufe
+    tips: {},              // tipId -> true (Ersthilfe-Hinweis wurde gezeigt, Runde 10)
   };
 }
 
@@ -261,6 +269,7 @@ function loadSave() {
       if (typeof s.ascension !== 'number') s.ascension = 0;
       if (typeof s.ascHigh !== 'number') s.ascHigh = 0;
       if (!s.ascStages) s.ascStages = {};
+      if (!s.tips) s.tips = {};                    // Migration Runde 10
       Object.keys(s.equipped).forEach(cid => {
         if (!s.collection[cid] || typeof Items === 'undefined' || !Items[s.equipped[cid]]) delete s.equipped[cid];
       });
@@ -348,23 +357,40 @@ function fusionResult(cidA, cidB) {
   return f && elId ? 'fx_' + f.id + '_' + elId : null;
 }
 
-// Wie fusionResult, prüft zusätzlich Besitz + Max-Level + noch nicht vorhanden.
+// Fusions-Regeln ab Runde 10 (21.07.2026):
+// Vorher brauchte Fusion ZWEI Max-Level-Kreaturen (zusammen 700 XP — mehr, als
+// die ganze Kampagne hergibt) und das Ergebnis startete auf Level 1. Gemessen:
+// bei 8 von 12 Rezepten verlor die frische Fusion gegen eine der Zutaten, die
+// man dafür gelöscht hat. Fusion war also eine Falle.
+// Jetzt: ab Level 3 möglich, und das Ergebnis erbt das NIEDRIGERE Zutat-Level.
+// Damit ist Fusion immer ein Aufstieg und wird zur echten Entscheidung —
+// früh fusionieren (schwächer, aber sofort) oder auf Level 5 warten.
+const FUSION_MIN_LEVEL = 3;
+
+function fusionLevelFor(cidA, cidB) {
+  const ea = Save.collection[cidA], eb = Save.collection[cidB];
+  if (!ea || !eb) return 0;
+  return Math.min(ea.level, eb.level);
+}
+
+// Wie fusionResult, prüft zusätzlich Besitz + Mindestlevel + noch nicht vorhanden.
 function fusionReady(cidA, cidB) {
   const out = fusionResult(cidA, cidB);
   if (!out || Save.collection[out]) return null;
   const ea = Save.collection[cidA], eb = Save.collection[cidB];
-  return ea && eb && ea.level >= MAX_LEVEL && eb.level >= MAX_LEVEL ? out : null;
+  return ea && eb && ea.level >= FUSION_MIN_LEVEL && eb.level >= FUSION_MIN_LEVEL ? out : null;
 }
 
 // Verbraucht beide Zutaten, fügt die Fusions-Kreatur (Level 1) hinzu, flickt das Team.
 function fuseCreatures(cidA, cidB) {
   const out = fusionReady(cidA, cidB);
   if (!out) return null;
+  const outLevel = fusionLevelFor(cidA, cidB);   // erbt das niedrigere Zutat-Level
   delete Save.collection[cidA];
   delete Save.collection[cidB];
   delete Save.equipped[cidA];   // Items der Zutaten wandern zurück ins Inventar
   delete Save.equipped[cidB];
-  Save.collection[out] = { level: 1, xp: 0 };
+  Save.collection[out] = { level: outLevel, xp: 0 };
   // Kampagnen- UND Arena-Team flicken (beide greifen auf dieselbe Sammlung zu).
   ['team', 'arenaTeam'].forEach(key => {
     if (!Array.isArray(Save[key])) return;
@@ -388,6 +414,18 @@ function highestClearedStage() {
 
 function stageUnlocked(n) { return n <= highestClearedStage() + 1; }
 
+// Neu freigeschaltete Kreaturen starten auf dem Level des aktuellen Teams,
+// nicht auf 1 (Runde 10). Vorher war eine Belohnung aus Kapitel 2 mit Level 1
+// gegen ein Level-4-Team wertlos — der Spieler bekam etwas geschenkt, das er
+// sofort wieder wegsteckte. Ein Level unter dem Team-Schnitt bleibt als Anreiz,
+// sie hochzuspielen.
+function unlockLevel() {
+  const levels = Object.values(Save.collection).map(e => e.level).sort((a, b) => a - b);
+  if (!levels.length) return 1;
+  const mid = levels[Math.floor(levels.length / 2)];
+  return Math.max(1, Math.min(MAX_LEVEL, mid - 1));
+}
+
 function grantStageRewards(stage, stars) {
   const first = !Save.stages[stage.id];
   const prev = Save.stages[stage.id] || 0;
@@ -404,14 +442,14 @@ function grantStageRewards(stage, stars) {
   if (first) {
     gold += stage.firstClearBonus;
     if (stage.unlockCreature && !Save.collection[stage.unlockCreature]) {
-      Save.collection[stage.unlockCreature] = { level: 1, xp: 0 };
+      Save.collection[stage.unlockCreature] = { level: unlockLevel(), xp: 0 };
       unlocked = stage.unlockCreature;
     }
   }
   // Endboss-Belohnung (Runde 9): einmalig, eigener Archetyp, nicht fusionierbar.
   // Auch auf höheren Aufstiegsstufen gibt es sie nur, wenn man sie noch nicht hat.
   if (stage.bossCreature && Creatures[stage.bossCreature] && !Save.collection[stage.bossCreature]) {
-    Save.collection[stage.bossCreature] = { level: 1, xp: 0 };
+    Save.collection[stage.bossCreature] = { level: unlockLevel(), xp: 0 };
     bossUnlocked = stage.bossCreature;
   }
   Save.gold += gold;

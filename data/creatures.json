@@ -43,7 +43,7 @@
       "target": "allAllies",
       "effect": "teamShield",
       "params": {
-        "shieldPctMaxHp": 0.2,
+        "shieldPctMaxHp": 0.15,
         "durationSec": 5,
         "taunt": true
       }
@@ -52,8 +52,11 @@
       "name": "Windschnitt",
       "trigger": "onAttack",
       "energyGain": 10,
-      "effect": "none",
-      "params": {}
+      "effect": "everyNthAttackDouble",
+      "params": {
+        "every": 3,
+        "mult": 1
+      }
     },
     "greif_active": {
       "name": "Sturzflug",
@@ -71,7 +74,7 @@
       "energyGain": 7,
       "effect": "lifesteal",
       "params": {
-        "pctOfDamage": 0.15
+        "pctOfDamage": 0.1
       }
     },
     "wolf_active": {
@@ -80,7 +83,7 @@
       "target": "enemyLowestHp",
       "effect": "hitPlusBleed",
       "params": {
-        "atkMultiplier": 2.5,
+        "atkMultiplier": 2.2,
         "bleedPct": 0.1,
         "bleedTicks": 3
       }
@@ -91,7 +94,7 @@
       "energyGain": 6,
       "effect": "applyPoison",
       "params": {
-        "stackPct": 0.05,
+        "stackPct": 0.06,
         "maxStacks": 5
       }
     },
@@ -103,15 +106,18 @@
       "params": {
         "dotPct": 0.15,
         "durationSec": 4,
-        "defDown": 0.1
+        "defDown": 0.18
       }
     },
     "geist_passive": {
       "name": "Lebensquell",
       "trigger": "perSecond",
       "energyGain": 6,
-      "effect": "none",
-      "params": {}
+      "effect": "teamAura",
+      "params": {
+        "atk": 0.08,
+        "def": 0.06
+      }
     },
     "geist_active": {
       "name": "Segen",
@@ -119,15 +125,17 @@
       "target": "allAllies",
       "effect": "teamHeal",
       "params": {
-        "healPctMaxHp": 0.3
+        "healPctMaxHp": 0.35
       }
     },
     "phoenix_passive": {
       "name": "Ewige Glut",
       "trigger": "perSecond",
       "energyGain": 5,
-      "effect": "none",
-      "params": {}
+      "effect": "selfRevive",
+      "params": {
+        "hpPct": 0.35
+      }
     },
     "phoenix_active": {
       "name": "Wiedergeburt",
@@ -375,7 +383,7 @@
       "target": "allAllies",
       "effect": "teamShield",
       "params": {
-        "shieldPctMaxHp": 0.28,
+        "shieldPctMaxHp": 0.22,
         "durationSec": 6,
         "taunt": true
       }
@@ -628,8 +636,8 @@
       "rarity": "rare",
       "tier": 1,
       "baseStats": {
-        "hp": 85,
-        "atk": 16,
+        "hp": 97,
+        "atk": 18,
         "def": 9,
         "spd": 14
       },
@@ -646,8 +654,8 @@
       "rarity": "rare",
       "tier": 1,
       "baseStats": {
-        "hp": 94,
-        "atk": 15,
+        "hp": 106,
+        "atk": 17,
         "def": 9,
         "spd": 14
       },
@@ -664,8 +672,8 @@
       "rarity": "rare",
       "tier": 1,
       "baseStats": {
-        "hp": 85,
-        "atk": 15,
+        "hp": 97,
+        "atk": 17,
         "def": 10,
         "spd": 14
       },
@@ -790,9 +798,9 @@
       "rarity": "legendary",
       "tier": 3,
       "baseStats": {
-        "hp": 230,
-        "atk": 23,
-        "def": 22,
+        "hp": 200,
+        "atk": 20,
+        "def": 20,
         "spd": 9
       },
       "passive": "titan_passive",
@@ -809,9 +817,9 @@
       "rarity": "legendary",
       "tier": 3,
       "baseStats": {
-        "hp": 185,
-        "atk": 29,
-        "def": 16,
+        "hp": 165,
+        "atk": 25,
+        "def": 15,
         "spd": 14
       },
       "passive": "schlange_passive",

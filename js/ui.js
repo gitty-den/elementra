@@ -244,6 +244,7 @@ function renderChapterMap(root, chId) {
   let idx = stages.findIndex(s => s.id === current);
   if (idx < 0) idx = 0;
   root.scrollTop = Math.max(0, pos[idx].y - root.clientHeight / 2 + 50);
+  showTipOnce('map');
 }
 
 // ---------- Navigation zwischen den Subscreens: Pfeile am Bildschirmrand ----------
@@ -410,6 +411,7 @@ function openTeamSelect(stage) {
     const ov = showOverlay(`
       ${bandHTML}
       <div class="ts-slots">${slots}</div>
+      ${arena ? '' : previewHTML(picked, stage)}
       <div class="ts-grid ${showAll ? '' : 'ts-grid-short'}">
         ${shown.map(id => creatureCardHTML(id, Save.collection[id].level,
           { cls: (picked.includes(id) ? 'picked ' : '')
@@ -422,6 +424,7 @@ function openTeamSelect(stage) {
         <button class="btn btn-primary" id="ts-start" ${picked.length === 3 ? '' : 'disabled'}>${iconArt(arena ? 'shield' : 'sword', 18)}</button>
       </div>`, 'ts-overlay');
 
+    showTipOnce('team');
     ov.querySelectorAll('.ts-slot').forEach(slotEl => {
       slotEl.onclick = e => {
         if (e.target.closest('.ts-warn-ico')) {                 // Warn-Icon erklärt sich per Tap
@@ -452,6 +455,11 @@ function openTeamSelect(stage) {
       };
       attachLongPress(card, () => openCreatureDetail(card.dataset.cid, { onClose: render }));
     });
+    const prev = ov.querySelector('#ts-preview');
+    if (prev) prev.onclick = () => {
+      Sfx.click();
+      floatHint('Vorschau ohne dein Zutun — mit gut getimten Ults schaffst du mehr.');
+    };
     const more = ov.querySelector('#ts-more');
     if (more) more.onclick = () => { Sfx.click(); showAll = true; render(); };
     ov.querySelector('#ts-cancel').onclick = () => { Sfx.click(); closeOverlay(); };
@@ -470,6 +478,93 @@ function openTeamSelect(stage) {
     };
   };
   render();
+}
+
+// ---------- Ersthilfe-Hinweise (Runde 10) ----------
+// Ein neuer Spieler bekam bisher Elemente, Rollen, Energie, Ults, Items, Fusion
+// und Arena ohne eine Sekunde Erklärung — der häufigste Grund, eine App in den
+// ersten fünf Minuten wieder zu löschen.
+//
+// Bewusst KEIN gesperrter Tutorial-Pfad: je ein kurzer Hinweis, genau dann, wenn
+// der Spieler das Ding zum ersten Mal sieht. Ein Tipp erscheint genau einmal
+// (`Save.tips`), Antippen schließt ihn.
+const TIPS = {
+  map:    { icon: 'map',    text: 'Tippe einen Knoten an. Der Weg führt von unten nach oben.' },
+  team:   { icon: 'shield', text: 'Vorderste Kreatur wird zuerst angegriffen. Zwei Taps tauschen Plätze.' },
+  battle: { icon: 'bolt',   text: 'Leuchtet ein Knopf golden, ist die Ult bereit. Tippen zündet sie.' },
+  coll:   { icon: 'book',   text: 'Kreaturen wachsen durchs Kämpfen. Gold beschleunigt nur.' },
+  element:{ icon: 'fire',   text: 'Feuer schlägt Natur, Natur schlägt Wasser, Wasser schlägt Feuer.' },
+  fusion: { icon: 'orb',    text: 'Zwei verschiedene Archetypen ab Stufe 3 verschmelzen zu etwas Stärkerem.' },
+};
+
+function showTipOnce(id) {
+  if (!TIPS[id]) return;
+  if (!Save.tips) Save.tips = {};
+  if (Save.tips[id]) return;
+  Save.tips[id] = true;
+  persist();
+  const n = el('div', 'tip-card');
+  n.innerHTML = `<span class="tip-ico">${iconArt(TIPS[id].icon, 26)}</span>
+    <span class="tip-text">${TIPS[id].text}</span>`;
+  document.body.appendChild(n);
+  const close = () => n.remove();
+  n.onclick = close;
+  setTimeout(close, 6500);
+}
+
+// ---------- Kampf-Vorschau (Runde 10) ----------
+// `battle.js` ist deterministisch — der Ausgang eines Kampfes lässt sich vorher
+// exakt ausrechnen. Das nutzt sonst kein vergleichbares Spiel, weil deren
+// Engines Zufall enthalten. Hier wird der Kampf im Speicher durchgespielt und
+// als grobe Einschätzung angezeigt.
+//
+// WICHTIG — die Vorschau rechnet mit AUTOMATISCHEN Ults (`autoUlti`). Wer seine
+// Ults im echten Kampf gut timt, schlägt die Vorschau. Sie nimmt dem Spieler
+// also nicht die Entscheidung ab, sie nimmt ihm das Raten ab.
+const PREVIEW_STEPS = [
+  { max: 0,  cls: 'lose', icon: 'skull',  text: 'aussichtslos' },
+  { max: 18, cls: 'tight', icon: 'skull', text: 'sehr knapp' },
+  { max: 45, cls: 'ok',    icon: 'sword', text: 'machbar' },
+  { max: 70, cls: 'good',  icon: 'shield', text: 'sicher' },
+  { max: 101, cls: 'easy', icon: 'star',  text: 'überlegen' },
+];
+
+// Liefert { margin, sec, win } oder null (kein vollständiges Team).
+function previewBattle(teamIds, stage) {
+  if (!teamIds || teamIds.length < 3 || !stage.enemies || !stage.enemies.length) return null;
+  try {
+    const allies = teamIds.slice(0, 3).map((id, slot) => ({
+      id, level: Save.collection[id].level, item: Save.equipped[id] || undefined, slot,
+    }));
+    const foes = (typeof ascEnemyDefs === 'function' && !stage.pvp && !stage.dev)
+      ? ascEnemyDefs(stage) : stage.enemies;
+    const mods = (typeof activeMutators === 'function' && !stage.pvp && !stage.dev)
+      ? activeMutators() : [];
+    const b = createBattle(allies, foes, mods);
+    b.autoUlti = true;
+    let guard = 0;
+    while (!b.over && b.time < 400000 && guard < 40000) { updateBattle(b, 16); guard++; }
+    const maxHp = b.allies.reduce((s, u) => s + u.maxHp, 0) || 1;
+    const hp = b.allies.reduce((s, u) => s + Math.max(0, u.hp), 0);
+    return { win: b.winner === 'ally', margin: b.winner === 'ally' ? hp / maxHp * 100 : 0,
+             sec: b.time / 1000 };
+  } catch (e) {
+    console.warn('Vorschau fehlgeschlagen', e);
+    return null;
+  }
+}
+
+function previewHTML(teamIds, stage) {
+  const p = previewBattle(teamIds, stage);
+  if (!p) return '';
+  const step = PREVIEW_STEPS.find(s => p.margin <= s.max) || PREVIEW_STEPS[PREVIEW_STEPS.length - 1];
+  const cls = p.win ? step.cls : 'lose';
+  const s = p.win ? step : PREVIEW_STEPS[0];
+  // Balken zeigt die erwarteten Rest-LP; bei Niederlage bleibt er leer.
+  return `<button class="ts-preview ${cls}" id="ts-preview">
+    ${iconArt(s.icon, 16)}<span class="tp-text">${s.text}</span>
+    <span class="tp-bar"><i style="width:${Math.round(p.margin)}%"></i></span>
+  </button>`;
 }
 
 // Kurzer Hinweis-Streifen (z. B. Erklärung zum Warn-Icon), verschwindet von selbst.
@@ -601,6 +696,8 @@ function showBattleCountdown() {
   }, i * COUNT_STEP_MS));
   const total = (COUNT_STEPS.length - 1) * COUNT_STEP_MS + 260;
   setTimeout(() => wrap.remove(), total + 120);
+  // Erstes Mal im Kampf: erklären, wofür die Knöpfe unten da sind.
+  setTimeout(() => { showTipOnce('battle'); showTipOnce('element'); }, total + 400);
   return total;
 }
 
@@ -954,6 +1051,11 @@ function onBattleEvent(type, d) {
     case 'absorb': floatText(d.target, '🛡 ' + d.amount, 'absorb'); break;
     case 'shieldGain': floatText(d.target, '🛡 Schild', 'absorb'); break;
     case 'poison': floatText(d.target, '☠ ×' + d.stacks, 'poison'); break;
+    // Runde 10: Element-Mechaniken sichtbar machen — sonst merkt niemand, dass
+    // sich Glut-Wolf und Flut-Wolf unterschiedlich spielen.
+    case 'burn':  spawnParticles(d.target, PixelPalettes.fire.g, 6); break;
+    case 'chill': spawnParticles(d.target, PixelPalettes.frost.h, 6); break;
+    case 'doubleHit': floatText(d.attacker, '×2', 'crit'); Sfx.hit(); break;
     case 'ulti': {
       const glow = PixelPalettes[d.unit.c.element].g;
       // Kurzer Hit-Stop: Kampf friert ~260 ms ein, Ulti bekommt ihren Moment.
@@ -1181,6 +1283,51 @@ function collTabsHTML() {
   </div>`;
 }
 
+// ---------- Sammlungs-Filter (Runde 10) ----------
+// Bleibt bewusst im Arbeitsspeicher (nicht im Save): ein Filter ist eine
+// Momentaufnahme, kein Spielstand.
+let collFilter = { el: null, role: null, sort: 'level' };
+
+const COLL_SORTS = {
+  level: { icon: 'bolt', fn: (a, b) => (Save.collection[b].level - Save.collection[a].level) },
+  power: { icon: 'sword', fn: (a, b) => statPower(b) - statPower(a) },
+  name:  { icon: 'book', fn: (a, b) => Creatures[a].name.localeCompare(Creatures[b].name) },
+};
+
+function statPower(id) {
+  const s = statsAtLevel(Creatures[id], Save.collection[id].level);
+  return s.hp + s.atk * 4 + s.def * 2 + s.spd * 2;
+}
+
+function collMatches(id) {
+  const c = Creatures[id];
+  if (collFilter.el && c.element !== collFilter.el) return false;
+  if (collFilter.role && c.role !== collFilter.role) return false;
+  return true;
+}
+
+function collSort(ids) {
+  return ids.slice().sort(COLL_SORTS[collFilter.sort].fn);
+}
+
+function collFilterHTML() {
+  const els = TYPES_DATA.elements.map(e => {
+    const n = ownedIds().filter(id => Creatures[id].element === e.id).length;
+    return `<button class="cf-btn ${collFilter.el === e.id ? 'on' : ''}" data-fel="${e.id}"
+      ${n ? '' : 'disabled'}>${iconArt(e.id, 18)}<i>${n}</i></button>`;
+  }).join('');
+  const roles = Object.keys(RoleInfo).map(r => {
+    const n = ownedIds().filter(id => Creatures[id].role === r).length;
+    return `<button class="cf-btn ${collFilter.role === r ? 'on' : ''}" data-frole="${r}"
+      ${n ? '' : 'disabled'}>${iconArt(RoleInfo[r].icon, 18)}<i>${n}</i></button>`;
+  }).join('');
+  const sorts = Object.entries(COLL_SORTS).map(([k, v]) =>
+    `<button class="cf-btn sort ${collFilter.sort === k ? 'on' : ''}" data-fsort="${k}">
+      ${iconArt(v.icon, 16)}</button>`).join('');
+  return `<div class="cf-row">${els}</div>
+          <div class="cf-row">${roles}<span class="cf-sep"></span>${sorts}</div>`;
+}
+
 function renderCollection(root) {
   const wrap = el('div', 'coll-screen');
   const tabs = el('div', '', collTabsHTML());
@@ -1193,6 +1340,7 @@ function renderCollection(root) {
   if (collMode === 'fusion') { renderFusionBody(wrap); root.appendChild(wrap); return; }
   if (collMode === 'items') { renderItemsBody(wrap); root.appendChild(wrap); return; }
 
+  showTipOnce('coll');
   wrap.appendChild(el('div', '', goalsPanelHTML()));
   wrap.querySelectorAll('.goal-chip.ready').forEach(chip => chip.onclick = () => {
     const m = MILESTONES.find(x => x.id === chip.dataset.mid);
@@ -1202,9 +1350,29 @@ function renderCollection(root) {
       showScreen('collection');
     }
   });
-  const owned = ownedIds();
+  // Filterleiste (Runde 10): Icon-Knöpfe für Element und Rolle. Ohne sie ist die
+  // Sammlung ab ~30 Kreaturen ein unsortierter Haufen. Rein visuell, kein Text
+  // außer den Zahlen (UI-Grundsatz: sprachunabhängig).
+  const filterBar = el('div', 'coll-filters', collFilterHTML());
+  wrap.appendChild(filterBar);
+  filterBar.querySelectorAll('[data-fel]').forEach(b => b.onclick = () => {
+    collFilter.el = collFilter.el === b.dataset.fel ? null : b.dataset.fel;
+    Sfx.click(); showScreen('collection');
+  });
+  filterBar.querySelectorAll('[data-frole]').forEach(b => b.onclick = () => {
+    collFilter.role = collFilter.role === b.dataset.frole ? null : b.dataset.frole;
+    Sfx.click(); showScreen('collection');
+  });
+  filterBar.querySelectorAll('[data-fsort]').forEach(b => b.onclick = () => {
+    collFilter.sort = b.dataset.fsort;
+    Sfx.click(); showScreen('collection');
+  });
+
+  const owned = collSort(ownedIds().filter(collMatches));
   const grid = el('div', 'coll-grid');
-  grid.innerHTML = owned.map(id => creatureCardHTML(id, Save.collection[id].level)).join('');
+  grid.innerHTML = owned.length
+    ? owned.map(id => creatureCardHTML(id, Save.collection[id].level)).join('')
+    : `<div class="fusion-nores">${iconArt('lock', 22)}<div>Nichts passt zu diesem Filter</div></div>`;
   wrap.appendChild(grid);
 
   const unknown = CREATURES_DATA.creatures.filter(c => !Save.collection[c.id]);
@@ -1232,6 +1400,26 @@ function renderCollection(root) {
     };
     attachLongPress(card, open);
   });
+}
+
+// Element-Mechanik sichtbar machen (Runde 10). Ohne diese Zeile bliebe der
+// Unterschied zwischen Glut- und Flut-Wolf unsichtbar — und genau der ist der
+// Grund, warum die 21 Basis-Kreaturen jetzt 21 statt 7 sind.
+const ELEMENT_KEYWORD_TEXT = {
+  burn:        'Angriffe setzen in Brand',
+  poison:      'Angriffe vergiften (stapelt)',
+  chill:       'Angriffe verlangsamen das Ziel',
+  energy:      'Angriffe laden die Ult schneller',
+  thorns:      'Angreifer bekommen Schaden zurück',
+  shieldStart: 'Startet den Kampf mit Schild',
+};
+
+function elementKeywordHTML(c) {
+  const k = elementKeyword(c);
+  if (!k) return '';
+  const info = ITEM_KEYWORDS[k.type];
+  return `<div class="ab ab-elem"><span class="ab-ico">${iconArt(c.element, 20)}</span>
+    <span class="ab-txt"><b>${info.name}</b><i>${ELEMENT_KEYWORD_TEXT[k.type] || ''}</i></span></div>`;
 }
 
 // Icon-basiert (UI-Grundsätze): Element-/Rollen-Icon, Level-Pips, Stat-Icons.
@@ -1264,6 +1452,7 @@ function openCreatureDetail(cid, opts = {}) {
           <div class="stat">${iconArt('bolt', 17)}<b>${st.spd}</b></div>
         </div>
         <div class="ability-box">
+          ${elementKeywordHTML(c)}
           <div class="ab"><span class="ab-ico">${iconArt('orb', 20)}</span>
             <span class="ab-txt"><b>${Abilities[c.passive].name}</b><i>${abilityShort(c.passive)}</i></span></div>
           <div class="ab ab-ult"><span class="ab-ico">${iconArt(ultIconName(c), 20)}</span>
@@ -1424,7 +1613,24 @@ function levelPipsHTML(level) {
 let fusionPick = [];
 
 // Fusion-Inhalt in die Sammlung eingebettet (Tab „Fusion"). parent = coll-screen.
+// Was bringt die Fusion? Vergleich gegen die STÄRKERE der beiden Zutaten
+// (Werte-Summe), damit die Anzeige nicht schönrechnet. Icon-basiert.
+function fusionGainHTML(cidA, cidB, outId, lvl) {
+  const sum = s => s.hp + s.atk * 4 + s.def * 2 + s.spd * 2;
+  const sa = statsAtLevel(Creatures[cidA], Save.collection[cidA].level);
+  const sb = statsAtLevel(Creatures[cidB], Save.collection[cidB].level);
+  const best = sum(sa) >= sum(sb) ? sa : sb;
+  const out = statsAtLevel(Creatures[outId], lvl);
+  const row = (icon, a, b) => {
+    const d = b - a;
+    return `<span class="fg-stat ${d >= 0 ? 'up' : 'down'}">${iconArt(icon, 13)}${d >= 0 ? '+' : ''}${d}</span>`;
+  };
+  return row('heart', best.hp, out.hp) + row('sword', best.atk, out.atk)
+       + row('shield', best.def, out.def) + row('bolt', best.spd, out.spd);
+}
+
 function renderFusionBody(parent) {
+  showTipOnce('fusion');
   const wrap = el('div', 'fusion-screen');
 
   fusionPick = fusionPick.filter(id => Save.collection[id]);
@@ -1445,8 +1651,12 @@ function renderFusionBody(parent) {
     resultHTML = creatureCardHTML(outId, Save.collection[outId].level)
       + '<div class="fusion-req"><span class="fusion-ok">bereits erwacht</span></div>';
   } else if (outId) {
-    resultHTML = silhouetteCardHTML(outId)
-      + `<div class="fusion-req">${Creatures[outId].name}</div>`;
+    // Runde 10: Ergebnis-Level vorher zeigen — es erbt das niedrigere Zutat-Level.
+    // Vorher tappte der Spieler blind in ein teures Geschäft.
+    const lvl = ready ? fusionLevelFor(a, b) : 0;
+    resultHTML = (ready ? creatureCardHTML(outId, lvl) : silhouetteCardHTML(outId))
+      + `<div class="fusion-req">${Creatures[outId].name}</div>`
+      + (ready ? `<div class="fusion-gain">${fusionGainHTML(a, b, outId, lvl)}</div>` : '');
   } else if (a && b) {
     resultHTML = `<div class="fusion-nores">${iconArt('lock', 22)}<div>Kein Rezept für dieses Paar</div></div>`;
   } else {
@@ -1467,15 +1677,15 @@ function renderFusionBody(parent) {
   wrap.appendChild(el('div', 'fusion-hint',
     a && fusionPick.length < 2
       ? 'Passende Partner — beide Kreaturen werden verbraucht!'
-      : 'Zwei verschiedene Archetypen auf Max-Level — beide werden verbraucht!'));
+      : 'Zwei verschiedene Archetypen ab Level ' + FUSION_MIN_LEVEL + ' — beide werden verbraucht!'));
 
-  // Kandidaten (21.07.2026): NUR fusionsfähige Kreaturen zeigen — Basis-Archetyp
-  // (Fusionen sind Endstufe) auf Max-Level. Alles darunter würde ohnehin nur
+  // Kandidaten: NUR fusionsfähige Kreaturen zeigen — Basis-Archetyp
+  // (Fusionen sind Endstufe) ab FUSION_MIN_LEVEL (Runde 10: 3 statt Max-Level). Alles darunter würde ohnehin nur
   // ausgegraut herumstehen. Ist bereits eine Kreatur gewählt, bleiben nur die
   // Partner übrig, mit denen es wirklich ein Rezept gibt (9 Paare haben keins).
   const cands = ownedIds().filter(id => {
     const c = Creatures[id];
-    if (c.fusion || Save.collection[id].level < MAX_LEVEL) return false;
+    if (c.fusion || Save.collection[id].level < FUSION_MIN_LEVEL) return false;
     if (fusionPick.includes(id)) return true;
     if (a && fusionPick.length < 2 && !fusionResult(a, id)) return false;
     return true;
@@ -1489,7 +1699,7 @@ function renderFusionBody(parent) {
   } else {
     // Nichts übrig: entweder noch niemand auf Max-Level oder kein Partner passt.
     grid.innerHTML = `<div class="fusion-nores fx-empty">${iconArt('lock', 22)}
-      <div>${a ? 'Kein passender Partner im Besitz' : 'Noch keine Kreatur auf Max-Level'}</div></div>`;
+      <div>${a ? 'Kein passender Partner im Besitz' : 'Noch keine Kreatur auf Level ' + FUSION_MIN_LEVEL}</div></div>`;
   }
   wrap.appendChild(grid);
 

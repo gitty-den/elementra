@@ -1,5 +1,6 @@
 // Auto-generiert aus data/*.json
 const TYPES_DATA = {
+  "_hinweis": "Zwei Konter-RÃ¤der statt einem. Basis: Feuer > Natur > Wasser > Feuer. Hybrid: Dampf > Asche > Frost > Dampf. Basis und Hybrid schlagen sich gegenseitig NIE (neutral zueinander) â€” dadurch bleibt jedes Rad fÃ¼r sich auswendig lernbar. Vor Runde 10 waren Hybride komplett neutral; damit lÃ¶schte das Endgame (2 von 3 Fusionen sind hybrid) die Kernmechanik.",
   "multipliers": {
     "advantage": 1.5,
     "disadvantage": 0.75,
@@ -12,6 +13,7 @@ const TYPES_DATA = {
       "tier": 1,
       "strongVs": "nature",
       "weakVs": "water",
+      "keyword": "burn",
       "color": "#e8552d"
     },
     {
@@ -20,6 +22,7 @@ const TYPES_DATA = {
       "tier": 1,
       "strongVs": "water",
       "weakVs": "fire",
+      "keyword": "poison",
       "color": "#4caf50"
     },
     {
@@ -28,6 +31,7 @@ const TYPES_DATA = {
       "tier": 1,
       "strongVs": "fire",
       "weakVs": "nature",
+      "keyword": "chill",
       "color": "#2f80ed"
     },
     {
@@ -38,7 +42,9 @@ const TYPES_DATA = {
         "fire",
         "water"
       ],
-      "neutral": true,
+      "strongVs": "ash",
+      "weakVs": "frost",
+      "keyword": "energy",
       "color": "#b0bec5"
     },
     {
@@ -49,7 +55,9 @@ const TYPES_DATA = {
         "fire",
         "nature"
       ],
-      "neutral": true,
+      "strongVs": "frost",
+      "weakVs": "steam",
+      "keyword": "thorns",
       "color": "#8d6e63"
     },
     {
@@ -60,11 +68,14 @@ const TYPES_DATA = {
         "nature",
         "water"
       ],
-      "neutral": true,
+      "strongVs": "steam",
+      "weakVs": "ash",
+      "keyword": "shieldStart",
       "color": "#81d4fa"
     }
   ]
-};
+}
+;
 const CREATURES_DATA = {
   "energyModel": {
     "max": 100,
@@ -110,7 +121,7 @@ const CREATURES_DATA = {
       "target": "allAllies",
       "effect": "teamShield",
       "params": {
-        "shieldPctMaxHp": 0.2,
+        "shieldPctMaxHp": 0.15,
         "durationSec": 5,
         "taunt": true
       }
@@ -119,8 +130,11 @@ const CREATURES_DATA = {
       "name": "Windschnitt",
       "trigger": "onAttack",
       "energyGain": 10,
-      "effect": "none",
-      "params": {}
+      "effect": "everyNthAttackDouble",
+      "params": {
+        "every": 3,
+        "mult": 1
+      }
     },
     "greif_active": {
       "name": "Sturzflug",
@@ -138,7 +152,7 @@ const CREATURES_DATA = {
       "energyGain": 7,
       "effect": "lifesteal",
       "params": {
-        "pctOfDamage": 0.15
+        "pctOfDamage": 0.1
       }
     },
     "wolf_active": {
@@ -147,7 +161,7 @@ const CREATURES_DATA = {
       "target": "enemyLowestHp",
       "effect": "hitPlusBleed",
       "params": {
-        "atkMultiplier": 2.5,
+        "atkMultiplier": 2.2,
         "bleedPct": 0.1,
         "bleedTicks": 3
       }
@@ -158,7 +172,7 @@ const CREATURES_DATA = {
       "energyGain": 6,
       "effect": "applyPoison",
       "params": {
-        "stackPct": 0.05,
+        "stackPct": 0.06,
         "maxStacks": 5
       }
     },
@@ -170,15 +184,18 @@ const CREATURES_DATA = {
       "params": {
         "dotPct": 0.15,
         "durationSec": 4,
-        "defDown": 0.1
+        "defDown": 0.18
       }
     },
     "geist_passive": {
       "name": "Lebensquell",
       "trigger": "perSecond",
       "energyGain": 6,
-      "effect": "none",
-      "params": {}
+      "effect": "teamAura",
+      "params": {
+        "atk": 0.08,
+        "def": 0.06
+      }
     },
     "geist_active": {
       "name": "Segen",
@@ -186,15 +203,17 @@ const CREATURES_DATA = {
       "target": "allAllies",
       "effect": "teamHeal",
       "params": {
-        "healPctMaxHp": 0.3
+        "healPctMaxHp": 0.35
       }
     },
     "phoenix_passive": {
       "name": "Ewige Glut",
       "trigger": "perSecond",
       "energyGain": 5,
-      "effect": "none",
-      "params": {}
+      "effect": "selfRevive",
+      "params": {
+        "hpPct": 0.35
+      }
     },
     "phoenix_active": {
       "name": "Wiedergeburt",
@@ -442,7 +461,7 @@ const CREATURES_DATA = {
       "target": "allAllies",
       "effect": "teamShield",
       "params": {
-        "shieldPctMaxHp": 0.28,
+        "shieldPctMaxHp": 0.22,
         "durationSec": 6,
         "taunt": true
       }
@@ -695,8 +714,8 @@ const CREATURES_DATA = {
       "rarity": "rare",
       "tier": 1,
       "baseStats": {
-        "hp": 85,
-        "atk": 16,
+        "hp": 97,
+        "atk": 18,
         "def": 9,
         "spd": 14
       },
@@ -713,8 +732,8 @@ const CREATURES_DATA = {
       "rarity": "rare",
       "tier": 1,
       "baseStats": {
-        "hp": 94,
-        "atk": 15,
+        "hp": 106,
+        "atk": 17,
         "def": 9,
         "spd": 14
       },
@@ -731,8 +750,8 @@ const CREATURES_DATA = {
       "rarity": "rare",
       "tier": 1,
       "baseStats": {
-        "hp": 85,
-        "atk": 15,
+        "hp": 97,
+        "atk": 17,
         "def": 10,
         "spd": 14
       },
@@ -857,9 +876,9 @@ const CREATURES_DATA = {
       "rarity": "legendary",
       "tier": 3,
       "baseStats": {
-        "hp": 230,
-        "atk": 23,
-        "def": 22,
+        "hp": 200,
+        "atk": 20,
+        "def": 20,
         "spd": 9
       },
       "passive": "titan_passive",
@@ -876,9 +895,9 @@ const CREATURES_DATA = {
       "rarity": "legendary",
       "tier": 3,
       "baseStats": {
-        "hp": 185,
-        "atk": 29,
-        "def": 16,
+        "hp": 165,
+        "atk": 25,
+        "def": 15,
         "spd": 14
       },
       "passive": "schlange_passive",

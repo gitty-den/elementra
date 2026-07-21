@@ -3,6 +3,37 @@
 Kreaturen-Sammel-Autobattler (Echtzeit, 3 vs 3) mit Element-System und Fusion.
 Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 
+## Runde 10 (21.07.2026) — Neuausrichtung nach Messung. ZUERST LESEN.
+
+Eine Analyse hatte belegt, dass mehrere Kernsysteme nicht funktionierten. Die
+Zahlen und die Gegenmaßnahmen stehen hier, weil sie fast jede Datei berühren.
+
+**Befund und Behebung:**
+
+| Befund (gemessen) | Behebung |
+|---|---|
+| 95 Kreaturen = nur 21 Designs; `fire_drache` und `nature_drache` unterschieden sich um 9 LP bei gleichen Fähigkeiten | **Element-Keywords** (`ELEMENT_KEYWORD_PARAMS` in items.js, `keyword` je Element in types.json): Feuer brennt, Natur vergiftet, Wasser friert ein, Dampf lädt Energie, Asche hat Dornen, Frost startet mit Schild |
+| Hybride waren `neutral: true`; 2 von 3 Fusionen löschten damit das Element-System | **Zweites Konter-Rad** Dampf>Asche>Frost>Dampf. Basis und Hybrid sind zueinander neutral, jedes Rad bleibt für sich lernbar |
+| 3 von 7 Archetypen hatten `effect: 'none'` als Passiv; Geist-Teams gewannen 0 von 12 Spielen | **Drei neue Passiv-Effekte** in battle.js: `everyNthAttackDouble` (Greif), `teamAura` (Geist), `selfRevive` (Phönix) |
+| Kämpfe dauerten im Median 15 s Kampfzeit (7 s echte Zeit) — zu kurz für Heilung und Schilde | **`HP_SCALE = 1.7`** in battle.js. Bewusst LP hoch statt Schaden runter: Verteidigung und Steinhaut sind FLACHE Abzüge, eine Schadensbremse macht sie relativ stärker und lässt Tanks alles dominieren (gemessen) |
+| Fusion war bei 8 von 12 Rezepten ein Rückschritt: 700 XP Einsatz, Ergebnis auf Level 1 | **`FUSION_MIN_LEVEL = 3`**, Ergebnis erbt das niedrigere Zutat-Level (`fusionLevelFor`). Vorschau zeigt den Werte-Gewinn (`fusionGainHTML`) |
+| Neue Unlocks kamen auf Level 1 in ein Level-4-Team | **`unlockLevel()`** in state.js: Belohnungen starten knapp unter dem Team-Schnitt |
+| Items waren Rauschen; ein 120-Gold-Common schlug zwei Epics | Werte nach gemessener Wirkung neu gesetzt; Seltenheit und Wirkung decken sich jetzt (common ≈ 2, rare ≈ 3, epic ≈ 5,5 Prozentpunkte Rest-LP) |
+| Kein Onboarding | **`TIPS` + `showTipOnce`**: sechs Hinweise, je einmal, am richtigen Ort |
+| Kein Grund, ein Team vorher zu durchdenken | **Kampf-Vorschau** (`previewBattle`/`previewHTML`) — die deterministische Engine rechnet den Ausgang vorher durch. Rechnet mit AUTO-Ults, gutes Timing schlägt die Vorschau |
+| Sammlung mit 95 Karten unbenutzbar | **Filterleiste** (`collFilter`, `collFilterHTML`): Element, Rolle, Sortierung |
+
+**Neue Projektregel (Pfeiler 5): Balancing wird nie geschätzt.** Es gibt jetzt
+`tools/` mit `sim.mjs`, `campaign.mjs`, `tune.mjs` — sie laufen gegen die
+generierte `engine.js`, also exakt die Engine von Browser und Server. **Vor jedem
+Lauf `powershell -File tools/regen.ps1`**, sonst misst man alten Code.
+
+`tools/tune.mjs --write` sucht je Stage die Gegner-Stärke (Level-Offset, Items,
+Werte-Bonus `mod`), die die Zielkurve trifft, und schreibt `js/stages.js`.
+Zielkurve = Rest-LP nach dem Sieg: S1–3 ≈ 72 %, S4–7 ≈ 58 %, S8–12 ≈ 48 %,
+S13–16 ≈ 40 %, S17–19 ≈ 33 %, Bosse ≈ 25 %. **Wer Kreaturen- oder Item-Werte
+ändert, muss den Tuner danach neu laufen lassen** — sonst driftet die Kampagne.
+
 ## Navigation (seit 17.07.2026: Hub-and-Spoke, kein Bottom-Nav)
 
 - App startet mit **Splash** (nur rotierendes Ring-Logo, fliegt per FLIP auf die
@@ -232,7 +263,9 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   Chimära=Greif+Wolf, Sphinx=Greif+Geist, Barghest=Wolf+Geist, Ouroboros=Wyrm+
   Phönix, Archon=Geist+Phönix). 9 Paare haben bewusst KEIN Rezept.
 - Element des Ergebnisses: gleich+gleich → gleich, sonst Hybrid-Element
-  (fire+water=steam, fire+nature=ash, nature+water=frost). Hybride kämpfen neutral.
+  (fire+water=steam, fire+nature=ash, nature+water=frost). **Hybride kämpfen seit
+  Runde 10 NICHT mehr neutral** — sie haben ein eigenes Konter-Rad
+  (Dampf>Asche>Frost>Dampf); gegen Basis-Elemente bleiben sie neutral.
 - Ergebnis-IDs `fx_<archetyp>_<element>` werden zur Laufzeit in state.js generiert
   (12×6=72 Einträge in `Creatures`, NICHT in creatures.json); Name =
   `namePrefixes[element]`-Archetypname (z. B. „Aschen-Koloss").
@@ -240,6 +273,9 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   Paletten wie gehabt je Element. Angriffs-Animationen erben per CSS vom passenden
   Eltern-Archetyp (Block „Fusions-Archetypen erben…" in style.css).
 - Fusions-Kreaturen sind Endstufe: nicht erneut fusionierbar.
+- **Ab Level 3 fusionierbar (Runde 10), Ergebnis erbt das niedrigere Zutat-Level.**
+  Vorher: zwei Max-Level-Kreaturen, Ergebnis auf Level 1 — bei 8 von 12 Rezepten
+  verlor die frische Fusion gegen eine der Zutaten, die man dafür gelöscht hat.
 - Fusion-Screen ist ein freier 2-Slot-Picker mit Ergebnis-Vorschau (`renderFusion`).
 - **Picker zeigt nur, was wirklich geht** (21.07.): ausschließlich Basis-Kreaturen
   auf Max-Level; ist bereits eine gewählt, bleiben nur Partner übrig, für die
@@ -429,11 +465,16 @@ Dev-Sim übersprungen. Bei Boss-Stages gewinnt der längere der beiden Freezes.
 ## Kampfsystem (Kurzfassung)
 
 - Echtzeit; Angriffsintervall `max(700, 2400 − spd·50)` ms, erste Angriffe pro Slot gestaffelt.
+- **Alle LP werden mit `HP_SCALE` (1,7) multipliziert** — streckt die Kampfdauer,
+  ohne die Verhältnisse zu verzerren (Begründung in der Runde-10-Tabelle oben).
+- **Jede Kreatur trägt das Keyword ihres Elements** (`u.kws` in `createUnit`);
+  Item-Keywords kommen additiv dazu. Alle Keywords laufen durch dieselbe Schleife
+  in `doAttack` — ein neues Keyword braucht keinen Sonderweg.
 - Schaden: `ANG · Elementmult − VER · 0.4`, min. 1. Elementmult aus `types.json`
   (1.5 / 0.75 / 1.0; Hybride immer neutral). Golem-Passiv zieht flach 2 ab.
 - Energie 0–100 laut `creatures.json`-Passiven (onAttack/onHit/perSecond); Ulti kostet 100.
   Spieler tippt Kreatur an (Karte pulsiert gold) oder Auto-Schalter; Gegner-KI zündet nach 400 ms.
-- Status: Schild (absorbiert, verfällt), Spott, Gift-Stapel (5 %·ANG/s je Stapel, max 5),
+- Status: Schild (absorbiert, verfällt), Spott, Gift-Stapel (5 %·ANG/s je Stapel),
   Blutung, Flächen-DoT, VER-Debuff.
 - **Sudden Death:** ab 2 min Kampfzeit steigt aller Schaden linear bis 3× (Minute 4) —
   verhindert Heiler-Patts.

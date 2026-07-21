@@ -586,6 +586,9 @@ input[type="range"].pixel-range::-moz-range-thumb {
 .float-text.dmg { color: #fff; }
 .float-text.ulti-dmg { color: #ffd54f; font-size: 1.35rem; }
 .float-text.poison { color: #9ccc65; font-size: 0.85rem; }
+/* Runde 10: Doppeltreffer des Greif-Passivs */
+.float-text.crit { color: #ffe08a; font-size: 1.05rem; font-weight: 900;
+  text-shadow: 0 0 10px rgba(255, 210, 100, 0.9); }
 .float-text.bleed { color: #ff7d7d; font-size: 0.85rem; }
 .float-text.dot { color: #ce93d8; font-size: 0.85rem; }
 .float-text.healtxt { color: #69f0ae; }
@@ -1921,6 +1924,74 @@ body.in-menu #topbar {
     radial-gradient(ellipse at 50% 38%, rgba(112, 88, 210, 0.24), transparent 68%),
     linear-gradient(180deg, rgba(6, 7, 15, 0.2), rgba(6, 7, 15, 0.62));
 }
+
+/* ===== Runde 10: Onboarding, Kampf-Vorschau, Filter, Fusions-Gewinn ===== */
+
+/* Ersthilfe-Hinweis: erscheint je einmal, Antippen schliesst ihn */
+.tip-card {
+  position: fixed; z-index: 60; left: 50%; transform: translateX(-50%);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 96px);
+  width: min(88vw, 420px);
+  display: flex; align-items: center; gap: 11px;
+  padding: 12px 14px; border-radius: 5px;
+  background: linear-gradient(180deg, rgba(28, 24, 62, 0.97), rgba(14, 12, 34, 0.97));
+  border: 2px solid var(--accent2);
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.5), 0 0 34px -6px var(--accent2);
+  font-size: 0.82rem; line-height: 1.35; color: var(--text);
+  animation: tipIn 0.3s cubic-bezier(0.2, 1.2, 0.4, 1);
+}
+.tip-ico { flex: none; }
+@keyframes tipIn { from { opacity: 0; transform: translate(-50%, 14px); } }
+
+/* ===== Runde 10: Kampf-Vorschau, Sammlungs-Filter, Fusions-Gewinn ===== */
+
+/* Kampf-Vorschau im Team-Select — deterministische Engine rechnet vor */
+.ts-preview {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  margin: 10px 0 4px; padding: 9px 12px; border-radius: 4px;
+  border: 2px solid var(--panel-border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.3));
+  font-size: 0.78rem; color: var(--text); text-align: left;
+}
+.ts-preview .tp-text { flex: none; font-weight: 700; }
+.ts-preview .tp-bar {
+  flex: 1; height: 9px; border-radius: 2px; overflow: hidden;
+  background: rgba(0, 0, 0, 0.45);
+}
+.ts-preview .tp-bar i { display: block; height: 100%; background: currentColor; }
+.ts-preview.lose  { color: #ff7b7b; border-color: rgba(255, 90, 90, 0.55); }
+.ts-preview.tight { color: #ffb347; border-color: rgba(255, 170, 60, 0.55); }
+.ts-preview.ok    { color: #ffe08a; border-color: rgba(255, 210, 100, 0.45); }
+.ts-preview.good  { color: #9ce88a; border-color: rgba(140, 230, 120, 0.45); }
+.ts-preview.easy  { color: #8ad6ff; border-color: rgba(120, 200, 255, 0.45); }
+
+/* Element-Mechanik im Kreatur-Detail: hebt sich vom Passiv/Ult ab */
+.ab-elem { border-left: 3px solid var(--accent2); padding-left: 8px; }
+.ab-elem b { color: var(--accent2); }
+
+/* Sammlungs-Filter: reine Icon-Knoepfe mit Anzahl */
+.coll-filters { display: flex; flex-direction: column; gap: 7px; margin-bottom: 12px; }
+.cf-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cf-btn {
+  display: flex; align-items: center; gap: 4px; padding: 6px 9px; border-radius: 4px;
+  border: 2px solid var(--panel-border); background: rgba(255, 255, 255, 0.04);
+  font-size: 0.7rem; color: var(--text-dim);
+}
+.cf-btn i { font-style: normal; }
+.cf-btn.on {
+  border-color: var(--accent2); color: var(--text);
+  background: rgba(124, 108, 255, 0.2);
+  box-shadow: 0 0 10px -2px var(--accent2);
+}
+.cf-btn:disabled { opacity: 0.3; }
+.cf-btn.sort { padding: 6px 8px; }
+.cf-sep { flex: 1; }
+
+/* Fusions-Vorschau: was gewinnt man gegenueber der staerkeren Zutat */
+.fusion-gain { display: flex; gap: 7px; justify-content: center; margin-top: 5px; font-size: 0.7rem; }
+.fg-stat { display: inline-flex; align-items: center; gap: 2px; }
+.fg-stat.up { color: #8ce87a; }
+.fg-stat.down { color: #ff8a8a; }
 
 /* Spielstand-Cloud */
 .cloud-box { display: flex; flex-direction: column; gap: 10px; }
