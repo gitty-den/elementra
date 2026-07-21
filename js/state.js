@@ -192,6 +192,12 @@ function defaultSave() {
     lastLogin: null,       // 'YYYY-MM-DD' des letzten Tages-Bonus
     settings: { sfxVol: 1, musicVol: 1 }, // Regler 0–1 statt An/Aus (17.07.2026)
     bp: defaultBP(),       // Battlepass (Season, XP, Quests, abgeholte Stufen)
+    items: {},             // itemId -> Anzahl im Besitz (items.js)
+    equipped: {},          // creatureId -> itemId (EIN Slot je Kreatur)
+    shop: null,            // { day, offers[], bought{} } — lazy in shopState()
+    ascension: 0,          // gewählte Aufstiegsstufe (0 = normale Kampagne)
+    ascHigh: 0,            // höchste Stufe, auf der der Endboss fiel
+    ascStages: {},         // stageId -> höchste dort geschaffte Aufstiegsstufe
   };
 }
 
@@ -236,6 +242,17 @@ function loadSave() {
       delete s.settings.sfx; delete s.settings.music; delete s.settings.emblem;
       // Migration Kampf-XP: alten Einträgen xp-Feld geben.
       Object.values(s.collection).forEach(e => { if (typeof e.xp !== 'number') e.xp = 0; });
+      // Migration Items (21.07.): Felder anlegen, Ausrüstung an verlorenen
+      // Kreaturen/Items lösen (z. B. nach Fusion oder entferntem Item).
+      if (!s.items) s.items = {};
+      if (!s.equipped) s.equipped = {};
+      // Migration Aufstieg (21.07.)
+      if (typeof s.ascension !== 'number') s.ascension = 0;
+      if (typeof s.ascHigh !== 'number') s.ascHigh = 0;
+      if (!s.ascStages) s.ascStages = {};
+      Object.keys(s.equipped).forEach(cid => {
+        if (!s.collection[cid] || typeof Items === 'undefined' || !Items[s.equipped[cid]]) delete s.equipped[cid];
+      });
       // Migration Battlepass: Feld anlegen; neue Season -> Bahn zurücksetzen.
       if (!s.bp) s.bp = defaultBP();
       if (s.bp.season !== currentSeason()) {
@@ -334,6 +351,8 @@ function fuseCreatures(cidA, cidB) {
   if (!out) return null;
   delete Save.collection[cidA];
   delete Save.collection[cidB];
+  delete Save.equipped[cidA];   // Items der Zutaten wandern zurück ins Inventar
+  delete Save.equipped[cidB];
   Save.collection[out] = { level: 1, xp: 0 };
   Save.team = Save.team.map(id => (id === cidA || id === cidB) ? out : id);
   Save.team = [...new Set(Save.team)];
@@ -359,8 +378,13 @@ function grantStageRewards(stage, stars) {
   const first = !Save.stages[stage.id];
   const prev = Save.stages[stage.id] || 0;
   Save.stages[stage.id] = Math.max(prev, stars);
+  // Aufstieg: Erstsieg AUF DIESER Stufe zählt wieder wie ein Erstsieg (ascension.js).
+  const ascFirst = typeof ascFirstClear === 'function' && ascFirstClear(stage.id);
+  if (typeof markAscClear === 'function') markAscClear(stage.id);
   // Ökonomie-Bremse: Wiederholungen bringen nur halbes Gold.
   let gold = first ? stage.gold : Math.round(stage.gold * 0.5);
+  if (ascFirst) gold = stage.gold;                       // volle Basis auf neuer Stufe
+  if (Save.ascension) gold = Math.round(gold * ascGoldMult());
   let unlocked = null;
   if (first) {
     gold += stage.firstClearBonus;
@@ -371,5 +395,5 @@ function grantStageRewards(stage, stars) {
   }
   Save.gold += gold;
   persist();
-  return { gold, unlocked, first };
+  return { gold, unlocked, first, ascFirst };
 }

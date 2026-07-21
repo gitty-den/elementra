@@ -19,11 +19,13 @@ function bpIntoTier() { return Math.min(BP_TIER_XP, Save.bp.xp - bpCompleted() *
 
 function bpReward(tier, track) {
   if (track === 'free') {
-    if (tier % 5 === 0) return { kind: 'egg' };
+    if (tier % 10 === 0) return { kind: 'egg' };
+    if (tier % 5 === 0)  return { kind: 'item', rarity: 'rare' };
     return { kind: 'gold', amount: 40 + tier * 6 };
   }
-  // Premium-Spur: dickere Belohnungen, Kosmetik, Milestone-Eier.
+  // Premium-Spur: dickere Belohnungen, Kosmetik, Items, Milestone-Eier.
   if (tier % 10 === 0) return { kind: 'egg' };
+  if (tier % 4 === 0)  return { kind: 'item', rarity: tier >= 20 ? 'epic' : 'rare' };
   if (tier % 2 === 0)  return { kind: 'cosmetic', id: 'cos_s' + Save.bp.season + '_t' + tier };
   return { kind: 'gold', amount: 80 + tier * 10 };
 }
@@ -41,6 +43,11 @@ function bpGrant(rw) {
     const id = bpRandomCreature();
     if (id) { Save.collection[id] = { level: 1, xp: 0 }; return { icon: 'egg', label: Creatures[id].name, cid: id }; }
     Save.gold += 150; return { icon: 'coin', label: '+150' }; // alles vorhanden -> Gold
+  }
+  if (rw.kind === 'item') {
+    const id = randomItemByRarity(rw.rarity || 'rare');
+    grantItem(id);
+    return { icon: Items[id].icon, label: Items[id].name };
   }
   if (rw.kind === 'cosmetic') { Save.bp.cosmetics[rw.id] = true; return { icon: 'sparkle', label: 'Kosmetik' }; }
   return { icon: 'coin', label: '' };
@@ -130,6 +137,7 @@ function bpOnBattle(won) {
 function bpRewardIcon(rw) {
   if (rw.kind === 'gold') return `${iconArt('coin', 20)}<i>${rw.amount}</i>`;
   if (rw.kind === 'egg') return iconArt('egg', 24);
+  if (rw.kind === 'item') return iconArt('bag', 22);
   if (rw.kind === 'cosmetic') return iconArt('sparkle', 22);
   return '';
 }

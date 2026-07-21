@@ -1,21 +1,24 @@
 // sw.js — Offline-Cache fuer PWA (stale-while-revalidate).
 // Neue Assets (JS/CSS/Fonts/Icons) hier in ASSETS eintragen, sonst offline nicht verfuegbar.
 // Updates: Cache liefert sofort, Netz aktualisiert im Hintergrund -> greift beim NAECHSTEN Start.
-const CACHE = 'elementra-v7';
+const CACHE = 'elementra-v12';
 const ASSETS = [
   './',
   './index.html',
   './css/style.css',
   './js/data.js',
   './js/profiles.js',
+  './js/items.js',
   './js/state.js',
   './js/svg.js',
   './js/pixel.js',
   './js/sfx.js',
   './js/music.js',
   './js/stages.js',
+  './js/ascension.js',
   './js/battle.js',
   './js/bp.js',
+  './js/net.js',
   './js/ui.js',
   './js/main.js',
   './fonts/press-start-2p-latin.woff2',

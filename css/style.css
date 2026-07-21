@@ -1606,8 +1606,9 @@ body.gold-visible .gold-pill { display: flex; }
 
 /* ---- Tablet quer (genug Höhe): kompakteres Layout, alles bleibt spielbar ---- */
 @media (orientation: landscape) and (min-height: 601px) {
-  /* Spielfläche mittig halten, damit die Arena nicht extrem breit wird */
-  #screen { max-width: 720px; margin: 0 auto; width: 100%; }
+  /* Volle Breite — keine Randstreifen auf dem iPad (21.07.) */
+  #screen { max-width: none; width: 100%; margin: 0; }
+  #topbar { padding-left: 14px; padding-right: 14px; }
   /* Hauptmenü: vier Kacheln nebeneinander statt 2×2 — spart Höhe */
   .menu-grid { grid-template-columns: repeat(4, 1fr); width: min(92vw, 760px); margin-bottom: 20px; }
   .menu-tile { min-height: 82px; }
@@ -1628,7 +1629,240 @@ body.gold-visible .gold-pill { display: flex; }
   .pin-key { width: 64px; height: 54px; }
 }
 
-/* ---- Große Schirme: nicht ins Unendliche wachsen ---- */
-@media (min-width: 1100px) and (orientation: landscape) {
-  #screen { max-width: 780px; }
+/* Große Schirme im Querformat bekommen bewusst KEINE Breitenbegrenzung mehr —
+   auf dem iPad blieben sonst schwarze Streifen links und rechts (21.07.). */
+
+/* ===================================================================== */
+/* ===== Items (Runde 6, 21.07.2026) =================================== */
+/* ===================================================================== */
+
+/* Slot im Kreatur-Detail */
+.item-slot {
+  display: flex; align-items: center; gap: 11px; width: 100%; margin-top: 10px;
+  padding: 9px 12px; text-align: left; border-radius: 5px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.28));
+  border: 2px dashed rgba(255,255,255,0.2);
 }
+.item-slot.filled {
+  border-style: solid; border-color: rgba(255,201,77,0.5);
+  background: linear-gradient(180deg, rgba(255,201,77,0.12), rgba(0,0,0,0.3));
+}
+.item-slot:active { filter: brightness(1.15); transform: translateY(1px); }
+.item-slot-ico { flex: none; width: 30px; height: 30px; display: grid; place-items: center; }
+.item-plus { font-style: normal; font-size: 1.2rem; color: var(--text-dim); }
+.item-slot-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.item-slot-txt b { font-size: 0.82rem; }
+.item-slot-txt i { font-style: normal; font-size: 0.72rem; color: var(--text-dim); }
+
+/* Item-Kachel (Inventar, Picker, Shop, Drop) */
+.item-list { display: flex; flex-direction: column; gap: 8px; }
+.item-card {
+  display: flex; align-items: center; gap: 11px; padding: 9px 11px; border-radius: 5px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+}
+.item-card.equipped { border-color: rgba(255,201,77,0.45); background: rgba(255,201,77,0.08); }
+.item-card.rarity-rare { border-left: 3px solid #42a5f5; }
+.item-card.rarity-epic { border-left: 3px solid #ab47bc; }
+.item-card.rarity-common { border-left: 3px solid #9e9e9e; }
+.item-card-ico { flex: none; width: 32px; height: 32px; display: grid; place-items: center; }
+.item-card-main { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.item-card-main b { font-size: 0.84rem; color: var(--rar, var(--text)); }
+.item-card-main i { font-style: normal; font-size: 0.72rem; color: var(--text-dim); }
+.item-kw { flex: none; opacity: 0.9; }
+.item-count { flex: none; font-size: 0.76rem; color: var(--text-dim); }
+.item-count.on { color: var(--gold); }
+.drop-card { margin: 0 auto; max-width: 280px; }
+
+/* Inventar-Träger + Leerhinweis */
+.item-wearer { display: flex; gap: 4px; padding: 2px 0 6px 44px; margin-top: -6px; }
+.item-wearer span { width: 26px; height: 26px; display: block; }
+.item-empty-hint {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 18px 10px; color: var(--text-dim); font-size: 0.8rem; text-align: center;
+}
+
+/* Shop */
+.shop-list .item-card { background: rgba(124,108,255,0.07); }
+.item-card.sold { opacity: 0.45; }
+.item-buy { flex: none; white-space: nowrap; padding: 7px 10px; font-size: 0.74rem;
+  background: linear-gradient(180deg, rgba(255,201,77,0.25), rgba(255,201,77,0.08));
+  border: 1px solid rgba(255,201,77,0.5); color: var(--gold); border-radius: 4px; }
+.item-buy.poor { opacity: 0.4; }
+.item-buy.sold { background: none; border: none; }
+
+/* ----- Aufstieg (Ascension) + Wochen-Modifikatoren ----- */
+.asc-panel {
+  margin-bottom: 14px; padding: 11px 13px; border-radius: 6px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.3));
+  border: 2px solid var(--panel-border);
+}
+.asc-panel.on {
+  border-color: rgba(255,201,77,0.55);
+  background: linear-gradient(180deg, rgba(255,201,77,0.14), rgba(0,0,0,0.32));
+}
+.asc-row { display: flex; align-items: center; gap: 10px; }
+.asc-label { flex: 1; font-family: 'Press Start 2P', monospace; font-size: 0.56rem; }
+.asc-label .px-ico { vertical-align: -3px; }
+.asc-btn {
+  width: 38px; height: 38px; flex: none; border-radius: 5px; font-size: 1.1rem; font-weight: 900;
+  background: linear-gradient(180deg, rgba(255,255,255,0.12), rgba(0,0,0,0.35));
+  border: 2px solid var(--panel-border);
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.14), 0 3px 0 rgba(0,0,0,0.5);
+}
+.asc-btn:disabled { opacity: 0.3; pointer-events: none; }
+.asc-btn:active { transform: translateY(2px); filter: brightness(1.15); }
+.asc-lvl { min-width: 30px; text-align: center; font-family: 'Press Start 2P', monospace;
+  font-size: 0.9rem; color: var(--gold); }
+.asc-mods { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+.asc-mod {
+  display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px; border-radius: 999px;
+  font-size: 0.7rem; color: #ffd7a0;
+  background: rgba(255,140,60,0.14); border: 1px solid rgba(255,150,70,0.4);
+}
+.asc-hint { margin-top: 8px; font-size: 0.72rem; color: var(--text-dim); }
+.asc-hint .px-ico { vertical-align: -2px; }
+.battle-mods { display: flex; gap: 6px; justify-content: center; margin-top: 5px; flex-wrap: wrap; }
+.battle-mods .asc-mod { font-size: 0.62rem; padding: 3px 7px; }
+
+/* ===================================================================== */
+/* ===== Runde 8 (21.07.2026): Topbar ohne Leiste, Globen, Lagerfeuer === */
+/* ===================================================================== */
+
+/* Keine Kopfleiste mehr — nur noch Zurück-Pfeil links und Zahnrad rechts,
+   frei über dem Inhalt. Das ELEMENTRA-Band ist raus. */
+#topbar {
+  background: none; border-bottom: none; box-shadow: none;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) 12px 6px;
+}
+.logo { display: none; }
+/* Zahnrad auch im Hauptmenü (die Optionen-Kachel ist entfallen) */
+body.in-menu #topbar { display: flex; }
+body.in-menu #btn-back { visibility: hidden; }
+body.in-battle #topbar { display: none; }
+
+/* Hauptmenü: Kampagne-Kachel über die volle Breite, darunter zwei */
+.menu-tile.wide { grid-column: span 2; }
+
+/* Lagerfeuer + Team stehen AUF dem Boden (vorher schwebend) */
+.menu-creature {
+  animation: none;                      /* kein Schweben mehr — sie sitzen */
+  top: auto;
+}
+.menu-creature::after {
+  content: ''; position: absolute; left: 50%; bottom: -2px;
+  width: 66%; height: 9px; transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(0,0,0,0.6), transparent 70%);
+  pointer-events: none;
+}
+.camp-fire { top: auto; bottom: 17%; }
+.camp-fire::after {
+  content: ''; position: absolute; left: 50%; bottom: 2px;
+  width: 78%; height: 10px; transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(0,0,0,0.55), transparent 70%);
+  pointer-events: none; z-index: -1;
+}
+.camp-glow { top: auto; bottom: 12%; transform: translate(-50%, 0); }
+
+/* Lautstärke in 4 einrastbaren Stufen statt Schieberegler */
+.vol-steps { flex: 1; display: flex; align-items: flex-end; gap: 7px; height: 44px; }
+.vol-step {
+  flex: 1; height: var(--h, 40%); border-radius: 3px;
+  background: rgba(10, 14, 28, 0.85); border: 2px solid var(--panel-border);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.08);
+  transition: background 0.12s, border-color 0.12s;
+}
+.vol-step.mute { height: 26%; }
+.vol-step.on {
+  background: linear-gradient(180deg, #9fe0ff, var(--energy));
+  border-color: var(--energy);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.3), 0 0 10px rgba(77, 184, 255, 0.5);
+}
+.vol-step:active { filter: brightness(1.25); transform: translateY(1px); }
+
+/* Kampagne: Kapitel als Globen, horizontal durchscrollbar */
+.globe-rail {
+  display: flex; gap: 16px; overflow-x: auto; padding: 4px 2px 16px;
+  scroll-snap-type: x mandatory; scrollbar-width: none;
+}
+.globe-rail::-webkit-scrollbar { display: none; }
+.globe-card {
+  flex: none; width: min(74vw, 320px); scroll-snap-align: center;
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 16px 14px 18px; border-radius: 8px; cursor: pointer;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(0, 0, 0, 0.34));
+  border: 2px solid var(--panel-border);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.5), 0 0 28px -8px var(--theme-glow, #b18aff);
+  transition: transform 0.12s, filter 0.2s;
+}
+.globe-card:active { transform: translateY(2px); filter: brightness(1.1); }
+.globe-card.locked { filter: grayscale(0.85) brightness(0.55); cursor: default; }
+.globe-card.done { border-color: rgba(255, 201, 77, 0.55); }
+.globe-wrap { position: relative; width: min(46vw, 180px); aspect-ratio: 1; display: grid; place-items: center; }
+.globe-art {
+  width: 100%; height: 100%;
+  filter: drop-shadow(0 0 20px var(--theme-glow, #b18aff));
+  animation: globeFloat 5s ease-in-out infinite;
+}
+@keyframes globeFloat { 50% { transform: translateY(-7px); } }
+.globe-lock { position: absolute; inset: 0; display: grid; place-items: center; }
+.globe-done { position: absolute; right: 4%; top: 4%; }
+.globe-num { font-family: 'Press Start 2P', monospace; font-size: 0.58rem; color: var(--accent2); }
+.globe-name { font-size: 1.02rem; font-weight: 800; }
+.globe-bar { width: 82%; height: 9px; background: var(--hp-bg); border-radius: 2px; overflow: hidden; }
+.globe-bar .fill { height: 100%; background: linear-gradient(90deg, var(--gold), #ffe9a8); }
+.globe-stars { font-size: 0.74rem; color: var(--text-dim); }
+.globe-stars .px-ico { vertical-align: -2px; }
+
+/* ----- Countdown vor Rundenbeginn (Kampagne + Arena) ----- */
+.battle-count {
+  position: absolute; inset: 0; z-index: 40;
+  display: grid; place-items: center; pointer-events: none;
+}
+.count-num {
+  font-family: 'Press Start 2P', monospace; font-size: 3.4rem; color: #fff;
+  text-shadow: 0 0 22px rgba(124, 108, 255, 0.9), 0 5px 0 rgba(0, 0, 0, 0.6);
+  animation: countPop 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) forwards;
+}
+.count-num.go {
+  font-size: 2.5rem; color: var(--gold);
+  text-shadow: 0 0 28px rgba(255, 201, 77, 0.95), 0 5px 0 rgba(0, 0, 0, 0.6);
+}
+@keyframes countPop {
+  0%   { transform: scale(2.1); opacity: 0; }
+  22%  { transform: scale(1); opacity: 1; }
+  72%  { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.72); opacity: 0; }
+}
+
+/* ----- Arena (Async-PVP) ----- */
+.pvp-head { display: flex; gap: 12px; margin-bottom: 14px; }
+.pvp-stat {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 12px 8px; border-radius: 6px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(0,0,0,0.3));
+  border: 2px solid var(--panel-border);
+}
+.pvp-stat b { font-family: 'Press Start 2P', monospace; font-size: 0.85rem; color: var(--gold); }
+.pvp-stat i { font-style: normal; font-size: 0.7rem; color: var(--text-dim); }
+.pvp-team { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 12px; }
+.pvp-msg {
+  padding: 9px 12px; margin-bottom: 10px; border-radius: 4px; font-size: 0.78rem;
+  color: #ffd7a0; background: rgba(255,140,60,0.14); border: 1px solid rgba(255,150,70,0.4);
+}
+.pvp-actions { margin-bottom: 14px; }
+.pvp-board { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+.pvp-row {
+  display: flex; align-items: center; gap: 10px; padding: 7px 11px; border-radius: 4px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); font-size: 0.82rem;
+}
+.pvp-row.me { border-color: rgba(255,201,77,0.5); background: rgba(255,201,77,0.09); }
+.pvp-rank { flex: none; min-width: 26px; color: var(--accent2); }
+.pvp-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pvp-rating { flex: none; color: var(--gold); font-weight: 800; }
+.pvp-result-rating { margin: 10px 0; font-size: 0.85rem; }
+.pvp-result-rating .px-ico { vertical-align: -3px; }
+
+.item-ov .overlay-box { max-width: 420px; }
+.item-picker h2 { text-align: center; margin-bottom: 12px; }
+.item-picker .item-card { cursor: pointer; }
+.item-picker .item-card:active { filter: brightness(1.2); }

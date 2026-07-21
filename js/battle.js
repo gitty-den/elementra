@@ -10,8 +10,9 @@ const SUDDEN_DEATH_AT = 120000;      // ab 2 min steigt aller Schaden (verhinder
 
 // Globaler Schadens-Multiplikator: 1× bis 2 min, danach linear bis 3× (Minute 4+).
 function suddenDeathMult(battle) {
-  if (battle.time <= SUDDEN_DEATH_AT) return 1;
-  return 1 + Math.min(2, (battle.time - SUDDEN_DEATH_AT) / 60000);
+  const at = battle.suddenDeathAt || SUDDEN_DEATH_AT;   // Modifikator 'Zeitdruck'
+  if (battle.time <= at) return 1;
+  return 1 + Math.min(2, (battle.time - at) / 60000);
 }
 
 function elementMult(attEl, defEl) {
@@ -24,12 +25,23 @@ function elementMult(attEl, defEl) {
 
 let _unitUid = 0;
 
-function createUnit(cid, level, side, slot) {
+// Prozent-Aufschläge auf die Werte einer fertigen Einheit (Aufstieg/Modifikatoren).
+function applyStatMod(u, s) {
+  if (!s) return;
+  if (s.atk) u.stats.atk = Math.max(1, Math.round(u.stats.atk * (1 + s.atk)));
+  if (s.def) u.stats.def = Math.max(0, Math.round(u.stats.def * (1 + s.def)));
+  if (s.hp) { u.maxHp = Math.max(1, Math.round(u.maxHp * (1 + s.hp))); u.hp = u.maxHp; }
+}
+
+function createUnit(cid, level, side, slot, itemId, mod) {
   const c = Creatures[cid];
-  const stats = statsAtLevel(c, level);
-  return {
+  // Item (1 Slot je Kreatur): Werte fließen direkt in die Kampf-Stats ein,
+  // das Keyword wird in doAttack/dealDamage ausgewertet (items.js).
+  const item = (itemId && typeof Items !== 'undefined') ? (Items[itemId] || null) : null;
+  const stats = applyItemStats(statsAtLevel(c, level), item);
+  const u = {
     uid: 'u' + (++_unitUid),
-    cid, c, side, slot, level, stats,
+    cid, c, side, slot, level, stats, item,
     hp: stats.hp, maxHp: stats.hp,
     energy: 0, alive: true,
     nextAttackAt: 0,
@@ -42,31 +54,67 @@ function createUnit(cid, level, side, slot) {
     bleeds: [],              // [{ dmg, ticksLeft, nextTickAt }]
     dots: [],                // [{ dps, expiresAt, nextTickAt }]
     defDownUntil: 0, defDownPct: 0,
+    chillUntil: 0, chillPct: 0,   // Frost-Keyword: verlangsamt die Angriffe
+    thorns: 0,               // Modifikator 'Dornenwelt' (Item-Dornen kommen extra)
+    intervalMult: 1,         // Modifikator 'Frostluft'
     perSecondAcc: 0,
     ultiPlannedAt: null,     // KI-Verzögerung
   };
+  applyStatMod(u, mod);      // Aufstiegs-Skalierung der Gegner
+  return u;
 }
 
-function createBattle(allyDefs, enemyDefs) {
+function createBattle(allyDefs, enemyDefs, modIds) {
   const battle = {
     time: 0,
     over: false, winner: null,
-    allies: allyDefs.map((d, i) => createUnit(d.id, d.level, 'ally', i)),
-    enemies: enemyDefs.map((d, i) => createUnit(d.id, d.level, 'enemy', i)),
+    allies: allyDefs.map((d, i) => createUnit(d.id, d.level, 'ally', i, d.item, d.mod)),
+    enemies: enemyDefs.map((d, i) => createUnit(d.id, d.level, 'enemy', i, d.item, d.mod)),
     autoUlti: false,
     listeners: [],
     on(fn) { this.listeners.push(fn); },
     emit(type, data) { this.listeners.forEach(fn => fn(type, data)); },
   };
+  // Wochen-Modifikatoren (ascension.js). Generisch über die MUTATORS-Felder —
+  // neue Modifikatoren brauchen hier KEINEN neuen Code, nur einen Eintrag.
+  battle.mods = modIds || [];
+  battle.energyMult = 1;
+  battle.suddenDeathAt = SUDDEN_DEATH_AT;
+  battle.chipPctPerSec = 0;
+  battle.lifestealAll = 0;
+  battle.chipAcc = 0;
+  battle.mods.forEach(id => {
+    const m = (typeof MUTATORS !== 'undefined') && MUTATORS[id];
+    if (!m) return;
+    if (m.energyMult) battle.energyMult *= m.energyMult;
+    if (m.suddenDeathAt) battle.suddenDeathAt = Math.min(battle.suddenDeathAt, m.suddenDeathAt);
+    if (m.chipPctPerSec) battle.chipPctPerSec += m.chipPctPerSec;
+    if (m.lifestealAll) battle.lifestealAll += m.lifestealAll;
+    [...battle.allies, ...battle.enemies].forEach(u => {
+      applyStatMod(u, m.all || (u.side === 'enemy' ? m.enemy : null));
+      if (m.intervalMult) u.intervalMult *= m.intervalMult;
+      if (m.enemyThorns && u.side === 'enemy') u.thorns = m.enemyThorns;
+    });
+  });
+
   // Erste Angriffe staffeln, damit nicht alles gleichzeitig zuschlägt.
   [...battle.allies, ...battle.enemies].forEach(u => {
     u.nextAttackAt = attackInterval(u) * (0.35 + u.slot * 0.18);
+    // Keyword 'shieldStart': Kampfbeginn mit Schild (Aegis-Siegel).
+    const k = u.item && u.item.keyword;
+    if (k && k.type === 'shieldStart') {
+      u.shield = { amount: Math.round(u.maxHp * k.pct), expiresAt: k.sec * 1000 };
+    }
   });
   return battle;
 }
 
-function attackInterval(u) {
-  return Math.max(ATTACK_INTERVAL_MIN, ATTACK_INTERVAL_BASE - u.stats.spd * 50);
+// now optional: bei aktivem Frost-Chill schlägt die Einheit langsamer zu.
+function attackInterval(u, now) {
+  let iv = Math.max(ATTACK_INTERVAL_MIN, ATTACK_INTERVAL_BASE - u.stats.spd * 50);
+  iv *= u.intervalMult || 1;                                   // Modifikator 'Frostluft'
+  if (now !== undefined && now < u.chillUntil) iv *= 1 + u.chillPct;
+  return iv;
 }
 
 function foesOf(battle, u) { return u.side === 'ally' ? battle.enemies : battle.allies; }
@@ -91,7 +139,7 @@ function effDef(u, now) {
 
 function gainEnergy(battle, u, amount) {
   if (!u.alive || u.energy >= 100) return;
-  u.energy = Math.min(100, u.energy + amount);
+  u.energy = Math.min(100, u.energy + amount * (battle.energyMult || 1)); // 'Energiesturm'
   if (u.energy >= 100) {
     battle.emit('energyFull', { unit: u });
     if (u.side === 'enemy' || battle.autoUlti) {
@@ -121,6 +169,13 @@ function dealDamage(battle, source, target, rawAmount, kind, elMult) {
   }
   target.hp -= dmg;
   battle.emit('damage', { source, target, amount: dmg, kind, elMult: elMult || 1 });
+  // Keyword 'thorns': normaler Treffer wird flach zurückgespiegelt (kein Loop,
+  // weil der Rückschlag mit kind 'thorns' läuft).
+  if (kind === 'hit' && source && source.alive && target.alive) {
+    const tk = target.item && target.item.keyword;
+    const flat = (tk && tk.type === 'thorns' ? tk.flat : 0) + (target.thorns || 0);
+    if (flat > 0) dealDamage(battle, null, source, flat, 'thorns');
+  }
   if (target.hp <= 0) {
     target.hp = 0;
     target.alive = false;
@@ -175,6 +230,34 @@ function doAttack(battle, u) {
       target.poison.stacks = Math.min(p.params.maxStacks, target.poison.stacks + 1);
       target.poison.srcAtk = effAtk(u);
       battle.emit('poison', { target, stacks: target.poison.stacks });
+    }
+  }
+
+  if (battle.lifestealAll) heal(battle, u, dealt * battle.lifestealAll); // 'Blutrausch'
+
+  // Item-Keyword (items.js): Thema über Mechanik statt über neue Elemente.
+  const k = u.item && u.item.keyword;
+  if (k) {
+    if (k.type === 'lifesteal') heal(battle, u, dealt * k.pct);
+    if (k.type === 'energy') gainEnergy(battle, u, k.bonus);
+    if (target.alive) {
+      if (k.type === 'poison') {
+        if (!target.poison) target.poison = { stacks: 0, srcAtk: 0, nextTickAt: battle.time + 1000 };
+        target.poison.stacks = Math.min(k.maxStacks, target.poison.stacks + 1);
+        target.poison.srcAtk = effAtk(u);
+        battle.emit('poison', { target, stacks: target.poison.stacks });
+      }
+      if (k.type === 'burn') {
+        target.dots.push({ dps: effAtk(u) * k.pct,
+                           expiresAt: battle.time + k.sec * 1000,
+                           nextTickAt: battle.time + 1000 });
+        battle.emit('burn', { target });
+      }
+      if (k.type === 'chill') {
+        target.chillUntil = battle.time + k.sec * 1000;
+        target.chillPct = k.pct;
+        battle.emit('chill', { target });
+      }
     }
   }
 }
@@ -300,6 +383,17 @@ function checkEnd(battle) {
 function updateBattle(battle, dt) {
   if (battle.over) return;
   battle.time += dt;
+  // Modifikator 'Giftnebel': alle verlieren stetig einen Anteil ihrer Max-LP.
+  if (battle.chipPctPerSec) {
+    battle.chipAcc += dt;
+    while (battle.chipAcc >= 1000) {
+      battle.chipAcc -= 1000;
+      [...battle.allies, ...battle.enemies].forEach(u => {
+        if (u.alive) dealDamage(battle, null, u, u.maxHp * battle.chipPctPerSec, 'dot');
+      });
+      if (battle.over) return;
+    }
+  }
   const units = [...battle.allies, ...battle.enemies];
   for (const u of units) {
     if (!u.alive) continue;
@@ -318,7 +412,7 @@ function updateBattle(battle, dt) {
     if (battle.over) return;
     // Auto-Angriff
     if (battle.time >= u.nextAttackAt) {
-      u.nextAttackAt = battle.time + attackInterval(u);
+      u.nextAttackAt = battle.time + attackInterval(u, battle.time);
       doAttack(battle, u);
       if (battle.over) return;
     }

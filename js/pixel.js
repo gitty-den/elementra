@@ -677,6 +677,12 @@ const PixelIcons = {
     '.olmllmmllo.', '.ollllllllo.', '.oooooooooo.', '.oo.........', '.oo.........',
     '.oo.........', 'oooo........',
   ] },
+  // Beutel (Items/Inventar).
+  bag: { pal: { o: '#3a2a18', m: '#8a6a3a', l: '#c9a05a', h: '#e8cf94' }, rows: [
+    '...o....o...', '..o.o..o.o..', '..o..oo..o..', '.oooooooooo.', '.omllllllmo.',
+    '.omlhhhhlmo.', '.omllllllmo.', '.omllllllmo.', '.ommllllmmo.', '.oommmmmmoo.',
+    '..oooooooo..', '............',
+  ] },
   // Heil-Kreuz (Team-Heal-Ult).
   heal: { pal: { o: '#0f3a1a', m: '#37c76f', l: '#b6ffcf' }, rows: [
     '............', '....mmmm....', '....mllm....', '.mmmmllmmmm.', '.mlllllllllm',
@@ -872,6 +878,51 @@ function sceneURI(themeName, variant = '') {
 
 function sceneArt(themeName, variant = '') {
   return `<img class="pixel-sprite scene-art" src="${sceneURI(themeName, variant)}" alt="" draggable="false">`;
+}
+
+// ===================== Kapitel-Globus (Weltkarte) =====================
+// Ein Planet je Kapitel, Farben aus dem Theme (Kapitel 1 nature = grüne Welt).
+// Licht von oben links, Kontinent-Blobs, dunkler Rand, Atmosphären-Saum.
+
+const globeURICache = {};
+
+function globeURI(themeName) {
+  if (globeURICache[themeName]) return globeURICache[themeName];
+  const t = SceneThemes[themeName] || SceneThemes.storm;
+  const S = 48, c = S / 2 - 0.5, R = 22;
+  const canvas = document.createElement('canvas');
+  canvas.width = S; canvas.height = S;
+  const ctx = canvas.getContext('2d');
+  const rnd = _rng(_hashStr(themeName + 'globe'));
+
+  const blobs = [];
+  for (let i = 0; i < 7; i++) {
+    blobs.push({ x: c + (rnd() * 2 - 1) * R * 0.7, y: c + (rnd() * 2 - 1) * R * 0.7,
+                 r: R * (0.16 + rnd() * 0.24) });
+  }
+  const sea  = _hexLerp(t.ground2, t.sky2, 0.35);
+  const land = _hexLerp(t.near, t.far, 0.3);
+
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const d = Math.hypot(x - c, y - c);
+    if (d > R) continue;
+    const light = ((c - x) + (c - y)) / (R * 2);   // -1 (unten rechts) .. +1 (oben links)
+    let col = light > 0.15 ? _hexLerp(sea, t.ground1, 0.45) : sea;
+    if (blobs.some(b => Math.hypot(x - b.x, y - b.y) < b.r)) {
+      col = light > 0.15 ? _hexLerp(land, '#ffffff', 0.18) : land;
+    }
+    if (light < -0.35) col = _hexLerp(col, '#000000', 0.35);       // Nachtseite
+    if (d > R - 2) col = _hexLerp(col, '#000000', 0.45);           // harter Rand
+    if (d > R - 3 && light > 0.3) col = _hexLerp(col, t.orb, 0.55); // Lichtsaum
+    ctx.fillStyle = col;
+    ctx.fillRect(x, y, 1, 1);
+  }
+  globeURICache[themeName] = canvas.toDataURL();
+  return globeURICache[themeName];
+}
+
+function globeArt(themeName) {
+  return `<img class="pixel-sprite globe-art" src="${globeURI(themeName)}" alt="" draggable="false">`;
 }
 
 // ===================== Titel-Emblem: 4 Varianten, Auswahl in ⚙ → Logo =====================

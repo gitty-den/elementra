@@ -9,6 +9,39 @@ Mobile-Game (iOS + Android, App Store / Play Store). Kernloop: Autobattler
 3 vs 3, Element-Kreislauf 🔥→🌿→💧→🔥, Hybride durch Fusion.
 Stil: dunkel-episch mit Element-Glow.
 
+## Design-Pfeiler (21.07.2026) — BINDEND, gegen Scope-Creep
+
+Diese vier Regeln entscheiden jede neue Idee. Passt eine Idee nicht rein, kommt sie
+NICHT rein. Sie existieren, weil sonst Kombinatorik und Umfang explodieren.
+
+1. **Element-Rad ist eingefroren.** 3 Basis (Feuer/Natur/Wasser) + 3 Hybrid
+   (Dampf/Asche/Frost, neutral). **Keine neuen Elemente.** Grund: das Konter-Rad
+   muss auswendig lernbar bleiben, und jedes Element multipliziert Matchup-Tabelle,
+   Paletten und Fusions-Matrix.
+2. **Thema kommt über Keywords, nicht über Elemente.** Gift, Brand, Frost-Chill,
+   Lebensraub, Dornen sind **Mechaniken** an Items/Fähigkeiten — beliebig viele,
+   additiv, ohne Kombinatorik-Kosten. Beispiel: „Seeschlange mit Toxin" =
+   Wasser-Element + Keyword `poison`, NICHT ein neues Giftelement.
+3. **Fusionen werden kuratiert, nicht auskombiniert.** Nur Paare, die sich gut
+   anfühlen (aktuell 12 von 21; 9 bewusst ohne Rezept). Kein Vollständigkeits-Zwang.
+   Neue Fusionen kommen tröpfchenweise als Season-Chase-Units, nicht als Matrix.
+4. **Tiefe vor Breite.** Erst Systeme, die vorhandene Kreaturen interessanter machen
+   (Items, Modifikatoren, Aufstellung), dann erst neue Kreaturen. Neue Kreaturen sind
+   die teuerste und schwächste Retention-Maßnahme.
+
+### Langzeit-Motor (endlicher Content, unendliches Spiel)
+
+Die Map ist endlich — die Beschäftigung darf es nicht sein. Reihenfolge der Hebel:
+
+1. **Items** (Tiefe im Teambau) — Runde 6, siehe Phase 2.
+2. **Wochen-Modifikatoren + Ascension** (Kampagne mit Mutatoren neu spielbar) —
+   client-seitig, kein Backend nötig.
+3. **Async-PVP-Ladder** (Kampf gegen Team-Schnappschüsse anderer Spieler) —
+   spielergenerierte, unendliche Gegner. Braucht Backend (Phase 5), aber KEIN
+   Echtzeit-Netcode; `battle.js` ist deterministisch und läuft serverseitig weiter.
+4. **Live-Ops-Takt**: Seasons (Battlepass steht), Events, rotierende Quests.
+5. **Meta-Patches**: gelegentlich kleine Balance-Verschiebung statt Content-Flut.
+
 ## Design-Pivot (Interview 15.07.2026)
 
 1. **Art: Pixelart im GBA-Pokémon-Stil** (klar, ikonisch, lesbar) statt prozeduralem
@@ -148,6 +181,37 @@ Stil: dunkel-episch mit Element-Glow.
       (`leaveBattle`; vorher blieb die tote Arena stehen). **Bildschirmgrößen**:
       Handy nur hochkant (Dreh-Hinweis im Querformat), Tablet quer mit
       4-spaltigem Menü, Grundschrift skaliert per `vmin`. sw.js → v7.
+- [x] 21.07. (Runde 6): **Item-System** (`js/items.js`) — Langzeit-Hebel 1 der
+      Design-Pfeiler. 12 Items, 1 Slot je Kreatur, Werte als Prozent-Aufschlag +
+      **7 Keywords** (Gift/Brand/Frost-Chill/Lebensraub/Dornen/Energie/Startschild),
+      alle in `battle.js` verdrahtet. Quellen: Kampagnen-Drops, Tages-Shop,
+      Battlepass. UI: dritter Sammlungs-Tab (Inventar + Shop) + Slot im
+      Kreatur-Detail. Setzt Pfeiler 2 um: „Toxin" ist ein Keyword, kein Element.
+- [x] 21.07. (Runde 7): **Aufstieg + Wochen-Modifikatoren** (`js/ascension.js`) —
+      Langzeit-Hebel 2. Kampagne ab Endboss-Kill auf höheren Stufen neu spielbar
+      (Gegner +Level +Werte, Gold ×1,5 je Stufe, bessere Drops, Erstsieg je Stufe
+      zählt neu). **8 Modifikatoren**, zwei davon wöchentlich rotierend,
+      deterministisch aus dem Kalender — kein Backend. battle.js wertet sie
+      generisch aus: neuer Modifikator = ein Eintrag in `MUTATORS`.
+- [x] 21.07. (Runde 8): UI-Feinschliff — Lautstärke in 4 einrastbaren Stufen,
+      iPad-Querformat ohne Randstreifen (`#screen` volle Breite), Welt-Übersicht als
+      **Globen-Rail** (horizontal, ein Planet je Kapitel), Kopfleiste entfernt
+      (nur Zurück + Zahnrad, Zahnrad auch im Menü), Lagerfeuer + Team auf der
+      Bodenlinie statt schwebend.
+- [x] 21.07.: **Async-PVP LIVE** — Supabase-Projekt `kdldlxwkwqmbtttuwxbq`, Migration
+      eingespielt, Anonymous Sign-ins aktiv. End-to-End verifiziert: anonyme Anmeldung,
+      Spieler-Zeile, Snapshot-Upload, Matchmaking, Kampf, `submit_match` (Elo 1000 →
+      988 bei Niederlage, Gegner 1012), Rangliste. UI-Weg über den Arena-Screen
+      ebenfalls durchgetestet. **Offen: Edge Function** zur serverseitigen
+      Nachrechnung (`matches.verified`) — bis dahin meldet der Client den Sieger.
+- [~] **Async-PVP (Langzeit-Hebel 3):** Datenmodell steht als Migration
+      `supabase/migrations/0001_pvp.sql` (players, team_snapshots, ladder, matches
+      + RPCs `upsert_snapshot`/`find_opponent`/`submit_match`/`leaderboard`, RLS).
+      Kernpunkt: Wertung ist NICHT client-schreibbar. **`battle.js` ist
+      deterministisch** (kein `Math.random`, kein `Date.now`) — Stufe 2 lässt eine
+      Edge Function jeden Kampf nachrechnen (`matches.verified`).
+      Offen: Client-Anbindung (Supabase-URL + anon key), Anmeldung (anonymous auth),
+      PVP-Screen.
 - [ ] Mehr Kampagnen-Kapitel (Stages 21+, weitere Fusions-Rezepte für die 9 offenen Paare)
 - [ ] Idle-/Tages-Belohnungen, Erfolge
 - [ ] Team-Positionen (Front/Backline ausbauen — Engine kennt `enemyBackline` schon)

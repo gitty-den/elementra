@@ -89,6 +89,9 @@ const Sfx = {
       default:       this.tone(180, 0.09, 'square', 0.06, 90);
     }
   },
+  // Rundenstart-Countdown: drei trockene Ticks, dann ein heller Startakkord.
+  countTick() { this.tone(440, 0.1, 'square', 0.07); this.noise(0.05, { freq: 1800, vol: 0.03 }); },
+  countGo()   { [523, 784, 1047].forEach((f, i) => this.tone(f, 0.3, 'triangle', 0.11, null, i * 0.04)); },
   ulti()  { this.tone(220, 0.35, 'sawtooth', 0.1, 880); },
   heal()  { this.tone(520, 0.18, 'sine', 0.09, 780); },
   // ---- Ult-Sounds (überarbeitet 20.07.2026) ----

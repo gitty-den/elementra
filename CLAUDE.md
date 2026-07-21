@@ -9,8 +9,12 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   Emblem-Position im Menü — `showSplash` in main.js), dann **Hauptmenü**
   (`renderMenu`): Lager-Szene mit den 3 Team-Kreaturen am Pixel-Lagerfeuer
   (`campfireArt`, 2 Flacker-Frames), 2×2-Kachel-Raster: Kampagne / Sammlung /
-  **Battlepass** / Optionen (Fusion-Kachel entfiel 19.07. — Fusion ist jetzt Tab
-  in der Sammlung). Topbar nur in Subscreens (`body.in-menu` blendet sie aus).
+  **Battlepass** (Fusion-Kachel entfiel 19.07. — Fusion ist Tab in der Sammlung;
+  **Optionen-Kachel entfiel 21.07.**). Kampagne-Kachel ist `.wide` (volle Breite).
+- **Keine Kopfleiste mehr** (21.07.): `#topbar` ist transparent, ohne Rahmen/Schatten,
+  das ELEMENTRA-Band (`.logo`) ist ausgeblendet. Übrig bleiben Zurück-Pfeil links und
+  **Zahnrad rechts — auch im Hauptmenü** (`body.in-menu #topbar { display:flex }`,
+  Zurück dort `visibility:hidden`). Im Kampf bleibt die Topbar komplett aus.
 - **Rand-Pfeile** wechseln zwischen map/collection (`initNavArrows`/`updateNavArrows`,
   `NAV_ORDER` = ['map','collection']). Swipe ist seit 20.07. RAUS (kollidierte mit
   dem Scrollen der Karte). Pfeile sind fix am linken/rechten Bildschirmrand,
@@ -23,6 +27,11 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   ohne PIN startet durch. Wechseln in den Optionen, Löschen per Long-Press auf
   die Profilkarte. **Der PIN ist Bequemlichkeit, kein Schutz** (Klartext im
   localStorage).
+- **Welt-Übersicht = Globen-Rail** (21.07.): ein Planet je Kapitel
+  (`globeArt(theme)` in pixel.js — 48×48-Kugel aus den Theme-Farben, Licht von
+  oben links, Kontinent-Blobs), **horizontal scrollbar mit Snap** (`.globe-rail`),
+  scrollt automatisch aufs aktuelle Kapitel. Die alte vertikale Kartenliste
+  (`.world-card`) ist raus.
 - **Kampagne = Welt-Übersicht (`renderWorld`) → Kapitel-Karte (`renderChapterMap`)**
   (19.07.): `CHAPTERS` (stages.js) teilen die Stages in Abteile; `renderMap` ist
   Dispatcher über `currentChapter` (null = Übersicht). Kapitel N gesperrt bis
@@ -71,7 +80,7 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 
 - **Kein Build-Schritt, kein Framework.** Spiel muss per `file://` UND Preview-Server laufen.
 - **Kein `import`/`export`** — klassische Script-Tags, Reihenfolge in `index.html` ist bindend
-  (data → state → svg → pixel → sfx → music → stages → battle → bp → ui → main).
+  (profiles → data → items → state → svg → pixel → sfx → music → stages → ascension → battle → bp → ui → main).
 - **`data/*.json` ist die Quelle der Wahrheit** (kommt aus der Design-ZIP, Stats laut
   `data/DATA_SCHEMA.md` Platzhalter fürs Balancing). `js/data.js` wird daraus GENERIERT
   (JSON-Inhalt 1:1 in `const`-Deklarationen, wegen file://-CORS kein fetch). Nach jeder
@@ -88,7 +97,8 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 - **Bildschirmgrößen (21.07.):** Handy = NUR Hochformat — im Querformat unter
   601 px Höhe legt sich `#rotate-hint` über alles („bitte hochkant halten").
   Tablet/Desktop dürfen quer (ab 601 px Höhe): Menü wird 4-spaltig, `#screen`
-  auf 720 px begrenzt, Overlays bis 94 dvh. Grundschrift ist nicht mehr fest
+  nutzt die **volle Breite** (`max-width: none` — die frühere 720/780-px-Deckelung
+  erzeugte auf dem iPad schwarze Streifen links/rechts, 21.07.), Overlays bis 94 dvh. Grundschrift ist nicht mehr fest
   21 px, sondern `clamp(17px, 4.4vmin, 25px)` — skaliert an der KLEINEREN
   Bildschirmachse. Arena-Einheiten sind auf `min(27vw, 30vh, 150px)` gedeckelt,
   damit sie im Querformat nicht aus dem Bild wachsen. `manifest.webmanifest`
@@ -131,15 +141,18 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
 |---|---|
 | `js/profiles.js` | **Lokale Profile** (20.07.): Profilliste + aktives Profil in `elementra_profiles_v1`, Save-Schlüssel je Profil (`currentSaveKey`), `createProfile/deleteProfile/activateProfile`, `profileSummary`. Migriert einen alten `elementra_save_v1` beim Erststart zu „Spieler 1". Wird VOR state.js geladen |
 | `js/data.js` | GENERIERT — Rohdaten aus `data/*.json` als Globals `TYPES_DATA`, `CREATURES_DATA`, `FUSIONS_DATA` |
+| `js/items.js` | **Items** (21.07.): `ITEMS_DATA`/`Items` (12 Stück), `ITEM_KEYWORDS` (7 Mechaniken), `applyItemStats`, Inventar (`grantItem/equipItem/unequipItem/itemsFree/itemOf`), Tages-Shop (`shopState/buyItem`), Drops (`rollStageDrop`). Lädt VOR state.js |
 | `js/state.js` | Lookups (`Elements`, `Creatures`, `Abilities`), Kurzbeschreibungen `abilityShort` (GENERIERT aus effect/params — nicht handpflegen), Save (localStorage, Schlüssel kommt aus `currentSaveKey()`, Migration entfernt unbekannte IDs gegen 100 Gold), Level-Logik (`MAX_LEVEL` 5, +10 %/Level, Kosten 30·Level), Fusion (`fusionResult/fusionReady/fuseCreatures`), Stage-Fortschritt |
 | `js/svg.js` | KOMPLETT obsolet — nur die Farbtabelle `SceneThemes` wird noch von `sceneArt` (pixel.js) gelesen. Keine SVG-Funktion mehr aufrufen |
 | `js/pixel.js` | **Standard-Kreaturen-Renderer**: `creatureArt(c, {noAura,noAnim})` — `PixelArchetypes` (7 Basis + 12 Fusion Char-Maps) × `PixelPalettes`, 32×32-Canvas → dataURI, Cache. **Idle-Frames (19.07.)**: `creatureFrames(arch,el)` erzeugt prozedural Frame 1 (Augen zu via e/p→m + 1px Atem-Stauchung); globaler `setInterval` (540 ms) swappt `img.creature-sprite`-`src`. `noAnim` schaltet es ab. Tippfehler-Pixel erscheinen magenta |
 | `js/sfx.js` | WebAudio-Synth (`Sfx.hit/ulti/win/...`), kein Audio-Asset, entsperrt bei erster Interaktion. **Rausch-Kanal seit 20.07.** (`Sfx.noise(dur, {type,freq,freqTo,q,vol,attack,delay})`: gefiltertes Rauschen, grobkörniger Buffer) — das Gegenstück zum Noise-Kanal echter 8-Bit-Chips. Ult-Sounds sind nach dem Muster **Ton-Kern + Rausch-Schicht + Transiente** gebaut; neue Sounds bitte genauso, sonst klingen sie wieder austauschbar |
 | `js/music.js` | Generative Musik (WebAudio, Lookahead-Scheduler): Themes `map`/`battle`, `Music.play(theme)`, Toggle in ⚙. Hooks: Titel-Tap, `beginBattle`, `endBattleUI` |
 | `js/stages.js` | 10 Kampagnen-Stages: Gegner, Gold, First-Clear-Bonus, Kreaturen-Unlocks, `theme` (Arena-Hintergrund) |
-| `js/battle.js` | Engine: `createBattle`, `updateBattle(battle, dtMs)`, `castActive`. Events via `battle.on((type, data) => …)`: attack, damage, heal, absorb, shieldGain, poison, ulti, die, revive, energyFull, end |
+| `js/ascension.js` | **Aufstieg + Wochen-Modifikatoren** (21.07.): `MUTATORS` (8 Stück, generisch von battle.js gelesen), `weeklyMutators()` (deterministisch aus dem Montags-Datum), `ascensionUnlocked/maxAscension/setAscension`, `ascEnemyDefs`, `ascGoldMult`, `ascFirstClear/markAscClear`. Lädt VOR battle.js |
+| `js/battle.js` | Engine: `createBattle(allyDefs, enemyDefs, modIds)`, `updateBattle(battle, dtMs)`, `castActive`. Events via `battle.on((type, data) => …)`: attack, damage, heal, absorb, shieldGain, poison, ulti, die, revive, energyFull, end |
 | `js/bp.js` | **Battlepass** (19.07.): Season (~30 Tage, `currentSeason()` in state.js), Stufen (`bpCompleted`, `BP_TIER_XP`), Belohnungs-Bahn (`bpReward` free/prem, `bpClaim`), Aufgaben (`bpEnsureQuests`/`bpTrack`), Kampf-Hook `bpOnBattle(won)`, Screen `renderBattlepass`. Premium = Demo-Schalter (`bpUnlockPremium`), echtes IAP erst Phase 4 |
-| `js/ui.js` | Screens (menu/map=welt+kapitel/collection+fusion), Kampf-UI (rAF-Loop), Overlays, Hauptmenü (`renderMenu`), Team-Warnung (`teamWeakness`), Aufgeben (`giveUpBattle`), Developer-Board (`openDevBoard`), `debugBattleStep(ms)` |
+| `js/net.js` | **Supabase-Anbindung ohne Build-Schritt** (21.07.): reines `fetch` gegen Auth/REST/RPC — KEIN npm-Paket (Projektregel „kein Framework"). `NET_CONFIG` (URL + Publishable Key, beide öffentlich), anonyme Anmeldung + Token-Refresh, `Net.rpc/ensurePlayer/uploadSnapshot/findOpponent/submitMatch/leaderboard`, Snapshot-Helfer `pvpTeamUnits/pvpTeamPower/pvpUnitsToDefs`. **Offline zuerst:** jeder Aufruf darf scheitern, nichts wird automatisch hochgeladen |
+| `js/ui.js` | Screens (menu/map=welt+kapitel/collection+fusion/pvp), Kampf-UI (rAF-Loop), Overlays, Hauptmenü (`renderMenu`), Team-Warnung (`teamWeakness`), Aufgeben (`giveUpBattle`), Developer-Board (`openDevBoard`), `debugBattleStep(ms)` |
 | `js/main.js` | Bootstrap |
 
 ## UI-Design (Game-Look, kein Web-Look!)
@@ -180,8 +193,14 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   (`Sfx.ultShield/ultHeal/ultRevive/ultAttack(element)`). Normale Angriffe bleiben
   Tackle (`atk*`-Anims). Ulti-Ready-Sprite-Umrandung (`ultiBlink`) bleibt.
 - **Gold-Anzeige nur in der Sammlung** (`body.gold-visible`, in showScreen gesetzt).
-- Einstellungen: **Lautstärke-Regler** `Save.settings.sfxVol`/`musicVol` (0–1,
-  `Music.setVolume`), Logo fest 'ring'.
+- Einstellungen: **Lautstärke in 4 einrastbaren Stufen** (21.07., `VOL_STEPS`
+  = [0, 0.34, 0.67, 1], `volStepsHTML`) statt Schieberegler — am Handy zielsicherer.
+  Werte weiter in `Save.settings.sfxVol`/`musicVol`, Musik über `Music.setVolume`
+  (persistiert selbst). Logo fest 'ring'.
+- **Hauptmenü-Lagerfeuer sitzt auf dem Boden** (21.07.): `MENU_CAMP_POS` positioniert
+  über `bottom` statt `top`, damit Feuer und Team auf DERSELBEN Bodenlinie stehen;
+  `.menu-creature` hat `animation: none` (kein Schweben mehr) und einen
+  Boden-Schatten via `::after`.
 - **Kampf = Arena-Szene**: `sceneSVG(stage.theme)` als Hintergrund, Einheiten absolut
   positioniert über `SLOT_POS` (Prozent-Koordinaten in ui.js), Gegner per `scaleX(-1)`
   gespiegelt. Idle-Bobbing, gerichteter Ausfallschritt (Vektor per getBoundingClientRect
@@ -217,6 +236,121 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   auf Max-Level; ist bereits eine gewählt, bleiben nur Partner übrig, für die
   `fusionResult` ein Rezept liefert. Keine ausgegrauten Karten mehr. Leerer Fall
   bekommt eine Erklärzeile (kein Max-Level / kein passender Partner).
+
+## Items (Runde 6, 21.07.2026) — `js/items.js`
+
+**Design-Pfeiler 2 in Code gegossen: Thema kommt über KEYWORDS, nicht über neue
+Elemente.** „Seeschlange mit Toxin" = Wasser + Keyword `poison`, KEIN Giftelement.
+Das Element-Rad ist eingefroren (siehe MASTERPLAN „Design-Pfeiler").
+
+- **EIN Slot je Kreatur**: `Save.equipped[creatureId] = itemId`, Inventar
+  `Save.items[itemId] = Anzahl`. `itemsFree(id)` = Besitz minus getragen — ein Item
+  kann nur einmal gleichzeitig getragen werden.
+- **12 Items, 3 Seltenheiten.** `stats` sind PROZENT-Aufschläge auf die Level-Stats
+  (`hp/atk/def`), `spd` ist FLACH (Tempo skaliert nicht mit Level).
+- **7 Keywords** (`ITEM_KEYWORDS`), alle in `battle.js` verdrahtet:
+  `poison` (Stapel wie Wyrm-Passiv), `burn` (DoT), `chill` (Ziel schlägt langsamer —
+  `attackInterval(u, now)` rechnet `chillUntil/chillPct` ein), `lifesteal`, `thorns`
+  (Reflex bei `kind==='hit'`, Rückschlag läuft mit `kind='thorns'` = kein Loop),
+  `energy` (+Energie pro Angriff), `shieldStart` (Schild bei Kampfbeginn, in
+  `createBattle` gesetzt).
+- **Engine-Anbindung:** `createUnit(cid, level, side, slot, itemId)` zieht die Werte
+  über `applyItemStats` rein und legt `u.item` ab; `createBattle` reicht `d.item`
+  durch. `beginBattle` baut `allyDefs` mit `item: Save.equipped[id]`. Gegner können
+  ebenfalls Items bekommen (Feld `item` in den Stage-Gegnern) — noch ungenutzt.
+- **Quellen:** Kampagnen-Drops (`rollStageDrop`: Erstsieg garantiert, Seltenheit
+  steigt mit Stage; Wiederholung 20 %), Tages-Shop (`shopState`, 3 Angebote,
+  rotiert per Datum-Hash, `buyItem`), Battlepass (`bpReward` kind `'item'`).
+  **Dev-Sim droppt nie** (`stage.dev`).
+- **UI:** dritter Tab in der Sammlung (`collMode === 'items'`, `renderItemsBody`) =
+  Inventar + Shop; Slot im Kreatur-Detail (`itemSlotHTML`) öffnet `openItemPicker`.
+- **Aufräumen:** `fuseCreatures` löscht die Ausrüstung der verbrauchten Zutaten;
+  `loadSave` entfernt Ausrüstung an unbekannten Kreaturen/Items. Deshalb wird
+  `items.js` VOR `state.js` geladen (Migration braucht `Items`).
+
+## Aufstieg + Wochen-Modifikatoren (Runde 7, 21.07.2026) — `js/ascension.js`
+
+Langzeit-Hebel 2: die Map ist endlich, die Herausforderung nicht.
+
+- **Aufstieg (Ascension)** ist eine Schwierigkeitsstufe für die GANZE Kampagne,
+  kein eigener Modus. `Save.ascension` (gewählt), `Save.ascHigh` (höchste Stufe mit
+  Endboss-Kill), `Save.ascStages[stageId]` (höchste dort geschaffte Stufe).
+  Öffnet sich erst, wenn der Endboss des letzten Kapitels einmal fiel
+  (`ascensionUnlocked`); wählbar bis `maxAscension()` = `ascHigh + 1`.
+- **Skalierung:** `ascEnemyDefs(stage)` gibt Gegner mit `level + asc` (Cap MAX_LEVEL)
+  und `mod: {hp: 0.15·asc, atk: 0.12·asc}` zurück — `createUnit` wendet `mod` über
+  `applyStatMod` an.
+- **Belohnung:** Erstsieg AUF EINER STUFE (`ascFirstClear`) zählt wieder wie ein
+  Erstsieg: volles Stage-Gold × `ascGoldMult()` (1 + 0,5·asc) **und** garantierter
+  Item-Drop. `stageDropRarity` rechnet `asc·6` auf die Stage-Nummer — höhere Stufen
+  droppen besser. `markAscClear` hebt `ascHigh`, wenn der Endboss auf neuer Stufe fällt.
+- **Wochen-Modifikatoren:** `weeklyMutators()` wählt 2 aus `MUTATORS` deterministisch
+  aus dem Montags-Datum (UTC) — alle Spieler sehen dieselben, ohne Server. Aktiv NUR
+  ab Aufstieg 1 (`activeMutators`).
+- **8 Modifikatoren**, von `battle.js` **generisch** ausgewertet (`createBattle`
+  liest die MUTATORS-Felder) — ein neuer Modifikator braucht NUR einen Eintrag in
+  `MUTATORS`, keinen neuen Engine-Code: `all/enemy {atk,def,hp}` (Prozent),
+  `intervalMult` (Angriffstempo), `energyMult`, `suddenDeathAt`, `chipPctPerSec`
+  (Schaden pro Sekunde auf alle), `lifestealAll`, `enemyThorns`.
+- **UI:** Panel in der Welt-Übersicht (`ascensionPanelHTML`, −/+ Stufenwahl, Chips
+  der Wochen-Modifikatoren); im Kampf Chips oben (`.battle-mods`).
+- **Dev-Sim ist ausgenommen** — `beginBattle` nutzt bei `stage.dev` weder Skalierung
+  noch Modifikatoren.
+
+## Arena / Async-PVP (21.07.2026) — `js/net.js` + `supabase/migrations/0001_pvp.sql`
+
+- **Kein Echtzeit-Netcode.** Man kämpft gegen den **Team-Schnappschuss** eines
+  anderen Spielers, gesteuert von der normalen Gegner-KI (Super-Auto-Pets-Prinzip).
+  `battle.js` bleibt unverändert.
+- **`battle.js` ist deterministisch** — kein `Math.random`, kein `Date.now`. Deshalb
+  kann der Server jeden Kampf exakt nachrechnen (Stufe 2: Edge Function setzt
+  `matches.verified`). **Diese Eigenschaft bitte nie brechen** — sonst stirbt die
+  serverseitige Verifikation und damit das Anti-Cheat.
+- **Wertung ist nie client-schreibbar:** `ladder` hat keine Write-Policy, nur die
+  `SECURITY DEFINER`-Funktion `submit_match` (Elo K=24, Rate-Limit 30/Stunde) ändert sie.
+- Arena nutzt **keine** Aufstiegs-Skalierung (`beginBattle` schließt `stage.pvp` aus),
+  sonst zöge die eigene Stufe das fremde Team mit hoch.
+- Ergebnis läuft über `showPvpBattleResult` (eigener Zweig in `showBattleResult`,
+  wie die Dev-Sim) — keine Stage-Belohnungen, stattdessen `submit_match`.
+- **Voraussetzungen im Supabase-Projekt:** Migration eingespielt UND
+  Auth → Providers → **Anonymous sign-ins aktiviert** (sonst meldet die App
+  „Anonymous sign-ins are disabled" und bleibt sonst voll spielbar).
+
+## Edge Function `verify-match` (Anti-Cheat, 21.07.2026)
+
+- **Warum das geht:** `battle.js` ist deterministisch. Gleiche Aufstellungen +
+  gleiche Ult-Zeitpunkte = gleicher Sieger. **Diese Eigenschaft nie brechen.**
+- **Ult-Protokoll ist Pflicht:** Ults werden manuell gezündet, also reicht die
+  Aufstellung NICHT. `B.inputs` sammelt in Arena-Kämpfen `{slot, t}` je Zündung,
+  `submit_match` speichert es in `matches.inputs`, die Function spielt es beim
+  passenden Tick ein. Gemessen: mit Protokoll 26848 ms (identisch zum Original),
+  ohne Protokoll 23968 ms — **ohne Log wäre jede Prüfung falsch**.
+- **`engine.js` ist GENERIERT** aus den Browser-Dateien, damit Client und Server
+  nie auseinanderlaufen. Nach JEDER Änderung an profiles/data/items/state/
+  ascension/battle neu erzeugen:
+  ```powershell
+  cd C:\005-Kellerwohnung\elementra
+  $out = "// GENERIERT aus js/*.js - NICHT von Hand aendern.`n"
+  $out += "const localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };`n"
+  foreach ($f in @('profiles','data','items','state','ascension','battle')) {
+    $out += "`n// ================= js/$f.js =================`n"
+    $out += (Get-Content "js\$f.js" -Raw) + "`n"
+  }
+  $out += "`nexport { createBattle, updateBattle, castActive, Creatures, Items };`n"
+  [IO.File]::WriteAllText("supabase\functions\verify-match\engine.js", $out, (New-Object Text.UTF8Encoding($false)))
+  ```
+  Der `localStorage`-Schim ist nötig, weil profiles.js/state.js beim Laden darauf
+  zugreifen; `Save` bleibt serverseitig ein Default und wird von battle.js nicht genutzt.
+- **Prüfung ohne Treffer ist kein Fehler:** `apply_verification` setzt `verified`;
+  bei falscher Meldung dreht es `rating_delta` exakt zurück und setzt `cheated`.
+- Aufruf: `POST {match_id}` (Client nach dem Kampf, bester Aufwand) oder `POST {}`
+  für einen Cron-Lauf über bis zu 25 ungeprüfte Kämpfe.
+
+## Countdown vor Rundenbeginn (21.07.2026)
+
+`showBattleCountdown()` blendet mittig 3 · 2 · 1 · LOS! ein (620 ms je Schritt) und
+friert den Kampf über `B.freezeUntil` ein — gilt für Kampagne UND Arena, wird in der
+Dev-Sim übersprungen. Bei Boss-Stages gewinnt der längere der beiden Freezes.
 
 ## Progression (17.07.2026)
 
