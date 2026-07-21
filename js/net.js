@@ -163,14 +163,37 @@ const Net = {
   async leaderboard(season, limit = 25) {
     return this.rpc('leaderboard', { p_season: season, p_limit: limit });
   },
+
+  // ---------- Cloud-Spielstand (Runde 9) ----------
+  // Spielstand unter CODE + 4-stelliger PIN ablegen bzw. holen. Migration
+  // supabase/migrations/0003_cloud_save.sql. Beide Aufrufe duerfen scheitern —
+  // das Spiel bleibt offline voll spielbar.
+
+  // Gibt den Code zurueck (bei leerem code wird einer erzeugt).
+  async cloudPush(code, pin, name, data) {
+    return this.rpc('cloud_push', { p_code: code || null, p_pin: pin, p_name: name || 'Spieler', p_data: data });
+  },
+
+  // Liefert { name, data, updated_at } oder wirft.
+  async cloudPull(code, pin) {
+    const rows = await this.rpc('cloud_pull', { p_code: code, p_pin: pin });
+    if (!Array.isArray(rows) || !rows.length) throw new Error('Kein Spielstand zu diesem Code');
+    return rows[0];
+  },
 };
 
 // ---------- Team-Schnappschuss aus dem Spielstand ----------
 
 // Format entspricht exakt dem, was createBattle() erwartet (allyDefs/enemyDefs).
+// Runde 9: Die Arena hat ein EIGENES Team (`Save.arenaTeam`) — dieselbe Sammlung,
+// aber eine von der Kampagne unabhaengige Aufstellung.
+function arenaTeamIds() {
+  const t = Array.isArray(Save.arenaTeam) && Save.arenaTeam.length ? Save.arenaTeam : Save.team;
+  return t.filter(id => Save.collection[id]).slice(0, 3);
+}
+
 function pvpTeamUnits() {
-  return Save.team
-    .filter(id => Save.collection[id])
+  return arenaTeamIds()
     .slice(0, 3)
     .map((id, slot) => ({
       cid: id,

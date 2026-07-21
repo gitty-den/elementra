@@ -130,8 +130,10 @@ function buyItem(id) {
 }
 
 // ---------- Drops aus der Kampagne ----------
-// Erstsieg: garantiert ein Item (Seltenheit steigt mit der Stage).
-// Wiederholung: 20 % Chance auf ein gewöhnliches/seltenes Item.
+// Runde 9 (21.07.2026), Nutzer-Feedback „viel zu viele Items": Ein garantierter
+// Erstsieg-Drop gibt es NUR noch auf den mit `drop: true` markierten Stages —
+// zwei je Kapitel (stages.js). Überall sonst bleibt eine kleine Zufallschance.
+// Vorher droppte JEDER Erstsieg, also 10 Items je Kapitel.
 
 function randomItemByRarity(rarity) {
   const pool = ITEMS_DATA.filter(i => i.rarity === rarity);
@@ -151,13 +153,13 @@ function stageDropRarity(stageId) {
 // Gibt die gedroppte Item-ID zurück (bereits gutgeschrieben) oder null.
 function rollStageDrop(stage, firstClear) {
   if (!stage || stage.dev) return null;              // Dev-Sim droppt nie
-  if (firstClear) {
+  if (firstClear && stage.drop) {                    // nur die markierten Stages
     const id = randomItemByRarity(stageDropRarity(stage.id));
     grantItem(id);
     return id;
   }
-  if (Math.random() < 0.2) {
-    const id = randomItemByRarity(Math.random() < 0.3 ? 'rare' : 'common');
+  if (Math.random() < 0.05) {                        // Restchance, vorher 20 %
+    const id = randomItemByRarity(Math.random() < 0.2 ? 'rare' : 'common');
     grantItem(id);
     return id;
   }

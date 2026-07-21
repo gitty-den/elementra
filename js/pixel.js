@@ -440,6 +440,70 @@ const PixelArchetypes = {
     '...........##ddd',
     '.............##d',
   ] },
+
+  // ===== Endboss-Belohnungen (21.07.2026, Runde 9) =====
+  // EIGENE Archetypen — bewusst NICHT in fusions.json. Sie tauchen in keinem
+  // Fusions-Rezept auf und sind damit ausschliesslich ueber den Endboss-Sieg
+  // zu bekommen. Wer sie aendert, aendert eine einmalige Belohnung.
+
+  // Urtitan (Kapitel 1): Kronenzacken, leuchtendes Augenband, Schulterplatten,
+  // Glutkern in der Brust, breiter Stand.
+  titan: { symmetric: true, top: 3, rows: [
+    '...........#.#.#',
+    '...........#l#l#',
+    '..........#lllll',
+    '.........#llllll',
+    '........#lllllll',
+    '........#mmmmmmm',
+    '........#eeeeeee',
+    '........#mmmmmmm',
+    '.......##mmmmmmm',
+    '....####llllllll',
+    '...#lldd#lllllll',
+    '..#lldddd#mmmmmm',
+    '..#lmmmmm#mmmmmm',
+    '.#lmmmmmm####mmm',
+    '.#mmmmmmm#gg#mmm',
+    '.#mmmmmmm#gg#mmm',
+    '.#dmmmmmm####mmm',
+    '.#dmmmmmmmmmmmmm',
+    '..#ddmmmmmmmmmmm',
+    '..#dddmmmmmmmmmm',
+    '...#dddddddddddd',
+    '....############',
+    '....#ddd#.......',
+    '....#ddd#.......',
+    '....#####.......',
+  ] },
+  // Weltenschlange (Kapitel 2): aufgerichtete Kobra mit Haube, Glutzeichen,
+  // darunter der gewundene Leib in zwei Ringen.
+  weltenschlange: { symmetric: true, top: 4, rows: [
+    '.........#######',
+    '.......#llllllll',
+    '......#lllllllll',
+    '.....#lllmmmmmmm',
+    '.....#llmmmmmmmm',
+    '.....#lmmmm##mmm',
+    '.....#lmmm#gg#mm',
+    '.....#lmmmm##mmm',
+    '.....#lmmmmmmmmm',
+    '......#lmmmmmmmm',
+    '.......#llllllll',
+    '........#lleplll',
+    '.........#llllll',
+    '.........#mmmmmm',
+    '.........#mmmmmm',
+    '........#mmmmmmm',
+    '.......#mmmmmmmm',
+    '......#mmmmmmmmm',
+    '.....#mmmmmmmmmm',
+    '.....###########',
+    '....#lllllllllll',
+    '....#mmmmmmmmmmm',
+    '...#mmmmmmmmmmmm',
+    '...#dddddddddddd',
+    '....############',
+  ] },
 };
 
 const pixelURICache = {};

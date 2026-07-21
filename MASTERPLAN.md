@@ -28,6 +28,12 @@ Kampagne (2 Kapitel, 20 Stages), Sammlung, Fusion, Battlepass, **Items**,
   bzw. `delete from public.players where name = 'Test-Gegner';`
 
 ### Offen (in dieser Reihenfolge sinnvoll)
+0. **Migration `0003_cloud_save.sql` einspielen** (NEU, Runde 9) — sonst meldet die
+   App bei ⚙ → „Spielstand-Cloud": „Die Cloud ist im Server noch nicht eingerichtet".
+   Weg: supabase.com öffnen → Projekt `kdldlxwkwqmbtttuwxbq` → linke Leiste
+   **SQL Editor** → **New query** → Inhalt von
+   `supabase/migrations/0003_cloud_save.sql` hineinkopieren → **Run**.
+   (Das ist das Web-Dashboard im Browser, NICHT das schwarze Terminal.)
 1. **Edge Function `verify-match` deployen** — geht NICHT über den SQL-Editor:
    ```
    cd C:\005-Kellerwohnung\elementra
@@ -288,6 +294,13 @@ Die Map ist endlich — die Beschäftigung darf es nicht sein. Reihenfolge der H
       **Globen-Rail** (horizontal, ein Planet je Kapitel), Kopfleiste entfernt
       (nur Zurück + Zahnrad, Zahnrad auch im Menü), Lagerfeuer + Team auf der
       Bodenlinie statt schwebend.
+- [x] 21.07. (Runde 9): **Feedback-Runde:** Hauptmenü-Kacheln an die Bildschirm-
+      ränder (Lagerfeuer + Team wieder sichtbar), Streifen über dem Menü-Bild weg;
+      Welt-Übersicht = bildschirmbreiter Globus ohne Kästchen auf Sternenhimmel;
+      **Ökonomie-Bremse** (Gold halbiert, Wiederholung ¼, Item-Drops 2 statt 10 je
+      Kapitel); **Endboss-Kreaturen** Urtitan/Weltenschlange mit eigenen Sprites,
+      nicht fusionierbar; **Arena** mit eigenem Team + Dauer-Rangliste;
+      **Cloud-Spielstand** (Code + PIN, Migration 0003). sw.js → v13.
 - [x] 21.07.: **Async-PVP LIVE** — Supabase-Projekt `kdldlxwkwqmbtttuwxbq`, Migration
       eingespielt, Anonymous Sign-ins aktiv. End-to-End verifiziert: anonyme Anmeldung,
       Spieler-Zeile, Snapshot-Upload, Matchmaking, Kampf, `submit_match` (Elo 1000 →

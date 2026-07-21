@@ -72,6 +72,37 @@ function activateProfile(id) {
   Save = loadSave();
 }
 
+// ---------- Cloud-Anbindung (Runde 9, 21.07.2026) ----------
+// Ein Profil kann mit einem Cloud-Spielstand verknüpft sein: `p.cloud = { code,
+// pin, at }`. Der PIN liegt lokal im Klartext daneben — wie der Profil-PIN ist
+// er Bequemlichkeit, kein Schutz. Ohne Verknüpfung bleibt alles rein lokal.
+
+function setProfileCloud(id, code, pin) {
+  const p = Profiles.list.find(x => x.id === id);
+  if (!p) return null;
+  p.cloud = { code, pin, at: new Date().toISOString() };
+  persistProfiles();
+  return p.cloud;
+}
+
+function profileCloud(id) {
+  const p = Profiles.list.find(x => x.id === id);
+  return (p && p.cloud) || null;
+}
+
+// Legt ein NEUES Profil aus einem heruntergeladenen Spielstand an und aktiviert
+// es. Bewusst neu statt überschreiben — so geht nie ein lokaler Stand verloren.
+function importCloudProfile(name, saveData, code, pin) {
+  const p = createProfile(name, '');
+  if (!p) return null;
+  p.cloud = { code, pin, at: new Date().toISOString() };
+  persistProfiles();
+  try { localStorage.setItem(profileSaveKey(p.id), JSON.stringify(saveData)); }
+  catch (e) { console.warn('Cloud-Spielstand konnte nicht abgelegt werden.', e); }
+  Save = loadSave();
+  return p;
+}
+
 // Kurzer Fortschritts-Abriss für die Profilkarte (ohne den Save zu aktivieren).
 function profileSummary(id) {
   try {

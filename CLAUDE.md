@@ -27,11 +27,20 @@ Roadmap & App-Store-Pfad: `MASTERPLAN.md` — zuerst lesen.
   ohne PIN startet durch. Wechseln in den Optionen, Löschen per Long-Press auf
   die Profilkarte. **Der PIN ist Bequemlichkeit, kein Schutz** (Klartext im
   localStorage).
+- **Hauptmenü-Kacheln liegen an den Bildschirmrändern** (21.07. Runde 9,
+  `.menu-side.left/.right` in style.css): je zwei Kacheln links und rechts unten,
+  Mitte bleibt für Lagerfeuer + Team frei — vorher deckte das 2×2-Raster die
+  Szene auf dem Handy komplett zu. `MENU_CAMP_POS` wurde entsprechend nach oben
+  gerückt (Bottom 27/27/36 %). Im Menü ist `#topbar` **fixed** (schwebt über dem
+  Bild), sonst blieb oben ein leerer Streifen stehen, wo früher die Leiste saß.
 - **Welt-Übersicht = Globen-Rail** (21.07.): ein Planet je Kapitel
   (`globeArt(theme)` in pixel.js — 48×48-Kugel aus den Theme-Farben, Licht von
   oben links, Kontinent-Blobs), **horizontal scrollbar mit Snap** (`.globe-rail`),
   scrollt automatisch aufs aktuelle Kapitel. Die alte vertikale Kartenliste
-  (`.world-card`) ist raus.
+  (`.world-card`) ist raus. **Runde 9:** Eine Globus-Karte ist genau so breit wie
+  der Bildschirm (mittig zentriert), **ohne Kästchen** (kein Rahmen/Hintergrund/
+  Schatten); der Hintergrund ist wieder der gekachelte **Sternenhimmel**
+  (`setStarWallpaper`, `#bg-layer.stars`) statt eines Landschafts-Wallpapers.
 - **Kampagne = Welt-Übersicht (`renderWorld`) → Kapitel-Karte (`renderChapterMap`)**
   (19.07.): `CHAPTERS` (stages.js) teilen die Stages in Abteile; `renderMap` ist
   Dispatcher über `currentChapter` (null = Übersicht). Kapitel N gesperrt bis
@@ -321,6 +330,54 @@ Langzeit-Hebel 2: die Map ist endlich, die Herausforderung nicht.
   dagegen manuell timen. **Der Angreifer hat dadurch einen systematischen Vorteil,
   die Rangliste ist verzerrt.** Lösungswege stehen im MASTERPLAN unter
   „GEPLANT — PVP-Ausbau, B)". Vor öffentlichem Betrieb reparieren.
+
+## Runde 9 (21.07.2026): Ökonomie, Endboss-Kreaturen, Arena-Team, Cloud-Save
+
+### Ökonomie-Bremse (Nutzer: „keine Herausforderung, viel zu schnell")
+- **Gold halbiert**: alle `gold`/`firstClearBonus` in `stages.js` auf 50 % gesenkt
+  (S1 105 → 53 Gold beim Erstsieg, S10 350 → 200). **Wiederholungen geben ein
+  Viertel** statt der Hälfte (`grantStageRewards`).
+- **Item-Drops nur noch 2 je Kapitel**: garantierter Erstsieg-Drop ausschließlich
+  auf Stages mit `drop: true` (S5/S10/S15/S20). Restchance bei Wiederholung von
+  20 % auf **5 %** gesenkt (`rollStageDrop`). Vorher droppte jeder Erstsieg — 10
+  Items je Kapitel.
+- Kampf-XP blieb absichtlich unverändert (XP ist laut Design der Hauptweg; nur
+  der Gold-Beschleuniger war zu üppig).
+
+### Endboss-Kreaturen (`bossCreature` in stages.js)
+- **`boss_titan` „Urtitan"** (S10) und **`boss_schlange` „Weltenschlange"** (S20).
+  Einmalige Belohnung beim Boss-Sieg, zusätzlich zum normalen `unlockCreature`.
+- **Eigene Archetypen** `titan`/`weltenschlange` in `PixelArchetypes` — sie stehen
+  in KEINEM Fusions-Rezept (`fusions.json`), `fusionResult` liefert für sie immer
+  `null`. Damit sind sie ausschließlich über den Endboss zu bekommen.
+- Flag `unique: true`: zählt NICHT zum Sammelziel „Basis x/21" (`goalProgress`),
+  sonst stünde dort 23/21.
+- Werte per Sim gesetzt: Titan Lv1 ≈ Koloss Lv3 als Tank (230/23/22/9, Schild 28 %
+  + Spott), Weltenschlange Lv3 ≈ Koloss Lv3 (185/29/16/14, Gift 6 Stapel,
+  Flächen-DoT 11 %). Nicht ohne neue Sim verändern.
+
+### Arena
+- **Eigenes Team**: `Save.arenaTeam` (unabhängig von `Save.team`, **gleiche
+  Sammlung**). `arenaTeamIds()` in net.js ist die einzige Quelle; `fuseCreatures`
+  flickt beide Teams. Bearbeiten über `openArenaTeamSelect()` — derselbe Picker
+  wie die Kampagne mit `stage.arenaEdit`, nur ohne Gegner-Band und ohne Kampfstart.
+- **Rangliste ist Dauer-Inhalt**: lädt beim Öffnen des Screens automatisch
+  (`pvpState.boardTried` verhindert eine Endlosschleife, wenn der Abruf scheitert).
+  Der frühere „Rangliste"-Knopf ist weg.
+
+### Cloud-Spielstand (`0003_cloud_save.sql`, `Net.cloudPush/cloudPull`)
+- **Warum:** Profile lagen nur im localStorage des jeweiligen Browsers — vom
+  iPhone sah man die PC-Profile nicht.
+- Profil bekommt einen **8-Zeichen-Code + 4-stelligen PIN**. ⚙ → „Spielstand-Cloud":
+  hochladen (`cloud_push`) bzw. auf dem anderen Gerät mit Code+PIN laden
+  (`cloud_pull`). Verknüpfung steht in `Profiles.list[].cloud = { code, pin, at }`.
+- **Bewusst manuell**, kein Auto-Sync: automatisches Hochladen könnte den neueren
+  Stand des anderen Geräts überschreiben.
+- **Laden legt immer ein NEUES lokales Profil an** (`importCloudProfile`) — so
+  geht kein Stand auf dem Gerät verloren.
+- Sicherheit: `cloud_saves` hat **keine RLS-Policy**, ist also für Clients dicht;
+  Zugriff nur über die beiden `SECURITY DEFINER`-Funktionen, die Code+PIN prüfen.
+  Kein Kontoschutz — wer Code UND PIN kennt, hat den Spielstand.
 
 ## Edge Function `verify-match` (Anti-Cheat, 21.07.2026)
 

@@ -27,7 +27,7 @@ function showScreen(name) {
   document.body.classList.toggle('gold-visible', name === 'collection' || name === 'fusion');
   // Kampagne-Wallpaper standardmäßig leeren; renderWorld/renderChapterMap setzen es.
   const bg = document.getElementById('bg-layer');
-  if (bg && name !== 'map') bg.innerHTML = '';
+  if (bg && name !== 'map') { bg.innerHTML = ''; bg.style.backgroundImage = ''; bg.classList.remove('stars'); }
   const s = $('#screen');
   s.innerHTML = '';
   s.scrollTop = 0;
@@ -118,7 +118,20 @@ function chapterUnlocked(ch) {
 // eine gefüllte Szene, kein gekacheltes Muster. Cache je Theme via Sprite-URI.
 function setCampaignWallpaper(theme) {
   const bg = document.getElementById('bg-layer');
-  if (bg) bg.innerHTML = sceneArt(theme, 'map'); // 'map'-Variante: verwandt zur Arena, nicht gleich
+  if (!bg) return;
+  bg.style.backgroundImage = '';
+  bg.classList.remove('stars');
+  bg.innerHTML = sceneArt(theme, 'map'); // 'map'-Variante: verwandt zur Arena, nicht gleich
+}
+
+// Welt-Übersicht: gekachelter Pixel-Sternenhimmel (der Hintergrund von vor dem
+// 19.07.) — er passt zu den frei schwebenden Globen besser als eine Landschaft.
+function setStarWallpaper() {
+  const bg = document.getElementById('bg-layer');
+  if (!bg) return;
+  bg.innerHTML = '';
+  bg.classList.add('stars');
+  bg.style.backgroundImage = `url(${starTileURI()})`;
 }
 
 function renderMap(root) {
@@ -149,7 +162,7 @@ function ascensionPanelHTML() {
 }
 
 function renderWorld(root) {
-  setCampaignWallpaper('storm'); // Voll-Wallpaper (epischer Nachthimmel) hinter der Übersicht
+  setStarWallpaper(); // Sternenhimmel hinter den Globen (Nutzer-Wunsch 21.07.)
   const wrap = el('div', 'world-screen');
   wrap.appendChild(el('div', 'screen-title', 'Kampagne'));
   const asc = el('div', '', ascensionPanelHTML());
@@ -305,8 +318,11 @@ function stageFitScore(id, stage) {
 // Ruhige Einseite (Umbau 20.07.2026): schmales Gegner-Band, drei große Slots,
 // darunter das Kreaturen-Grid. Kein Stage-Name, keine Beschreibung, keine
 // Hinweiszeile — Belohnung nur als Icon+Zahl, Warnung nur als Icon.
+// `stage.arenaEdit` (Runde 9): derselbe Picker dient auch dem Arena-Team —
+// kein Gegner-Band, kein Kampfstart, Ergebnis landet in Save.arenaTeam.
 function openTeamSelect(stage) {
-  let picked = Save.team.filter(id => Save.collection[id]).slice(0, 3);
+  const arena = !!stage.arenaEdit;
+  let picked = (arena ? arenaTeamIds() : Save.team.filter(id => Save.collection[id])).slice(0, 3);
   // Markierung: { kind: 'slot', i } oder { kind: 'card', id } — null = nichts gewählt.
   let sel = null;
   let showAll = false;   // Grid: erst Empfehlungen, auf Wunsch alles
@@ -378,13 +394,21 @@ function openTeamSelect(stage) {
     const shown = showAll ? owned
       : Array.from(new Set([...picked, ...owned.slice(0, 6)])).filter(id => Save.collection[id]);
 
+    // Arena: statt Gegner-Band die eigene Team-Stärke (es gibt keinen festen Gegner).
+    const bandHTML = arena
+      ? `<div class="ts-band">
+           <div class="ts-loot">${iconArt('sword', 15)} ${pvpTeamPower(picked.map((id, slot) =>
+             ({ cid: id, level: Save.collection[id].level, item: Save.equipped[id] || null, slot })))}</div>
+         </div>`
+      : `<div class="ts-band">
+           <div class="ts-foes">${stage.enemies.map((e, i) =>
+             `<span class="mini-foe ${i === 0 ? 'front' : ''}">${creatureArt(Creatures[e.id], { noAura: true })}<i>${e.level}</i></span>`).join('')}
+           </div>
+           <div class="ts-loot">${iconArt('coin', 15)} ${stage.gold}${newCreature ? iconArt('egg', 15) : ''}</div>
+         </div>`;
+
     const ov = showOverlay(`
-      <div class="ts-band">
-        <div class="ts-foes">${stage.enemies.map((e, i) =>
-          `<span class="mini-foe ${i === 0 ? 'front' : ''}">${creatureArt(Creatures[e.id], { noAura: true })}<i>${e.level}</i></span>`).join('')}
-        </div>
-        <div class="ts-loot">${iconArt('coin', 15)} ${stage.gold}${newCreature ? iconArt('egg', 15) : ''}</div>
-      </div>
+      ${bandHTML}
       <div class="ts-slots">${slots}</div>
       <div class="ts-grid ${showAll ? '' : 'ts-grid-short'}">
         ${shown.map(id => creatureCardHTML(id, Save.collection[id].level,
@@ -395,7 +419,7 @@ function openTeamSelect(stage) {
       ${owned.length > shown.length ? `<button class="ts-more" id="ts-more">${iconArt('back', 15)}</button>` : ''}
       <div class="ov-actions">
         <button class="btn btn-ghost" id="ts-cancel">${iconArt('back', 16)}</button>
-        <button class="btn btn-primary" id="ts-start" ${picked.length === 3 ? '' : 'disabled'}>${iconArt('sword', 18)}</button>
+        <button class="btn btn-primary" id="ts-start" ${picked.length === 3 ? '' : 'disabled'}>${iconArt(arena ? 'shield' : 'sword', 18)}</button>
       </div>`, 'ts-overlay');
 
     ov.querySelectorAll('.ts-slot').forEach(slotEl => {
@@ -432,6 +456,13 @@ function openTeamSelect(stage) {
     if (more) more.onclick = () => { Sfx.click(); showAll = true; render(); };
     ov.querySelector('#ts-cancel').onclick = () => { Sfx.click(); closeOverlay(); };
     ov.querySelector('#ts-start').onclick = () => {
+      if (arena) {                       // Arena-Team nur speichern, kein Kampf
+        Save.arenaTeam = picked.slice();
+        persist();
+        closeOverlay();
+        showScreen('pvp');
+        return;
+      }
       Save.team = picked.slice();
       persist();
       closeOverlay();
@@ -1055,6 +1086,13 @@ function showBattleResult(winner) {
       </div>` : '';
     const bossHTML = stage.boss ? `
       <div class="boss-clear">${iconArt('star', 18)}${emblemArt()}${iconArt('star', 18)}</div>` : '';
+    // Endboss-Trophäe (Runde 9): einmalige Kreatur mit eigenem Archetyp.
+    const bossCreatureHTML = rewards.bossUnlocked ? `
+      <div class="unlock-box boss-unlock">
+        <div class="unlock-label">${iconArt('star', 14)} Endboss-Kreatur erobert!</div>
+        ${creatureCardHTML(rewards.bossUnlocked, 1, { cls: 'unlock-card' })}
+        <div class="unlock-note">Einmalig — nicht durch Fusion herstellbar.</div>
+      </div>` : '';
     // Item-Drop: Erstsieg garantiert, Wiederholung mit Chance (items.js).
     const dropId = rollStageDrop(stage, rewards.first || rewards.ascFirst);
     const dropHTML = dropId ? `
@@ -1069,6 +1107,7 @@ function showBattleResult(winner) {
         <div class="result-stars">${starsHTML(alive)}</div>
         <div class="result-gold">+ ${iconArt('coin')} ${rewards.gold}</div>
         ${xpRowHTML(xpGains)}
+        ${bossCreatureHTML}
         ${unlockHTML}
         ${dropHTML}
         <div class="ov-actions">
@@ -1519,10 +1558,13 @@ function playFusion(cidA, cidB) {
 
 // Team-Kreaturen ums Lagerfeuer. `bottom` statt `top`: alle sitzen auf DERSELBEN
 // Bodenlinie wie das Feuer (vorher schwebten sie frei in der Luft).
+// 21.07. Runde 9: Die Kacheln liegen jetzt an den Bildschirmrändern (siehe
+// `.menu-side`), das Lager rückt in die Mitte der unteren Bildschirmhälfte —
+// vorher deckten die Kacheln Feuer und Team auf dem Handy komplett zu.
 const MENU_CAMP_POS = [
-  { x: 24, bottom: 20, flip: false },
-  { x: 76, bottom: 20, flip: true },
-  { x: 50, bottom: 30, flip: false },   // hinten am Feuer, etwas höher = weiter weg
+  { x: 34, bottom: 27, flip: false },
+  { x: 66, bottom: 27, flip: true },
+  { x: 50, bottom: 36, flip: false },   // hinten am Feuer, etwas höher = weiter weg
 ];
 
 function renderMenu(root) {
@@ -1545,12 +1587,14 @@ function renderMenu(root) {
       <div class="menu-emblem">${emblemArt()}</div>
       <div class="title-logo menu-logo">ELEMENTRA</div>
       <div class="title-tag">Sammle. Fusioniere. Herrsche.</div>
-      <div class="menu-grid">
-        <button class="menu-tile primary wide" data-goto="map">${iconArt('map', 36)}<span>Kampagne</span></button>
-        <button class="menu-tile" data-goto="collection">${iconArt('book', 36)}<span>Sammlung</span></button>
-        <button class="menu-tile" data-goto="battlepass">${iconArt('star', 36)}<span>Battlepass</span></button>
-        <button class="menu-tile wide" data-goto="pvp">${iconArt('sword', 36)}<span>Arena</span></button>
-      </div>
+    </div>
+    <div class="menu-side left">
+      <button class="menu-tile primary" data-goto="map">${iconArt('map', 30)}<span>Kampagne</span></button>
+      <button class="menu-tile" data-goto="collection">${iconArt('book', 30)}<span>Sammlung</span></button>
+    </div>
+    <div class="menu-side right">
+      <button class="menu-tile" data-goto="pvp">${iconArt('sword', 30)}<span>Arena</span></button>
+      <button class="menu-tile" data-goto="battlepass">${iconArt('star', 30)}<span>Battlepass</span></button>
     </div>`;
   root.appendChild(wrap);
   wrap.querySelectorAll('[data-goto]').forEach(b =>
@@ -1569,12 +1613,23 @@ function renderMenu(root) {
 // Spielers, den die normale Gegner-KI steuert. Fällt das Netz aus, bleibt der
 // Rest des Spiels unberührt — jeder Aufruf ist abgefangen.
 
-let pvpState = { rating: null, busy: false, msg: '', board: null };
+let pvpState = { rating: null, busy: false, msg: '', board: null, boardLoading: false, boardTried: false };
 
 function renderPvp(root) {
   const wrap = el('div', 'pvp-screen');
   const units = pvpTeamUnits();
   const power = pvpTeamPower(units);
+  // Rangliste ist Dauer-Inhalt (Runde 9) — kein Knopf mehr, sie lädt beim Öffnen.
+  const boardHTML = pvpState.board
+    ? `<div class="pvp-board">${pvpState.board.map(row => `
+        <div class="pvp-row ${row.player_id === (Net.session && Net.session.user_id) ? 'me' : ''}">
+          <b class="pvp-rank">${row.rank}</b>
+          <span class="pvp-name">${row.name}</span>
+          <span class="pvp-rating">${row.rating}</span>
+        </div>`).join('')}</div>`
+    // Beim ersten Aufbau läuft der Abruf noch — dann „lädt", nicht „offline".
+    : `<div class="pvp-board-empty">${pvpState.boardTried && !pvpState.boardLoading
+        ? 'Rangliste nicht abrufbar (offline).' : 'Rangliste lädt…'}</div>`;
   wrap.innerHTML = `
     <div class="screen-title">Arena</div>
     <div class="pvp-head">
@@ -1583,25 +1638,33 @@ function renderPvp(root) {
       <div class="pvp-stat"><span>${iconArt('sword', 16)}</span>
         <b>${power}</b><i>Team-Stärke</i></div>
     </div>
+    <div class="pvp-team-head">
+      <span>${iconArt('shield', 15)} Arena-Team</span>
+      <button class="btn btn-ghost btn-sm" id="pvp-editteam">${iconArt('book', 14)} Ändern</button>
+    </div>
     <div class="pvp-team">${units.map(u =>
       creatureCardHTML(u.cid, u.level)).join('')}</div>
     ${pvpState.msg ? `<div class="pvp-msg">${pvpState.msg}</div>` : ''}
     <div class="ov-actions pvp-actions">
-      <button class="btn btn-ghost" id="pvp-board" ${pvpState.busy ? 'disabled' : ''}>Rangliste</button>
       <button class="btn btn-primary" id="pvp-fight" ${pvpState.busy || !units.length ? 'disabled' : ''}>
         ${pvpState.busy ? '…' : 'Gegner suchen'} ${iconArt('sword', 14)}</button>
     </div>
-    ${pvpState.board ? `<div class="pvp-board">${pvpState.board.map(row => `
-      <div class="pvp-row ${row.player_id === (Net.session && Net.session.user_id) ? 'me' : ''}">
-        <b class="pvp-rank">${row.rank}</b>
-        <span class="pvp-name">${row.name}</span>
-        <span class="pvp-rating">${row.rating}</span>
-      </div>`).join('')}</div>` : ''}
-    <div class="fusion-hint">Dein Team wird als Schnappschuss hinterlegt — andere kämpfen dagegen, auch wenn du offline bist.</div>`;
+    <div class="pvp-board-title">${iconArt('star', 14)} Rangliste</div>
+    ${boardHTML}
+    <div class="fusion-hint">Eigenes Team, gleiche Sammlung. Es wird als Schnappschuss hinterlegt — andere kämpfen dagegen, auch wenn du offline bist.</div>`;
   root.appendChild(wrap);
 
   wrap.querySelector('#pvp-fight').onclick = () => pvpFight();
-  wrap.querySelector('#pvp-board').onclick = () => pvpShowBoard();
+  wrap.querySelector('#pvp-editteam').onclick = () => { Sfx.click(); openArenaTeamSelect(); };
+  // Beim Öffnen EINMAL automatisch laden. `boardTried` verhindert eine
+  // Endlosschleife, wenn der Abruf scheitert (pvpShowBoard rendert neu).
+  if (!pvpState.boardTried && !pvpState.boardLoading) pvpShowBoard();
+}
+
+// Arena-Team bearbeiten: gleicher Picker wie die Kampagne, aber ohne Gegner-Band
+// und ohne Kampfstart — Auswahl landet in Save.arenaTeam.
+function openArenaTeamSelect() {
+  openTeamSelect({ id: 'arena', name: 'Arena', enemies: [], gold: 0, pvp: true, arenaEdit: true });
 }
 
 function pvpSetMsg(m) { pvpState.msg = m; if (currentScreen === 'pvp') showScreen('pvp'); }
@@ -1633,16 +1696,17 @@ async function pvpFight() {
 }
 
 async function pvpShowBoard() {
-  if (pvpState.busy) return;
-  pvpState.busy = true; pvpSetMsg('Lade Rangliste…');
+  if (pvpState.boardLoading) return;
+  pvpState.boardLoading = true;
+  pvpState.boardTried = true;
   try {
     await Net.ensureSession();
     pvpState.board = await Net.leaderboard(currentSeason(), 25);
-    pvpState.busy = false; pvpSetMsg('');
   } catch (e) {
-    pvpState.busy = false; pvpState.board = null;
-    pvpSetMsg('Rangliste nicht abrufbar: ' + e.message);
+    pvpState.board = null;                 // Anzeige fällt auf den Offline-Text zurück
   }
+  pvpState.boardLoading = false;
+  if (currentScreen === 'pvp') showScreen('pvp');
 }
 
 function startPvpBattle(opp) {
@@ -1652,7 +1716,7 @@ function startPvpBattle(opp) {
     id: 'pvp', name: 'Arena — ' + opp.name, theme: 'storm', pvp: true, opponent: opp,
     enemies: defs, gold: 0, firstClearBonus: 0, unlockCreature: null,
   };
-  beginBattle(stage, Save.team.filter(id => Save.collection[id]).slice(0, 3));
+  beginBattle(stage, arenaTeamIds());   // Arena kämpft mit dem Arena-Team
 }
 
 // Ergebnis melden: die WERTUNG rechnet der Server (submit_match), nicht der Client.
@@ -1718,6 +1782,7 @@ function openSettings() {
         ${volStepsHTML('music', volStepIndex(Save.settings.musicVol))}</div>
       <button class="btn btn-ghost" id="set-profile">${iconArt('lock', 14)} ${
         activeProfile() ? activeProfile().name : 'Profil wählen'}</button>
+      <button class="btn btn-ghost" id="set-cloud">${iconArt('orb', 14)} Spielstand-Cloud</button>
       <button class="btn btn-ghost" id="set-dev">${iconArt('gear', 14)} Developer-Board</button>
       <button class="btn btn-danger" id="set-reset">Spielstand zurücksetzen</button>
       <div class="settings-info">Elementra — Prototyp v0.2</div>
@@ -1750,7 +1815,128 @@ function openSettings() {
       showScreen('menu');
     }
   };
+  ov.querySelector('#set-cloud').onclick = () => { Sfx.click(); openCloudSave(); };
   ov.querySelector('#set-close').onclick = () => { Sfx.click(); closeOverlay(); };
+}
+
+// ---------- Spielstand-Cloud (Runde 9, 21.07.2026) ----------
+// Warum es das braucht: Profile liegen im Speicher des jeweiligen Browsers.
+// Vom iPhone sieht man die PC-Profile deshalb NICHT. Hier bekommt ein Profil
+// einen Code; mit Code + PIN holt man denselben Spielstand auf jedes Gerät.
+// Bewusst manuell (hochladen/laden per Knopf) — automatisches Synchronisieren
+// könnte den neueren Stand des anderen Geräts überschreiben.
+
+// Server-Fehler in Klartext übersetzen (der Nutzer ist kein Entwickler).
+function cloudErrText(e) {
+  const m = (e && e.message) || '';
+  if (/Could not find the function|schema cache/i.test(m))
+    return 'Die Cloud ist im Server noch nicht eingerichtet (Migration 0003 fehlt).';
+  if (/wrong pin/i.test(m))     return 'Falsche PIN.';
+  if (/unknown code/i.test(m))  return 'Diesen Code gibt es nicht.';
+  if (/not authenticated/i.test(m)) return 'Keine Verbindung zum Server.';
+  if (/Failed to fetch|NetworkError/i.test(m)) return 'Keine Internetverbindung.';
+  return m;
+}
+
+function openCloudSave() {
+  const p = activeProfile();
+  if (!p) { floatHint('Erst ein Profil wählen.'); return; }
+  let busy = false;
+
+  const render = (msg = '') => {
+    const link = profileCloud(p.id);
+    const ov = showOverlay(`
+      <div class="cloud-box">
+        <h2>${iconArt('orb', 18)} Spielstand-Cloud</h2>
+        <div class="cloud-hint">Ein Code + PIN — damit spielst du dasselbe Profil
+          auf Handy und PC.</div>
+        ${link ? `
+          <div class="cloud-code-box">
+            <div class="cloud-code-label">Dein Code</div>
+            <div class="cloud-code">${link.code}</div>
+            <div class="cloud-when">zuletzt hochgeladen: ${new Date(link.at).toLocaleString('de-DE')}</div>
+          </div>` : ''}
+        ${msg ? `<div class="pvp-msg">${msg}</div>` : ''}
+        <button class="btn btn-primary" id="cl-push" ${busy ? 'disabled' : ''}>
+          ${iconArt('star', 14)} ${link ? 'Jetzt hochladen' : 'Code erstellen'}</button>
+        <button class="btn btn-ghost" id="cl-pull" ${busy ? 'disabled' : ''}>
+          ${iconArt('book', 14)} Mit Code laden</button>
+        <div class="ov-actions">
+          <button class="btn btn-ghost" id="cl-close">Schließen</button>
+        </div>
+      </div>`, 'cloud-ov');
+    ov.querySelector('#cl-close').onclick = () => { Sfx.click(); closeOverlay(); };
+    ov.querySelector('#cl-push').onclick = () => {
+      Sfx.click();
+      const l = profileCloud(p.id);
+      if (l && l.pin) { doPush(l.code, l.pin); return; }
+      // Erster Upload: PIN festlegen (schützt den Code vor Fremdzugriff).
+      openPinPad('set', pin => doPush(null, pin), () => {});
+    };
+    ov.querySelector('#cl-pull').onclick = () => { Sfx.click(); openCloudPull(); };
+  };
+
+  const doPush = async (code, pin) => {
+    busy = true; render('Lade hoch…');
+    try {
+      await Net.ensureSession();
+      const newCode = await Net.cloudPush(code, pin, p.name, Save);
+      setProfileCloud(p.id, newCode, pin);
+      busy = false;
+      render('Hochgeladen. Code: ' + newCode);
+      Sfx.win();
+    } catch (e) {
+      busy = false;
+      render('Nicht hochgeladen: ' + cloudErrText(e));
+    }
+  };
+
+  render();
+}
+
+// Code eingeben, dann PIN — danach wird ein NEUES lokales Profil angelegt.
+// Bewusst neu statt überschreiben: so geht kein Stand auf diesem Gerät verloren.
+function openCloudPull() {
+  const render = (msg = '', code = '') => {
+    const ov = showOverlay(`
+      <div class="cloud-box">
+        <h2>${iconArt('book', 18)} Spielstand laden</h2>
+        <div class="cloud-hint">Code vom anderen Gerät eintippen (8 Zeichen).</div>
+        <input class="cloud-input" id="cl-code" maxlength="8" autocapitalize="characters"
+          autocomplete="off" spellcheck="false" value="${code}" placeholder="ABCD2345">
+        ${msg ? `<div class="pvp-msg">${msg}</div>` : ''}
+        <div class="ov-actions">
+          <button class="btn btn-ghost" id="cl-back">Zurück</button>
+          <button class="btn btn-primary" id="cl-go">Weiter</button>
+        </div>
+      </div>`, 'cloud-ov');
+    const input = ov.querySelector('#cl-code');
+    ov.querySelector('#cl-back').onclick = () => { Sfx.click(); openCloudSave(); };
+    ov.querySelector('#cl-go').onclick = () => {
+      const c = (input.value || '').trim().toUpperCase();
+      if (c.length !== 8) { render('Der Code hat 8 Zeichen.', c); return; }
+      Sfx.click();
+      openPinPad('set', pin => doPull(c, pin), () => {});
+    };
+  };
+
+  const doPull = async (code, pin) => {
+    render('Lade…', code);
+    try {
+      await Net.ensureSession();
+      const row = await Net.cloudPull(code, pin);
+      const prof = importCloudProfile(row.name || 'Cloud-Spieler', row.data, code, pin);
+      if (!prof) { render('Es sind schon 4 Profile angelegt — eins löschen und erneut versuchen.', code); return; }
+      Sfx.win();
+      closeOverlay();
+      showScreen('menu');
+      floatHint('Spielstand geladen: ' + prof.name);
+    } catch (e) {
+      render('Nicht geladen: ' + cloudErrText(e), code);
+    }
+  };
+
+  render();
 }
 
 // ---------- Dev-Kampf-Simulation: Team gegen unverwüstliche Dummys (Ults testen) ----------

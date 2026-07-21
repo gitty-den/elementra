@@ -1,6 +1,4 @@
 // GENERIERT aus js/*.js - NICHT von Hand aendern.
-// Neu erzeugen: siehe CLAUDE.md, Abschnitt 'Edge Function verify-match'.
-// Grund: die Pruefung MUSS exakt dieselbe Engine benutzen wie der Client.
 const localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
 
 // ================= js/profiles.js =================
@@ -76,6 +74,37 @@ function activateProfile(id) {
   Profiles.activeId = id;
   persistProfiles();
   Save = loadSave();
+}
+
+// ---------- Cloud-Anbindung (Runde 9, 21.07.2026) ----------
+// Ein Profil kann mit einem Cloud-Spielstand verknÃ¼pft sein: `p.cloud = { code,
+// pin, at }`. Der PIN liegt lokal im Klartext daneben â€” wie der Profil-PIN ist
+// er Bequemlichkeit, kein Schutz. Ohne VerknÃ¼pfung bleibt alles rein lokal.
+
+function setProfileCloud(id, code, pin) {
+  const p = Profiles.list.find(x => x.id === id);
+  if (!p) return null;
+  p.cloud = { code, pin, at: new Date().toISOString() };
+  persistProfiles();
+  return p.cloud;
+}
+
+function profileCloud(id) {
+  const p = Profiles.list.find(x => x.id === id);
+  return (p && p.cloud) || null;
+}
+
+// Legt ein NEUES Profil aus einem heruntergeladenen Spielstand an und aktiviert
+// es. Bewusst neu statt Ã¼berschreiben â€” so geht nie ein lokaler Stand verloren.
+function importCloudProfile(name, saveData, code, pin) {
+  const p = createProfile(name, '');
+  if (!p) return null;
+  p.cloud = { code, pin, at: new Date().toISOString() };
+  persistProfiles();
+  try { localStorage.setItem(profileSaveKey(p.id), JSON.stringify(saveData)); }
+  catch (e) { console.warn('Cloud-Spielstand konnte nicht abgelegt werden.', e); }
+  Save = loadSave();
+  return p;
 }
 
 // Kurzer Fortschritts-Abriss fÃ¼r die Profilkarte (ohne den Save zu aktivieren).
@@ -519,6 +548,47 @@ const CREATURES_DATA = {
       "params": {
         "healPctMaxHp": 0.35
       }
+    },
+    "titan_passive": {
+      "name": "Urgestein",
+      "trigger": "onHit",
+      "energyGain": 7,
+      "effect": "damageReduction",
+      "params": {
+        "flatReduce": 4
+      }
+    },
+    "titan_active": {
+      "name": "Weltenwall",
+      "energyCost": 100,
+      "target": "allAllies",
+      "effect": "teamShield",
+      "params": {
+        "shieldPctMaxHp": 0.28,
+        "durationSec": 6,
+        "taunt": true
+      }
+    },
+    "schlange_passive": {
+      "name": "Urtoxin",
+      "trigger": "onAttack",
+      "energyGain": 7,
+      "effect": "applyPoison",
+      "params": {
+        "stackPct": 0.07,
+        "maxStacks": 6
+      }
+    },
+    "schlange_active": {
+      "name": "Ewiger Kreis",
+      "energyCost": 100,
+      "target": "allEnemies",
+      "effect": "spreadDotDebuff",
+      "params": {
+        "dotPct": 0.11,
+        "durationSec": 6,
+        "defDown": 0.22
+      }
     }
   },
   "creatures": [
@@ -686,7 +756,7 @@ const CREATURES_DATA = {
     },
     {
       "id": "fire_wolf",
-      "name": "HÃ¶llenwolf",
+      "name": "HÃƒÂ¶llenwolf",
       "archetype": "wolf",
       "role": "bruiser",
       "element": "fire",
@@ -848,7 +918,7 @@ const CREATURES_DATA = {
     },
     {
       "id": "fire_phoenix",
-      "name": "PhÃ¶nix",
+      "name": "PhÃƒÂ¶nix",
       "archetype": "phoenix",
       "role": "sustain",
       "element": "fire",
@@ -899,9 +969,48 @@ const CREATURES_DATA = {
       "passive": "phoenix_passive",
       "active": "phoenix_active",
       "mvp": false
+    },
+    {
+      "id": "boss_titan",
+      "name": "Urtitan",
+      "archetype": "titan",
+      "role": "tank",
+      "element": "ash",
+      "rarity": "legendary",
+      "tier": 3,
+      "baseStats": {
+        "hp": 230,
+        "atk": 23,
+        "def": 22,
+        "spd": 9
+      },
+      "passive": "titan_passive",
+      "active": "titan_active",
+      "unique": true,
+      "mvp": false
+    },
+    {
+      "id": "boss_schlange",
+      "name": "Weltenschlange",
+      "archetype": "weltenschlange",
+      "role": "dot",
+      "element": "steam",
+      "rarity": "legendary",
+      "tier": 3,
+      "baseStats": {
+        "hp": 185,
+        "atk": 29,
+        "def": 16,
+        "spd": 14
+      },
+      "passive": "schlange_passive",
+      "active": "schlange_active",
+      "unique": true,
+      "mvp": false
     }
   ]
-};
+}
+;
 const FUSIONS_DATA = {
   "rule": "archetype+element",
   "description": "Zwei Max-Level-Kreaturen VERSCHIEDENER Archetypen fusionieren zu einem Fusions-Archetyp. Element: gleich+gleich -> gleich, sonst Hybrid-Element. Hybride bleiben im Kampf neutral.",
@@ -1066,7 +1175,7 @@ const FUSIONS_DATA = {
     },
     {
       "id": "chimaera",
-      "name": "ChimÃ¤ra",
+      "name": "ChimÃƒÂ¤ra",
       "pair": [
         "greif",
         "wolf"
@@ -1155,7 +1264,8 @@ const FUSIONS_DATA = {
       "active": "archon_active"
     }
   ]
-};
+}
+;
 
 
 // ================= js/items.js =================
@@ -1291,8 +1401,10 @@ function buyItem(id) {
 }
 
 // ---------- Drops aus der Kampagne ----------
-// Erstsieg: garantiert ein Item (Seltenheit steigt mit der Stage).
-// Wiederholung: 20 % Chance auf ein gewÃ¶hnliches/seltenes Item.
+// Runde 9 (21.07.2026), Nutzer-Feedback â€žviel zu viele Items": Ein garantierter
+// Erstsieg-Drop gibt es NUR noch auf den mit `drop: true` markierten Stages â€”
+// zwei je Kapitel (stages.js). Ãœberall sonst bleibt eine kleine Zufallschance.
+// Vorher droppte JEDER Erstsieg, also 10 Items je Kapitel.
 
 function randomItemByRarity(rarity) {
   const pool = ITEMS_DATA.filter(i => i.rarity === rarity);
@@ -1312,13 +1424,13 @@ function stageDropRarity(stageId) {
 // Gibt die gedroppte Item-ID zurÃ¼ck (bereits gutgeschrieben) oder null.
 function rollStageDrop(stage, firstClear) {
   if (!stage || stage.dev) return null;              // Dev-Sim droppt nie
-  if (firstClear) {
+  if (firstClear && stage.drop) {                    // nur die markierten Stages
     const id = randomItemByRarity(stageDropRarity(stage.id));
     grantItem(id);
     return id;
   }
-  if (Math.random() < 0.2) {
-    const id = randomItemByRarity(Math.random() < 0.3 ? 'rare' : 'common');
+  if (Math.random() < 0.05) {                        // Restchance, vorher 20 %
+    const id = randomItemByRarity(Math.random() < 0.2 ? 'rare' : 'common');
     grantItem(id);
     return id;
   }
@@ -1386,7 +1498,9 @@ const MILESTONES = [
 ];
 
 function goalProgress(type) {
-  if (type === 'base') return ownedIds().filter(id => !Creatures[id].fusion).length;
+  // Endboss-Kreaturen (`unique`) zÃ¤hlen NICHT zur Basis-Sammlung â€” sonst stÃ¼nde
+  // dort 23/21. Sie sind TrophÃ¤en, kein Sammelziel.
+  if (type === 'base') return ownedIds().filter(id => !Creatures[id].fusion && !Creatures[id].unique).length;
   if (type === 'fusion') return ownedIds().filter(id => Creatures[id].fusion).length;
   return Object.values(Save.stages).reduce((a, b) => a + b, 0); // stars
 }
@@ -1516,6 +1630,9 @@ function defaultSave() {
       water_geist:  { level: 1, xp: 0 },
     },
     team: ['fire_drache', 'nature_golem', 'water_geist'],
+    // Arena-Team (Runde 9): eigenstÃ¤ndige Aufstellung fÃ¼rs PVP. Es greift auf
+    // DIESELBE Sammlung zu â€” nur die drei PlÃ¤tze sind unabhÃ¤ngig von der Kampagne.
+    arenaTeam: ['fire_drache', 'nature_golem', 'water_geist'],
     stages: {},            // stageId -> Sterne (1â€“3)
     milestones: {},        // milestoneId -> true (abgeholt)
     lastLogin: null,       // 'YYYY-MM-DD' des letzten Tages-Bonus
@@ -1564,6 +1681,12 @@ function loadSave() {
       s.team = s.team.filter(id => s.collection[id]);
       const spare = Object.keys(s.collection).filter(id => !s.team.includes(id));
       while (s.team.length < 3 && spare.length) s.team.push(spare.shift());
+      // Migration Arena-Team (Runde 9): fehlt es, startet es als Kopie des
+      // Kampagnen-Teams; verlorene Kreaturen (Fusion) fallen raus.
+      if (!Array.isArray(s.arenaTeam)) s.arenaTeam = s.team.slice();
+      s.arenaTeam = s.arenaTeam.filter(id => s.collection[id]);
+      const spareA = Object.keys(s.collection).filter(id => !s.arenaTeam.includes(id));
+      while (s.arenaTeam.length < 3 && spareA.length) s.arenaTeam.push(spareA.shift());
       if (!Object.keys(s.collection).length) return defaultSave();
       // Migration: LautstÃ¤rke-Regler statt An/Aus; Logo fest auf Element-Ring.
       if (typeof s.settings.sfxVol !== 'number') s.settings.sfxVol = s.settings.sfx === false ? 0 : 1;
@@ -1683,13 +1806,16 @@ function fuseCreatures(cidA, cidB) {
   delete Save.equipped[cidA];   // Items der Zutaten wandern zurÃ¼ck ins Inventar
   delete Save.equipped[cidB];
   Save.collection[out] = { level: 1, xp: 0 };
-  Save.team = Save.team.map(id => (id === cidA || id === cidB) ? out : id);
-  Save.team = [...new Set(Save.team)];
-  while (Save.team.length < 3) {
-    const spare = ownedIds().find(id => !Save.team.includes(id));
-    if (!spare) break;
-    Save.team.push(spare);
-  }
+  // Kampagnen- UND Arena-Team flicken (beide greifen auf dieselbe Sammlung zu).
+  ['team', 'arenaTeam'].forEach(key => {
+    if (!Array.isArray(Save[key])) return;
+    Save[key] = [...new Set(Save[key].map(id => (id === cidA || id === cidB) ? out : id))];
+    while (Save[key].length < 3) {
+      const spare = ownedIds().find(id => !Save[key].includes(id));
+      if (!spare) break;
+      Save[key].push(spare);
+    }
+  });
   if (typeof bpTrack === 'function') bpTrack('fusion');
   persist();
   return out;
@@ -1710,11 +1836,12 @@ function grantStageRewards(stage, stars) {
   // Aufstieg: Erstsieg AUF DIESER Stufe zÃ¤hlt wieder wie ein Erstsieg (ascension.js).
   const ascFirst = typeof ascFirstClear === 'function' && ascFirstClear(stage.id);
   if (typeof markAscClear === 'function') markAscClear(stage.id);
-  // Ã–konomie-Bremse: Wiederholungen bringen nur halbes Gold.
-  let gold = first ? stage.gold : Math.round(stage.gold * 0.5);
+  // Ã–konomie-Bremse (verschÃ¤rft Runde 9): Wiederholungen bringen ein Viertel.
+  let gold = first ? stage.gold : Math.round(stage.gold * 0.25);
   if (ascFirst) gold = stage.gold;                       // volle Basis auf neuer Stufe
   if (Save.ascension) gold = Math.round(gold * ascGoldMult());
   let unlocked = null;
+  let bossUnlocked = null;
   if (first) {
     gold += stage.firstClearBonus;
     if (stage.unlockCreature && !Save.collection[stage.unlockCreature]) {
@@ -1722,9 +1849,15 @@ function grantStageRewards(stage, stars) {
       unlocked = stage.unlockCreature;
     }
   }
+  // Endboss-Belohnung (Runde 9): einmalig, eigener Archetyp, nicht fusionierbar.
+  // Auch auf hÃ¶heren Aufstiegsstufen gibt es sie nur, wenn man sie noch nicht hat.
+  if (stage.bossCreature && Creatures[stage.bossCreature] && !Save.collection[stage.bossCreature]) {
+    Save.collection[stage.bossCreature] = { level: 1, xp: 0 };
+    bossUnlocked = stage.bossCreature;
+  }
   Save.gold += gold;
   persist();
-  return { gold, unlocked, first, ascFirst };
+  return { gold, unlocked, bossUnlocked, first, ascFirst };
 }
 
 

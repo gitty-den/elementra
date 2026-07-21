@@ -57,7 +57,9 @@ const MILESTONES = [
 ];
 
 function goalProgress(type) {
-  if (type === 'base') return ownedIds().filter(id => !Creatures[id].fusion).length;
+  // Endboss-Kreaturen (`unique`) zählen NICHT zur Basis-Sammlung — sonst stünde
+  // dort 23/21. Sie sind Trophäen, kein Sammelziel.
+  if (type === 'base') return ownedIds().filter(id => !Creatures[id].fusion && !Creatures[id].unique).length;
   if (type === 'fusion') return ownedIds().filter(id => Creatures[id].fusion).length;
   return Object.values(Save.stages).reduce((a, b) => a + b, 0); // stars
 }
@@ -187,6 +189,9 @@ function defaultSave() {
       water_geist:  { level: 1, xp: 0 },
     },
     team: ['fire_drache', 'nature_golem', 'water_geist'],
+    // Arena-Team (Runde 9): eigenständige Aufstellung fürs PVP. Es greift auf
+    // DIESELBE Sammlung zu — nur die drei Plätze sind unabhängig von der Kampagne.
+    arenaTeam: ['fire_drache', 'nature_golem', 'water_geist'],
     stages: {},            // stageId -> Sterne (1–3)
     milestones: {},        // milestoneId -> true (abgeholt)
     lastLogin: null,       // 'YYYY-MM-DD' des letzten Tages-Bonus
@@ -235,6 +240,12 @@ function loadSave() {
       s.team = s.team.filter(id => s.collection[id]);
       const spare = Object.keys(s.collection).filter(id => !s.team.includes(id));
       while (s.team.length < 3 && spare.length) s.team.push(spare.shift());
+      // Migration Arena-Team (Runde 9): fehlt es, startet es als Kopie des
+      // Kampagnen-Teams; verlorene Kreaturen (Fusion) fallen raus.
+      if (!Array.isArray(s.arenaTeam)) s.arenaTeam = s.team.slice();
+      s.arenaTeam = s.arenaTeam.filter(id => s.collection[id]);
+      const spareA = Object.keys(s.collection).filter(id => !s.arenaTeam.includes(id));
+      while (s.arenaTeam.length < 3 && spareA.length) s.arenaTeam.push(spareA.shift());
       if (!Object.keys(s.collection).length) return defaultSave();
       // Migration: Lautstärke-Regler statt An/Aus; Logo fest auf Element-Ring.
       if (typeof s.settings.sfxVol !== 'number') s.settings.sfxVol = s.settings.sfx === false ? 0 : 1;
@@ -354,13 +365,16 @@ function fuseCreatures(cidA, cidB) {
   delete Save.equipped[cidA];   // Items der Zutaten wandern zurück ins Inventar
   delete Save.equipped[cidB];
   Save.collection[out] = { level: 1, xp: 0 };
-  Save.team = Save.team.map(id => (id === cidA || id === cidB) ? out : id);
-  Save.team = [...new Set(Save.team)];
-  while (Save.team.length < 3) {
-    const spare = ownedIds().find(id => !Save.team.includes(id));
-    if (!spare) break;
-    Save.team.push(spare);
-  }
+  // Kampagnen- UND Arena-Team flicken (beide greifen auf dieselbe Sammlung zu).
+  ['team', 'arenaTeam'].forEach(key => {
+    if (!Array.isArray(Save[key])) return;
+    Save[key] = [...new Set(Save[key].map(id => (id === cidA || id === cidB) ? out : id))];
+    while (Save[key].length < 3) {
+      const spare = ownedIds().find(id => !Save[key].includes(id));
+      if (!spare) break;
+      Save[key].push(spare);
+    }
+  });
   if (typeof bpTrack === 'function') bpTrack('fusion');
   persist();
   return out;
@@ -381,11 +395,12 @@ function grantStageRewards(stage, stars) {
   // Aufstieg: Erstsieg AUF DIESER Stufe zählt wieder wie ein Erstsieg (ascension.js).
   const ascFirst = typeof ascFirstClear === 'function' && ascFirstClear(stage.id);
   if (typeof markAscClear === 'function') markAscClear(stage.id);
-  // Ökonomie-Bremse: Wiederholungen bringen nur halbes Gold.
-  let gold = first ? stage.gold : Math.round(stage.gold * 0.5);
+  // Ökonomie-Bremse (verschärft Runde 9): Wiederholungen bringen ein Viertel.
+  let gold = first ? stage.gold : Math.round(stage.gold * 0.25);
   if (ascFirst) gold = stage.gold;                       // volle Basis auf neuer Stufe
   if (Save.ascension) gold = Math.round(gold * ascGoldMult());
   let unlocked = null;
+  let bossUnlocked = null;
   if (first) {
     gold += stage.firstClearBonus;
     if (stage.unlockCreature && !Save.collection[stage.unlockCreature]) {
@@ -393,7 +408,13 @@ function grantStageRewards(stage, stars) {
       unlocked = stage.unlockCreature;
     }
   }
+  // Endboss-Belohnung (Runde 9): einmalig, eigener Archetyp, nicht fusionierbar.
+  // Auch auf höheren Aufstiegsstufen gibt es sie nur, wenn man sie noch nicht hat.
+  if (stage.bossCreature && Creatures[stage.bossCreature] && !Save.collection[stage.bossCreature]) {
+    Save.collection[stage.bossCreature] = { level: 1, xp: 0 };
+    bossUnlocked = stage.bossCreature;
+  }
   Save.gold += gold;
   persist();
-  return { gold, unlocked, first, ascFirst };
+  return { gold, unlocked, bossUnlocked, first, ascFirst };
 }

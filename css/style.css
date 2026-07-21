@@ -1862,6 +1862,108 @@ body.in-battle #topbar { display: none; }
 .pvp-result-rating { margin: 10px 0; font-size: 0.85rem; }
 .pvp-result-rating .px-ico { vertical-align: -3px; }
 
+/* ===================================================================== */
+/* ===== Runde 9 (21.07.2026): Menue-Layout, freie Globen, Sternenhimmel = */
+/* ===================================================================== */
+
+/* Die Topbar (nur Zahnrad) schwebt im Hauptmenue UEBER dem Bild, statt als
+   Zeile Platz wegzunehmen — sonst blieb oben ein leerer Streifen stehen, wo
+   frueher die Kopfleiste sass. */
+body.in-menu #topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 6;
+}
+
+/* Kacheln an den seitlichen Bildschirmraendern, untere Haelfte — die Mitte
+   bleibt frei fuer Lagerfeuer + Team (auf dem Handy war es komplett verdeckt). */
+.menu-side {
+  position: absolute; z-index: 3;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.menu-side.left  { left: 8px; }
+.menu-side.right { right: 8px; }
+.menu-side .menu-tile {
+  width: min(27vw, 112px); min-height: 72px;
+  padding: 10px 4px 9px; gap: 6px; font-size: 0.42rem;
+}
+.menu-side .menu-tile .px-ico { width: 30px; height: 30px; }
+.menu-emblem { width: min(32vw, 132px); }
+
+/* Lager sitzt jetzt hoeher (ueber den Rand-Kacheln), Feuer + Team auf einer
+   Bodenlinie — die Prozentwerte spiegeln MENU_CAMP_POS in ui.js. */
+.camp-fire { bottom: 24%; }
+.camp-glow { bottom: 19%; }
+
+/* Querformat auf Tablet/Desktop: Kacheln bleiben aussen, duerfen breiter sein */
+@media (orientation: landscape) and (min-height: 601px) {
+  .menu-side .menu-tile { width: min(20vw, 150px); min-height: 84px; font-size: 0.5rem; }
+}
+
+/* Weltkarte: ein Globus fuellt den Bildschirm, kein Kaestchen drumherum.
+   Horizontal weiterscrollen bleibt (Snap pro Kapitel). */
+.globe-rail { gap: 0; padding: 4px 0 16px; }
+.globe-card {
+  width: 100%; flex: 0 0 100%;
+  background: none; border: none; box-shadow: none;
+  padding: 12px 16px 16px; gap: 9px;
+}
+.globe-card.done { border: none; }
+.globe-wrap { width: min(62vw, 260px); }
+.globe-bar { width: min(62vw, 260px); }
+
+/* Sternenhimmel als gekacheltes Wallpaper hinter der Welt-Uebersicht */
+#bg-layer.stars {
+  background-repeat: repeat; background-size: 128px 128px;
+  image-rendering: pixelated;
+}
+#bg-layer.stars::after {
+  background:
+    radial-gradient(ellipse at 50% 38%, rgba(112, 88, 210, 0.24), transparent 68%),
+    linear-gradient(180deg, rgba(6, 7, 15, 0.2), rgba(6, 7, 15, 0.62));
+}
+
+/* Spielstand-Cloud */
+.cloud-box { display: flex; flex-direction: column; gap: 10px; }
+.cloud-box h2 { text-align: center; }
+.cloud-hint { font-size: 0.8rem; color: var(--text-dim); text-align: center; }
+.cloud-code-box {
+  text-align: center; padding: 12px 10px; border-radius: 6px;
+  background: rgba(255, 201, 77, 0.08); border: 2px solid rgba(255, 201, 77, 0.4);
+}
+.cloud-code-label { font-size: 0.72rem; color: var(--text-dim); }
+.cloud-code {
+  font-family: 'Press Start 2P', monospace; font-size: 1.1rem; color: var(--gold);
+  letter-spacing: 3px; margin: 6px 0 4px; word-break: break-all;
+}
+.cloud-when { font-size: 0.7rem; color: var(--text-dim); }
+.cloud-input {
+  font-family: 'Press Start 2P', monospace; font-size: 0.9rem; letter-spacing: 3px;
+  text-align: center; text-transform: uppercase; color: var(--text);
+  padding: 14px 8px; border-radius: 4px;
+  background: rgba(10, 14, 28, 0.9); border: 2px solid var(--panel-border);
+}
+.cloud-input:focus { outline: none; border-color: var(--accent2); }
+
+/* Arena: eigenes Team-Band + Dauer-Rangliste */
+.pvp-team-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px; font-size: 0.82rem; color: var(--text-dim);
+}
+.pvp-team-head .px-ico { vertical-align: -2px; }
+.pvp-board-title {
+  margin: 4px 0 8px; font-family: 'Press Start 2P', monospace;
+  font-size: 0.55rem; color: var(--accent2); letter-spacing: 1px;
+}
+.pvp-board-empty {
+  padding: 12px; text-align: center; font-size: 0.78rem; color: var(--text-dim);
+  border: 1px dashed rgba(255, 255, 255, 0.14); border-radius: 4px; margin-bottom: 12px;
+}
+
+/* Endboss-Trophaee im Ergebnis-Screen: golden hervorgehoben */
+.boss-unlock .unlock-label { color: var(--gold); }
+.boss-unlock .ccard-art { filter: drop-shadow(0 0 16px rgba(255, 201, 77, 0.75)); }
+.unlock-note { font-size: 0.72rem; color: var(--text-dim); margin-top: 4px; }
+
 .item-ov .overlay-box { max-width: 420px; }
 .item-picker h2 { text-align: center; margin-bottom: 12px; }
 .item-picker .item-card { cursor: pointer; }

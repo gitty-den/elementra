@@ -426,6 +426,47 @@ const CREATURES_DATA = {
       "params": {
         "healPctMaxHp": 0.35
       }
+    },
+    "titan_passive": {
+      "name": "Urgestein",
+      "trigger": "onHit",
+      "energyGain": 7,
+      "effect": "damageReduction",
+      "params": {
+        "flatReduce": 4
+      }
+    },
+    "titan_active": {
+      "name": "Weltenwall",
+      "energyCost": 100,
+      "target": "allAllies",
+      "effect": "teamShield",
+      "params": {
+        "shieldPctMaxHp": 0.28,
+        "durationSec": 6,
+        "taunt": true
+      }
+    },
+    "schlange_passive": {
+      "name": "Urtoxin",
+      "trigger": "onAttack",
+      "energyGain": 7,
+      "effect": "applyPoison",
+      "params": {
+        "stackPct": 0.07,
+        "maxStacks": 6
+      }
+    },
+    "schlange_active": {
+      "name": "Ewiger Kreis",
+      "energyCost": 100,
+      "target": "allEnemies",
+      "effect": "spreadDotDebuff",
+      "params": {
+        "dotPct": 0.11,
+        "durationSec": 6,
+        "defDown": 0.22
+      }
     }
   },
   "creatures": [
@@ -593,7 +634,7 @@ const CREATURES_DATA = {
     },
     {
       "id": "fire_wolf",
-      "name": "Höllenwolf",
+      "name": "HÃ¶llenwolf",
       "archetype": "wolf",
       "role": "bruiser",
       "element": "fire",
@@ -755,7 +796,7 @@ const CREATURES_DATA = {
     },
     {
       "id": "fire_phoenix",
-      "name": "Phönix",
+      "name": "PhÃ¶nix",
       "archetype": "phoenix",
       "role": "sustain",
       "element": "fire",
@@ -806,9 +847,48 @@ const CREATURES_DATA = {
       "passive": "phoenix_passive",
       "active": "phoenix_active",
       "mvp": false
+    },
+    {
+      "id": "boss_titan",
+      "name": "Urtitan",
+      "archetype": "titan",
+      "role": "tank",
+      "element": "ash",
+      "rarity": "legendary",
+      "tier": 3,
+      "baseStats": {
+        "hp": 230,
+        "atk": 23,
+        "def": 22,
+        "spd": 9
+      },
+      "passive": "titan_passive",
+      "active": "titan_active",
+      "unique": true,
+      "mvp": false
+    },
+    {
+      "id": "boss_schlange",
+      "name": "Weltenschlange",
+      "archetype": "weltenschlange",
+      "role": "dot",
+      "element": "steam",
+      "rarity": "legendary",
+      "tier": 3,
+      "baseStats": {
+        "hp": 185,
+        "atk": 29,
+        "def": 16,
+        "spd": 14
+      },
+      "passive": "schlange_passive",
+      "active": "schlange_active",
+      "unique": true,
+      "mvp": false
     }
   ]
-};
+}
+;
 const FUSIONS_DATA = {
   "rule": "archetype+element",
   "description": "Zwei Max-Level-Kreaturen VERSCHIEDENER Archetypen fusionieren zu einem Fusions-Archetyp. Element: gleich+gleich -> gleich, sonst Hybrid-Element. Hybride bleiben im Kampf neutral.",
@@ -973,7 +1053,7 @@ const FUSIONS_DATA = {
     },
     {
       "id": "chimaera",
-      "name": "Chimära",
+      "name": "ChimÃ¤ra",
       "pair": [
         "greif",
         "wolf"
@@ -1062,4 +1142,5 @@ const FUSIONS_DATA = {
       "active": "archon_active"
     }
   ]
-};
+}
+;

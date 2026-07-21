@@ -7,6 +7,15 @@
 // - S8–S10 zeigen Fusions-Kreaturen (fx_*) als Gegner — Vorgeschmack aufs eigene
 //   Fusions-Endgame; Level per Headless-Sim ausbalanciert.
 
+// Runde 9 (21.07.2026), Nutzer-Feedback „keine Herausforderung":
+// - Gold und Erstsieg-Bonus sind auf die HÄLFTE gesenkt (Wiederholungen geben in
+//   grantStageRewards nur noch ein Viertel).
+// - `drop: true` markiert die EINZIGEN Stages mit garantiertem Item-Erstsieg —
+//   zwei je Kapitel (Mitte + Endboss). Überall sonst gibt es nur die kleine
+//   Wiederholungs-Chance (items.js `rollStageDrop`).
+// - `bossCreature` ist die einmalige Endboss-Belohnung: eigene Archetypen
+//   (titan/weltenschlange), NICHT über Fusion herstellbar.
+
 // Kapitel/Abteile (19.07.2026): Kampagne = Welt-Übersicht -> Kapitel-Karte.
 // Boss-Sieg schaltet das nächste Kapitel frei (neue Karte). range = [erste, letzte].
 const CHAPTERS = [
@@ -21,7 +30,7 @@ const STAGES = [
       { id: 'nature_wyrm', level: 1 },
       { id: 'nature_greif', level: 1 },
     ],
-    gold: 45, firstClearBonus: 60, unlockCreature: null,
+    gold: 23, firstClearBonus: 30, unlockCreature: null,
   },
   {
     id: 2, name: 'Dornige Lichtung', theme: 'nature', desc: 'Ein Rudel verteidigt sein Revier.',
@@ -30,7 +39,7 @@ const STAGES = [
       { id: 'nature_greif', level: 1 },
       { id: 'nature_wyrm', level: 1 },
     ],
-    gold: 60, firstClearBonus: 80, unlockCreature: 'fire_greif',
+    gold: 30, firstClearBonus: 40, unlockCreature: 'fire_greif',
   },
   {
     id: 3, name: 'Flussfurt', theme: 'water', desc: 'Wasserkreaturen bewachen die Überquerung.',
@@ -39,7 +48,7 @@ const STAGES = [
       { id: 'water_greif', level: 1 },
       { id: 'water_wyrm', level: 2 },
     ],
-    gold: 70, firstClearBonus: 90, unlockCreature: 'water_wyrm',
+    gold: 35, firstClearBonus: 45, unlockCreature: 'water_wyrm',
   },
   {
     id: 4, name: 'Glutschlucht', theme: 'fire', desc: 'Hitze flimmert über schwarzem Fels.',
@@ -48,7 +57,7 @@ const STAGES = [
       { id: 'fire_wyrm', level: 1 },
       { id: 'nature_greif', level: 2 },
     ],
-    gold: 80, firstClearBonus: 100, unlockCreature: 'nature_wolf',
+    gold: 40, firstClearBonus: 50, unlockCreature: 'nature_wolf',
   },
   {
     id: 5, name: 'Versunkener Tempel', theme: 'water', desc: 'Etwas Altes wacht in der Tiefe.',
@@ -57,7 +66,7 @@ const STAGES = [
       { id: 'water_drache', level: 2 },
       { id: 'water_wolf', level: 2 },
     ],
-    gold: 90, firstClearBonus: 110, unlockCreature: null,
+    gold: 45, firstClearBonus: 55, unlockCreature: null, drop: true,
   },
   {
     id: 6, name: 'Sturmklippen', theme: 'storm', desc: 'Greifen kreisen über den Felsen.',
@@ -66,7 +75,7 @@ const STAGES = [
       { id: 'fire_greif', level: 3 },
       { id: 'water_greif', level: 3 },
     ],
-    gold: 100, firstClearBonus: 120, unlockCreature: null,
+    gold: 50, firstClearBonus: 60, unlockCreature: null,
   },
   {
     id: 7, name: 'Tiefenmeer-Grotte', theme: 'water', desc: 'Der Tiefendrache stellt sich dir.',
@@ -75,7 +84,7 @@ const STAGES = [
       { id: 'water_golem', level: 3 },
       { id: 'water_geist', level: 3 },
     ],
-    gold: 110, firstClearBonus: 140, unlockCreature: 'water_drache',
+    gold: 55, firstClearBonus: 70, unlockCreature: 'water_drache',
   },
   {
     id: 8, name: 'Aschewüste', theme: 'ash', desc: 'Eine Fusions-Chimära — Vorsicht, neutral!',
@@ -84,7 +93,7 @@ const STAGES = [
       { id: 'fire_drache', level: 4 },
       { id: 'nature_geist', level: 3 },
     ],
-    gold: 120, firstClearBonus: 160, unlockCreature: null,
+    gold: 60, firstClearBonus: 80, unlockCreature: null,
   },
   {
     id: 9, name: 'Frostgrat', theme: 'frost', desc: 'Frost-Fusionen halten den Pass.',
@@ -93,7 +102,7 @@ const STAGES = [
       { id: 'fx_basilisk_frost', level: 3 },
       { id: 'water_geist', level: 4 },
     ],
-    gold: 130, firstClearBonus: 180, unlockCreature: null,
+    gold: 65, firstClearBonus: 90, unlockCreature: null,
   },
   {
     id: 10, name: 'Thron der Elemente', theme: 'storm', boss: true,
@@ -103,7 +112,8 @@ const STAGES = [
       { id: 'fx_leviathan_steam', level: 2 },
       { id: 'fx_koloss_frost', level: 1 },
     ],
-    gold: 150, firstClearBonus: 250, unlockCreature: 'fire_phoenix',
+    gold: 75, firstClearBonus: 125, unlockCreature: 'fire_phoenix', drop: true,
+    bossCreature: 'boss_titan',
   },
 
   // ===== Kapitel 2 (17.07.2026): Fusions-Ära. Ab S15 sind eigene Fusionen
@@ -115,7 +125,7 @@ const STAGES = [
       { id: 'fire_wolf', level: 4 },
       { id: 'fire_geist', level: 3 },
     ],
-    gold: 160, firstClearBonus: 200, unlockCreature: 'water_golem',
+    gold: 80, firstClearBonus: 100, unlockCreature: 'water_golem',
   },
   {
     id: 12, name: 'Sturmsee', theme: 'water', desc: 'Die See tobt — alles hier beißt.',
@@ -124,7 +134,7 @@ const STAGES = [
       { id: 'water_wolf', level: 5 },
       { id: 'water_greif', level: 4 },
     ],
-    gold: 170, firstClearBonus: 210, unlockCreature: 'nature_greif',
+    gold: 85, firstClearBonus: 105, unlockCreature: 'nature_greif',
   },
   {
     id: 13, name: 'Dornenwald', theme: 'nature', desc: 'Der Wald selbst stellt sich dir entgegen.',
@@ -133,7 +143,7 @@ const STAGES = [
       { id: 'nature_wolf', level: 5 },
       { id: 'nature_geist', level: 5 },
     ],
-    gold: 180, firstClearBonus: 220, unlockCreature: 'fire_wyrm',
+    gold: 90, firstClearBonus: 110, unlockCreature: 'fire_wyrm',
   },
   {
     id: 14, name: 'Aschensturm', theme: 'ash', desc: 'Ein Geisterwolf jagt im Aschenregen.',
@@ -142,7 +152,7 @@ const STAGES = [
       { id: 'fire_drache', level: 5 },
       { id: 'fire_greif', level: 4 },
     ],
-    gold: 190, firstClearBonus: 230, unlockCreature: 'nature_drache',
+    gold: 95, firstClearBonus: 115, unlockCreature: 'nature_drache',
   },
   {
     id: 15, name: 'Eistiefe', theme: 'frost', desc: 'Unter dem Eis wartet der Basilisk.',
@@ -151,7 +161,7 @@ const STAGES = [
       { id: 'water_golem', level: 5 },
       { id: 'water_geist', level: 5 },
     ],
-    gold: 200, firstClearBonus: 240, unlockCreature: 'fire_golem',
+    gold: 100, firstClearBonus: 120, unlockCreature: 'fire_golem', drop: true,
   },
   {
     id: 16, name: 'Himmelspass', theme: 'storm', desc: 'Die Sphinx bewacht den Aufstieg.',
@@ -160,7 +170,7 @@ const STAGES = [
       { id: 'nature_greif', level: 5 },
       { id: 'fire_greif', level: 5 },
     ],
-    gold: 210, firstClearBonus: 250, unlockCreature: 'water_wolf',
+    gold: 105, firstClearBonus: 125, unlockCreature: 'water_wolf',
   },
   {
     id: 17, name: 'Seelenmoor', theme: 'nature', desc: 'Irrlichter führen dich vom Weg ab.',
@@ -169,7 +179,7 @@ const STAGES = [
       { id: 'nature_geist', level: 5 },
       { id: 'nature_wolf', level: 5 },
     ],
-    gold: 220, firstClearBonus: 260, unlockCreature: 'fire_geist',
+    gold: 110, firstClearBonus: 130, unlockCreature: 'fire_geist',
   },
   {
     id: 18, name: 'Obsidianfeste', theme: 'fire', desc: 'Der Koloss hält die schwarzen Tore.',
@@ -178,7 +188,7 @@ const STAGES = [
       { id: 'fire_golem', level: 5 },
       { id: 'fire_drache', level: 5 },
     ],
-    gold: 230, firstClearBonus: 280, unlockCreature: 'fire_wolf',
+    gold: 115, firstClearBonus: 140, unlockCreature: 'fire_wolf',
   },
   {
     id: 19, name: 'Frostthron', theme: 'frost', desc: 'Gargoyle und Ouroboros — Eis ohne Ende.',
@@ -187,7 +197,7 @@ const STAGES = [
       { id: 'fx_ouroboros_frost', level: 2 },
       { id: 'water_drache', level: 5 },
     ],
-    gold: 240, firstClearBonus: 300, unlockCreature: 'water_phoenix',
+    gold: 120, firstClearBonus: 150, unlockCreature: 'water_phoenix',
   },
   {
     id: 20, name: 'Herz der Elemente', theme: 'storm', boss: true,
@@ -197,6 +207,7 @@ const STAGES = [
       { id: 'fx_leviathan_ash', level: 3 },
       { id: 'fx_archon_frost', level: 3 },
     ],
-    gold: 300, firstClearBonus: 400, unlockCreature: 'nature_phoenix',
+    gold: 150, firstClearBonus: 200, unlockCreature: 'nature_phoenix', drop: true,
+    bossCreature: 'boss_schlange',
   },
 ];
