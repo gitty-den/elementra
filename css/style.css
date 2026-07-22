@@ -525,28 +525,38 @@ input[type="range"].pixel-range::-moz-range-thumb {
 
 /* Kompakt-Plakette über der Figur: Level-Badge links bündig an HP-Bar,
    darunter die Energie-Bar — kein Name im Kampf (Interview 17.07.2026). */
+/* Plakette = deutlich seltenheits-gefärbter Rahmen (Runde 12): die ganze
+   Plakette bekommt einen 2px --rar-Rand + farbigen Schein auf dunklem Grund.
+   So ist die Seltenheit auf einen Blick lesbar. Die BARS bleiben bewusst
+   neutral (HP grün, Energie blau) — Rarity sitzt nur auf dem Rahmen. */
 .unit-plate {
   position: relative; z-index: 3;
-  display: flex; align-items: stretch; gap: 3px;
-  width: 118%; margin: 0 0 3px -9%;
+  display: flex; align-items: center; gap: 4px;
+  width: 122%; margin: 0 0 4px -11%;
+  padding: 3px 5px; border-radius: 7px;
+  background: rgba(6, 8, 18, 0.72);
+  border: 2px solid var(--rar, rgba(255, 255, 255, 0.25));
+  box-shadow: 0 0 9px -1px var(--rar, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.unit.rar-legendary .unit-plate { animation: rarPulse 1.6s ease-in-out infinite; }
+@keyframes rarPulse {
+  50% { box-shadow: 0 0 16px 1px var(--rar), inset 0 1px 0 rgba(255, 255, 255, 0.2); }
 }
 .unit-lvl {
-  flex: 0 0 auto; min-width: 22px;
+  flex: 0 0 auto; min-width: 20px; border-radius: 3px;
   display: grid; place-items: center;
   font-size: 0.48rem; color: var(--gold);
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.72);
   box-shadow: inset 0 0 0 1px var(--rar, rgba(255, 201, 77, 0.55));
 }
 .unit-plate-bars { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
-/* Element-Icon rechts an der Plakette (Runde 11) */
+/* Element-Icon rechts an der Plakette — größer + dunkles rundes Backing (Runde 12) */
 .unit-elem {
-  flex: 0 0 auto; display: grid; place-items: center; width: 16px;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.8));
+  flex: 0 0 auto; display: grid; place-items: center;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
 }
-.unit-elem .px-ico { width: 13px; height: 13px; }
-/* Rarity-Rahmen um Bars + Level-Badge; Legendär pulsiert leicht */
-.unit-plate .bar { box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--rar, rgba(255, 255, 255, 0.12)); }
-.unit.rar-legendary .unit-plate .bar { box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--rar), 0 0 8px -1px var(--rar); }
+.unit-elem .px-ico { width: 18px; height: 18px; }
 .unit.rar-legendary .unit-ring { box-shadow: 0 0 14px 2px var(--rar); }
 .bar {
   height: 9px; border-radius: 5px; background: var(--hp-bg);
@@ -733,7 +743,9 @@ input[type="range"].pixel-range::-moz-range-thumb {
 .fa-stage { position: relative; height: 190px; margin-bottom: 10px; }
 .fa-card {
   position: absolute; top: 25px; width: 120px; height: 120px;
-  transition: transform 1.1s cubic-bezier(0.5, 0, 0.3, 1), opacity 0.5s 0.9s;
+  /* Anlauf beschleunigt (ease-IN) — die Sprites rasen aufeinander zu */
+  transition: transform 0.62s cubic-bezier(0.55, 0, 0.85, 0.32);
+  z-index: 2;
 }
 .fa-card svg { width: 100%; height: 100%; }
 .fa-left { left: 8%; }
@@ -750,13 +762,30 @@ input[type="range"].pixel-range::-moz-range-thumb {
   transform: translateX(-50%) scale(0); opacity: 0;
 }
 .fa-result svg { width: 100%; height: 100%; }
-.fa-stage.merge .fa-left { transform: translateX(115px) scale(0.5); opacity: 0; }
-.fa-stage.merge .fa-right { transform: translateX(-115px) scale(0.5); opacity: 0; }
-.fa-stage.merge .fa-core { transform: translate(-50%, -50%) scale(4); }
-.fa-stage.reveal .fa-core { transform: translate(-50%, -50%) scale(0); transition: transform 0.3s; }
-.fa-stage.reveal .fa-result {
-  transform: translateX(-50%) scale(1); opacity: 1;
-  transition: transform 0.55s cubic-bezier(0.2, 1.5, 0.4, 1), opacity 0.3s;
+/* Anlauf: aufeinander zu, größer werdend (Richtung Kamera), leicht gekippt */
+.fa-stage.approach .fa-left  { transform: translateX(96px) scale(1.14) rotate(-7deg); }
+.fa-stage.approach .fa-right { transform: translateX(-96px) scale(1.14) rotate(7deg); }
+/* Aufprall: voll ins Zentrum, horizontal zerquetscht, verschwinden im Blitz */
+.fa-stage.smash .fa-left {
+  transform: translateX(128px) scaleX(0.35) scaleY(1.2); opacity: 0;
+  transition: transform 0.11s ease-in, opacity 0.13s;
+}
+.fa-stage.smash .fa-right {
+  transform: translateX(-128px) scaleX(0.35) scaleY(1.2); opacity: 0;
+  transition: transform 0.11s ease-in, opacity 0.13s;
+}
+/* Kern als kurzer Aufprall-Funke */
+.fa-stage.smash .fa-core {
+  transform: translate(-50%, -50%) scale(7); opacity: 0;
+  transition: transform 0.28s ease-out, opacity 0.28s;
+}
+/* Das neue PLOPPT aus dem Aufprallpunkt heraus */
+.fa-stage.smash .fa-result { animation: faPop 0.5s cubic-bezier(0.2, 1.7, 0.35, 1) 0.05s forwards; }
+@keyframes faPop {
+  0%   { transform: translateX(-50%) scale(0);    opacity: 0; }
+  55%  { transform: translateX(-50%) scale(1.2);  opacity: 1; }
+  78%  { transform: translateX(-50%) scale(0.92); }
+  100% { transform: translateX(-50%) scale(1);    opacity: 1; }
 }
 .fa-label { font-size: 1.05rem; line-height: 1.5; min-height: 56px; }
 .fa-sub { color: var(--text-dim); font-size: 0.8rem; }

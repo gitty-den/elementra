@@ -796,7 +796,7 @@ function buildUnitEl(u) {
         <div class="bar hp-bar"><div class="fill hp-fill"></div><div class="fill shield-fill"></div></div>
         <div class="bar energy-bar"><div class="fill energy-fill"></div></div>
       </div>
-      <span class="unit-elem" title="${Elements[u.c.element] ? Elements[u.c.element].name : ''}">${iconArt(u.c.element, 13)}</span>
+      <span class="unit-elem" title="${Elements[u.c.element] ? Elements[u.c.element].name : ''}">${iconArt(u.c.element, 18)}</span>
     </div>
     <div class="unit-body">
       <div class="unit-ring"></div>
@@ -1803,38 +1803,41 @@ function playFusion(cidA, cidB) {
       <div class="fa-label">Fusion…</div>
     </div>`, 'fusion-ov');
   const stage = ov.querySelector('.fa-stage');
+  stage.style.setProperty('--fx-glow', palO.g);
   Sfx.fuse();
-  // Phase 1: Zutaten fahren zusammen, ihre Farben strömen zum Kern.
+  // Phase 1 (Anlauf, ~640 ms): die beiden Sprites beschleunigen aufeinander zu
+  // (kein Runterskalieren mehr — sie krachen wie ein Auto-Crash zusammen).
   setTimeout(() => {
-    stage.classList.add('merge');
-    fusionBurst(stage, [palA.m, palA.l, palB.m, palB.l, palA.h, palB.h], 'in', 22);
-  }, 100);
-  // Phase 2: Erwachen — Blitz, Schockwelle, Partikel-Explosion, Screen-Shake.
+    stage.classList.add('approach');
+    fusionBurst(stage, [palA.m, palA.l, palB.m, palB.l], 'in', 14);
+  }, 60);
+  // Phase 2 (Aufprall): Sprites zerstauchen und verschwinden im Blitz, aus dem
+  // Punkt PLOPPT das neue heraus — Blitz, Schockwelle, Partikel, harter Shake.
   setTimeout(() => {
     fuseCreatures(cidA, cidB);
     fusionPick = [];
-    stage.classList.add('reveal');
-    stage.style.setProperty('--fx-glow', palO.g);
-    // Blitz
+    stage.classList.add('smash');
     const flash = stage.querySelector('.fa-flash');
-    if (flash) { flash.style.background = `radial-gradient(circle at 50% 45%, ${palO.g}, ${palO.h}00 70%)`;
-      flash.classList.add('on'); setTimeout(() => flash.classList.remove('on'), 500); }
-    // Schockwelle
+    if (flash) { flash.style.background = `radial-gradient(circle at 50% 45%, ${palO.g}, ${palO.h}00 72%)`;
+      flash.classList.add('on'); setTimeout(() => flash.classList.remove('on'), 480); }
     const wave = el('span', 'fa-wave'); wave.style.borderColor = palO.g;
     stage.appendChild(wave); setTimeout(() => wave.remove(), 750);
-    // Explosion + kurzer Shake
-    fusionBurst(stage, [palO.m, palO.l, palO.h, palO.g], 'out', 30);
+    fusionBurst(stage, [palO.m, palO.l, palO.h, palO.g], 'out', 34);
     const anim = ov.querySelector('.fusion-anim');
-    anim.classList.add('fa-shake'); setTimeout(() => anim.classList.remove('fa-shake'), 400);
+    anim.classList.add('fa-shake'); setTimeout(() => anim.classList.remove('fa-shake'), 420);
+    Sfx.ultAttack(out.element);   // dumpfer Aufprall-Ton
     const elInfo = Elements[out.element];
-    const hybrid = !!elInfo.components;   // Hybride (Dampf/Asche/Frost) haben ein eigenes Konter-Rad
-    ov.querySelector('.fa-label').innerHTML =
-      `<b>${out.name}</b> ist erwacht!<br><span class="fa-sub">${RarityInfo[out.rarity].name} · ${elInfo.name}${hybrid ? ' · Hybrid-Rad' : ''}</span>`;
-    const btn = el('button', 'btn btn-primary', 'Fantastisch!');
-    btn.onclick = () => { Sfx.click(); closeOverlay(); showScreen('fusion'); updateGoldDisplay(); };
-    ov.querySelector('.fusion-anim').appendChild(btn);
-    Sfx.win();
-  }, 1900);
+    const hybrid = !!elInfo.components;
+    // Label erst mit dem Herausploppen einblenden.
+    setTimeout(() => {
+      ov.querySelector('.fa-label').innerHTML =
+        `<b>${out.name}</b> ist erwacht!<br><span class="fa-sub">${RarityInfo[out.rarity].name} · ${elInfo.name}${hybrid ? ' · Hybrid-Rad' : ''}</span>`;
+      const btn = el('button', 'btn btn-primary', 'Fantastisch!');
+      btn.onclick = () => { Sfx.click(); closeOverlay(); showScreen('fusion'); updateGoldDisplay(); };
+      ov.querySelector('.fusion-anim').appendChild(btn);
+      Sfx.win();
+    }, 260);
+  }, 700);
 }
 
 // ---------- Hauptmenü (Landingpage): Lager-Szene mit dem aktiven Team ----------

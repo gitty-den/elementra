@@ -362,10 +362,14 @@ function fusionResult(cidA, cidB) {
 // die ganze Kampagne hergibt) und das Ergebnis startete auf Level 1. Gemessen:
 // bei 8 von 12 Rezepten verlor die frische Fusion gegen eine der Zutaten, die
 // man dafür gelöscht hat. Fusion war also eine Falle.
-// Jetzt: ab Level 3 möglich, und das Ergebnis erbt das NIEDRIGERE Zutat-Level.
-// Damit ist Fusion immer ein Aufstieg und wird zur echten Entscheidung —
-// früh fusionieren (schwächer, aber sofort) oder auf Level 5 warten.
-const FUSION_MIN_LEVEL = 3;
+// Runde 12 (22.07.2026): Fusion war „zu leicht" (Nutzer). Gate von Level 3 auf
+// MAX_LEVEL angehoben — beide Zutaten müssen voll ausgebaut sein. Das Ergebnis
+// erbt aber weiter das NIEDRIGERE Zutat-Level (also Max), bleibt also ein echter
+// Aufstieg (nicht die alte Level-1-Falle). Fusion ist damit wieder ein
+// bewusstes End-Ziel, kein Frühspiel-Selbstläufer. Fusionen liegen ohnehin
+// NICHT im Balancing-Pool der Kampagne (tools/campaign.mjs) — sie sind optionale
+// Extra-Power, das Anheben macht die Kampagne also nicht unschaffbar.
+const FUSION_MIN_LEVEL = MAX_LEVEL;
 
 function fusionLevelFor(cidA, cidB) {
   const ea = Save.collection[cidA], eb = Save.collection[cidB];
