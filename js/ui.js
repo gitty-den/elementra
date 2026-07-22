@@ -197,9 +197,31 @@ function renderWorld(root) {
   });
   wrap.appendChild(rail);
   root.appendChild(wrap);
-  // Auf das aktuelle Kapitel scrollen (mittig).
-  const target = rail.children[focusIdx];
-  if (target) rail.scrollLeft = Math.max(0, target.offsetLeft - (rail.clientWidth - target.clientWidth) / 2);
+
+  // Peek-Carousel (Runde 11, Nutzer-Skizze): das fokussierte Kapitel steht groß
+  // und mittig, die Nachbarn schauen klein und gedimmt an den Rändern herein.
+  // Ein Scroll-Listener markiert die dem Zentrum nächste Karte mit `.focus`.
+  const centerCard = idx => {
+    const t = rail.children[idx];
+    if (t) rail.scrollLeft = Math.max(0, t.offsetLeft - (rail.clientWidth - t.clientWidth) / 2);
+  };
+  const updateFocus = () => {
+    const mid = rail.scrollLeft + rail.clientWidth / 2;
+    let best = 0, bestD = Infinity;
+    [...rail.children].forEach((c, i) => {
+      const d = Math.abs(c.offsetLeft + c.clientWidth / 2 - mid);
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    [...rail.children].forEach((c, i) => c.classList.toggle('focus', i === best));
+  };
+  let scrollTimer = null;
+  rail.addEventListener('scroll', () => {
+    updateFocus();
+    if (scrollTimer) clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(updateFocus, 120);
+  });
+  // Ersten Frame abwarten, damit Breiten stehen, dann aufs aktuelle Kapitel.
+  requestAnimationFrame(() => { centerCard(focusIdx); updateFocus(); });
 }
 
 function renderChapterMap(root, chId) {
@@ -396,12 +418,15 @@ function openTeamSelect(stage) {
       : Array.from(new Set([...picked, ...owned.slice(0, 6)])).filter(id => Save.collection[id]);
 
     // Arena: statt Gegner-Band die eigene Team-Stärke (es gibt keinen festen Gegner).
+    // Titel wieder da (Runde 11, Nutzer-Wunsch): Gegner-Band und eigene Slots
+    // bekommen je eine kleine Überschrift, damit klar ist, was oben und unten steht.
     const bandHTML = arena
       ? `<div class="ts-band">
            <div class="ts-loot">${iconArt('sword', 15)} ${pvpTeamPower(picked.map((id, slot) =>
              ({ cid: id, level: Save.collection[id].level, item: Save.equipped[id] || null, slot })))}</div>
          </div>`
-      : `<div class="ts-band">
+      : `<div class="ts-head">${iconArt('skull', 14)} Gegner-Team</div>
+         <div class="ts-band">
            <div class="ts-foes">${stage.enemies.map((e, i) =>
              `<span class="mini-foe ${i === 0 ? 'front' : ''}">${creatureArt(Creatures[e.id], { noAura: true })}<i>${e.level}</i></span>`).join('')}
            </div>
@@ -410,6 +435,7 @@ function openTeamSelect(stage) {
 
     const ov = showOverlay(`
       ${bandHTML}
+      <div class="ts-head ts-head-own">${iconArt('shield', 14)} ${arena ? 'Arena-Team' : 'Dein Team'}</div>
       <div class="ts-slots">${slots}</div>
       ${arena ? '' : previewHTML(picked, stage)}
       <div class="ts-grid ${showAll ? '' : 'ts-grid-short'}">
@@ -753,13 +779,16 @@ function debugBattleStep(ms) {
 
 function buildUnitEl(u) {
   const p = SLOT_POS[u.side][u.slot] || SLOT_POS[u.side][0];
-  const card = el('div', `unit ${u.side} arch-${u.c.archetype}`);
+  const card = el('div', `unit ${u.side} arch-${u.c.archetype} rar-${u.c.rarity}`);
   card.id = u.uid;
   card.style.left = p.x + '%';
   card.style.top = p.y + '%';
   card.style.zIndex = 10 + Math.round(p.y);
   card.style.setProperty('--bob-delay', (u.slot * 0.4 + (u.side === 'enemy' ? 0.25 : 0)).toFixed(2) + 's');
   card.style.setProperty('--dir', u.side === 'enemy' ? -1 : 1); // Rotationsrichtung der Angriffs-Animation
+  // Rarity färbt Rahmen/Glow (Runde 11) — der HP-Füllstand bleibt gesundheits-
+  // farben, sonst ginge die wichtigste Kampf-Info verloren.
+  card.style.setProperty('--rar', (RarityInfo[u.c.rarity] || RarityInfo.common).color);
   card.innerHTML = `
     <div class="unit-plate">
       <span class="unit-lvl">${u.level}</span>
@@ -767,6 +796,7 @@ function buildUnitEl(u) {
         <div class="bar hp-bar"><div class="fill hp-fill"></div><div class="fill shield-fill"></div></div>
         <div class="bar energy-bar"><div class="fill energy-fill"></div></div>
       </div>
+      <span class="unit-elem" title="${Elements[u.c.element] ? Elements[u.c.element].name : ''}">${iconArt(u.c.element, 13)}</span>
     </div>
     <div class="unit-body">
       <div class="unit-ring"></div>
@@ -1734,13 +1764,37 @@ function renderFusionBody(parent) {
   });
 }
 
+// Pixel-Partikel für die Fusion (Runde 11), angelehnt an spawnUltiBurst:
+// mode 'in' = die Zutaten-Farben strömen zum Kern, mode 'out' = das Ergebnis
+// explodiert in seiner Element-Farbe nach außen.
+function fusionBurst(stage, colors, mode, count = 26) {
+  for (let i = 0; i < count; i++) {
+    const p = el('span', 'fa-particle');
+    p.style.background = colors[i % colors.length];
+    const a = Math.random() * Math.PI * 2, r = 70 + Math.random() * 90;
+    const ex = Math.cos(a) * r, ey = Math.sin(a) * r;
+    if (mode === 'in') {                      // von außen zum Zentrum
+      p.style.setProperty('--x0', ex + 'px'); p.style.setProperty('--y0', ey + 'px');
+      p.style.setProperty('--x1', '0px');     p.style.setProperty('--y1', '0px');
+    } else {                                  // vom Zentrum nach außen
+      p.style.setProperty('--x0', '0px');     p.style.setProperty('--y0', '0px');
+      p.style.setProperty('--x1', ex + 'px'); p.style.setProperty('--y1', ey + 'px');
+    }
+    p.style.animationDelay = (Math.random() * 0.15) + 's';
+    stage.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
+}
+
 function playFusion(cidA, cidB) {
   const outId = fusionReady(cidA, cidB);
   if (!outId) return;
   const a = Creatures[cidA], b = Creatures[cidB], out = Creatures[outId];
+  const palA = PixelPalettes[a.element], palB = PixelPalettes[b.element], palO = PixelPalettes[out.element];
   const ov = showOverlay(`
     <div class="fusion-anim">
       <div class="fa-stage">
+        <div class="fa-flash"></div>
         <div class="fa-card fa-left">${creatureArt(a)}</div>
         <div class="fa-core"></div>
         <div class="fa-card fa-right">${creatureArt(b)}</div>
@@ -1748,15 +1802,34 @@ function playFusion(cidA, cidB) {
       </div>
       <div class="fa-label">Fusion…</div>
     </div>`, 'fusion-ov');
+  const stage = ov.querySelector('.fa-stage');
   Sfx.fuse();
-  setTimeout(() => ov.querySelector('.fa-stage').classList.add('merge'), 100);
+  // Phase 1: Zutaten fahren zusammen, ihre Farben strömen zum Kern.
+  setTimeout(() => {
+    stage.classList.add('merge');
+    fusionBurst(stage, [palA.m, palA.l, palB.m, palB.l, palA.h, palB.h], 'in', 22);
+  }, 100);
+  // Phase 2: Erwachen — Blitz, Schockwelle, Partikel-Explosion, Screen-Shake.
   setTimeout(() => {
     fuseCreatures(cidA, cidB);
     fusionPick = [];
-    ov.querySelector('.fa-stage').classList.add('reveal');
+    stage.classList.add('reveal');
+    stage.style.setProperty('--fx-glow', palO.g);
+    // Blitz
+    const flash = stage.querySelector('.fa-flash');
+    if (flash) { flash.style.background = `radial-gradient(circle at 50% 45%, ${palO.g}, ${palO.h}00 70%)`;
+      flash.classList.add('on'); setTimeout(() => flash.classList.remove('on'), 500); }
+    // Schockwelle
+    const wave = el('span', 'fa-wave'); wave.style.borderColor = palO.g;
+    stage.appendChild(wave); setTimeout(() => wave.remove(), 750);
+    // Explosion + kurzer Shake
+    fusionBurst(stage, [palO.m, palO.l, palO.h, palO.g], 'out', 30);
+    const anim = ov.querySelector('.fusion-anim');
+    anim.classList.add('fa-shake'); setTimeout(() => anim.classList.remove('fa-shake'), 400);
     const elInfo = Elements[out.element];
+    const hybrid = !!elInfo.components;   // Hybride (Dampf/Asche/Frost) haben ein eigenes Konter-Rad
     ov.querySelector('.fa-label').innerHTML =
-      `<b>${out.name}</b> ist erwacht!<br><span class="fa-sub">${RarityInfo[out.rarity].name} · ${elInfo.name}${elInfo.neutral ? ' · neutral gegen alle Elemente' : ''}</span>`;
+      `<b>${out.name}</b> ist erwacht!<br><span class="fa-sub">${RarityInfo[out.rarity].name} · ${elInfo.name}${hybrid ? ' · Hybrid-Rad' : ''}</span>`;
     const btn = el('button', 'btn btn-primary', 'Fantastisch!');
     btn.onclick = () => { Sfx.click(); closeOverlay(); showScreen('fusion'); updateGoldDisplay(); };
     ov.querySelector('.fusion-anim').appendChild(btn);

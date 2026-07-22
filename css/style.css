@@ -90,7 +90,7 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 #screen { flex: 1; overflow-y: auto; padding: 0; position: relative; }
 
 .map-screen, .coll-screen, .fusion-screen { animation: screenIn 0.3s ease; }
-.coll-screen, .fusion-screen { padding: 16px 14px 24px; }
+.coll-screen, .fusion-screen, .pvp-screen { padding: 16px 14px 24px; }
 @keyframes screenIn { from { opacity: 0; transform: translateY(10px); } }
 
 /* Kein Bottom-Nav mehr — Hub-and-Spoke: Hauptmenü als Landingpage,
@@ -307,10 +307,19 @@ body.in-battle #screen { overflow: hidden; }
 
 /* ----- Team-Auswahl (Umbau 20.07.2026: ruhige Einseite, fast textfrei) ----- */
 
-/* Gegner-Band: drei Sprites + Level, rechts die Belohnung. Kein Titel, kein Text. */
+/* Kleine Überschriften (Runde 11): benennen Gegner- und eigenes Team. */
+.ts-head {
+  font-family: 'Press Start 2P', monospace; font-size: 0.5rem;
+  letter-spacing: 1px; color: var(--text-dim); text-transform: uppercase;
+  display: flex; align-items: center; gap: 6px; margin: 2px 2px 6px;
+}
+.ts-head .px-ico { vertical-align: -2px; }
+.ts-head-own { margin-top: 10px; color: var(--accent2); }
+
+/* Gegner-Band: drei Sprites + Level, rechts die Belohnung. */
 .ts-band {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 4px 2px 12px;
+  padding: 0 2px 10px;
 }
 .ts-foes { display: flex; align-items: center; gap: 10px; }
 .ts-foes .mini-foe { width: 46px; height: 46px; position: relative; display: inline-block; opacity: 0.9; }
@@ -526,9 +535,19 @@ input[type="range"].pixel-range::-moz-range-thumb {
   display: grid; place-items: center;
   font-size: 0.48rem; color: var(--gold);
   background: rgba(0, 0, 0, 0.7);
-  box-shadow: inset 0 0 0 1px rgba(255, 201, 77, 0.55);
+  box-shadow: inset 0 0 0 1px var(--rar, rgba(255, 201, 77, 0.55));
 }
 .unit-plate-bars { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
+/* Element-Icon rechts an der Plakette (Runde 11) */
+.unit-elem {
+  flex: 0 0 auto; display: grid; place-items: center; width: 16px;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.8));
+}
+.unit-elem .px-ico { width: 13px; height: 13px; }
+/* Rarity-Rahmen um Bars + Level-Badge; Legendär pulsiert leicht */
+.unit-plate .bar { box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--rar, rgba(255, 255, 255, 0.12)); }
+.unit.rar-legendary .unit-plate .bar { box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--rar), 0 0 8px -1px var(--rar); }
+.unit.rar-legendary .unit-ring { box-shadow: 0 0 14px 2px var(--rar); }
 .bar {
   height: 9px; border-radius: 5px; background: var(--hp-bg);
   position: relative; overflow: hidden;
@@ -641,15 +660,19 @@ input[type="range"].pixel-range::-moz-range-thumb {
 }
 
 #ulti-banner { position: fixed; top: 16%; left: 0; right: 0; pointer-events: none; z-index: 40; text-align: center; }
+/* Rahmenlos (Runde 11): nur leuchtender Text, keine Pille/Box mehr — der
+   Ult-Moment soll frei über der Arena stehen, nicht in einem Kasten. */
 .ulti-flash {
   display: inline-block;
-  padding: 10px 28px; border-radius: 999px;
-  background: rgba(8, 10, 22, 0.9);
-  border: 1px solid var(--glow, var(--accent));
-  box-shadow: 0 0 38px var(--glow, var(--accent)), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  font-size: 1rem;
+  padding: 6px 20px;
+  font-size: 1.15rem; font-weight: 900; letter-spacing: 1px;
+  color: #fff;
+  text-shadow: 0 0 6px var(--glow, var(--accent)),
+               0 0 22px var(--glow, var(--accent)),
+               0 2px 3px rgba(0, 0, 0, 0.8);
   animation: bannerIn 1.3s ease forwards;
 }
+.ulti-flash b { color: var(--glow, var(--accent)); }
 @keyframes bannerIn {
   0% { opacity: 0; transform: scale(0.7); }
   12% { opacity: 1; transform: scale(1.05); }
@@ -738,6 +761,48 @@ input[type="range"].pixel-range::-moz-range-thumb {
 .fa-label { font-size: 1.05rem; line-height: 1.5; min-height: 56px; }
 .fa-sub { color: var(--text-dim); font-size: 0.8rem; }
 .fusion-anim .btn { margin-top: 10px; }
+
+/* Fusion-Effekte (Runde 11): Pixel-Partikel, Schockwelle, Blitz, Shake.
+   Angelehnt an den Ult-Dopamin-Moment. */
+.fa-flash {
+  position: absolute; inset: -40% -20%; z-index: 4; opacity: 0;
+  pointer-events: none; mix-blend-mode: screen;
+}
+.fa-flash.on { animation: faFlash 0.5s ease-out; }
+@keyframes faFlash { 0% { opacity: 0; } 15% { opacity: 1; } 100% { opacity: 0; } }
+.fa-particle {
+  position: absolute; left: 50%; top: 80px; z-index: 5;
+  width: 6px; height: 6px; border-radius: 1px;
+  image-rendering: pixelated; pointer-events: none;
+  box-shadow: 0 0 6px currentColor;
+  animation: faPart 0.85s ease-out forwards;
+  transform: translate(calc(-50% + var(--x0)), calc(-50% + var(--y0)));
+}
+@keyframes faPart {
+  0%   { transform: translate(calc(-50% + var(--x0)), calc(-50% + var(--y0))); opacity: 0; }
+  15%  { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--x1)), calc(-50% + var(--y1))); opacity: 0; }
+}
+.fa-wave {
+  position: absolute; left: 50%; top: 80px; z-index: 5;
+  width: 24px; height: 24px; border-radius: 50%;
+  border: 3px solid var(--fx-glow, #fff);
+  transform: translate(-50%, -50%) scale(0.3); opacity: 0.9;
+  pointer-events: none; animation: faWave 0.7s ease-out forwards;
+}
+@keyframes faWave {
+  0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(7); opacity: 0; }
+}
+.fa-shake { animation: faShake 0.4s ease; }
+@keyframes faShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translate(-6px, 3px); }
+  45% { transform: translate(5px, -3px); }
+  70% { transform: translate(-3px, 2px); }
+}
+/* Kern leuchtet beim Erwachen kräftig im Ergebnis-Ton */
+.fa-stage.reveal .fa-core { box-shadow: 0 0 60px 26px var(--fx-glow, rgba(177,138,255,0.9)); }
 
 /* ---------- Desktop-Feinschliff ---------- */
 
@@ -1621,6 +1686,16 @@ body.gold-visible .gold-pill { display: flex; }
   /* Team-Auswahl: Slots und Grid nebeneinander statt untereinander */
   .ts-slots { max-width: 520px; margin-inline: auto; }
   .ts-grid { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); }
+  /* Inhalt der Content-Screens mittig begrenzen (Runde 11): auf dem iPad quer
+     lief der Arena-Screen über die volle Breite, die Team-Sprites wurden riesig.
+     #screen bleibt voll (Wallpaper), nur der Inhalt wird gedeckelt. */
+  .pvp-screen, .coll-screen, .fusion-screen, .bp-screen { max-width: 780px; margin-inline: auto; }
+  .pvp-team { max-width: 520px; margin-inline: auto; }
+  .pvp-team .ccard-art { max-width: 150px; margin-inline: auto; }
+  .coll-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+  /* Querformat-Feinschliff der Weltkarte steht weiter unten, NACH dem
+     Runde-11-Globe-Block — sonst überschriebe der ihn (Media Query erhöht die
+     Spezifität nicht, nur die Quelltext-Reihenfolge entscheidet). */
 }
 
 /* ---- Sehr kleine Handys (iPhone SE & Co.) ---- */
@@ -1902,17 +1977,45 @@ body.in-menu #topbar {
   .menu-side .menu-tile { width: min(20vw, 150px); min-height: 84px; font-size: 0.5rem; }
 }
 
-/* Weltkarte: ein Globus fuellt den Bildschirm, kein Kaestchen drumherum.
-   Horizontal weiterscrollen bleibt (Snap pro Kapitel). */
-.globe-rail { gap: 0; padding: 4px 0 16px; }
-.globe-card {
-  width: 100%; flex: 0 0 100%;
-  background: none; border: none; box-shadow: none;
-  padding: 12px 16px 16px; gap: 9px;
+/* Weltkarte (Runde 11): Peek-Carousel. Das fokussierte Kapitel steht groß und
+   MITTIG (vertikal + horizontal), kein Kästchen; die Nachbarn schauen klein und
+   gedimmt an den Rändern herein (Vorschau). Horizontal-Scroll mit Snap bleibt. */
+.world-screen {
+  display: flex; flex-direction: column; min-height: 100%; padding-bottom: 20px;
 }
+.globe-rail {
+  flex: 1; align-items: center;          /* zentriert die Karten vertikal */
+  gap: 0; padding: 0 15vw;               /* Rand in vw (siehe Karte) */
+}
+/* Kartenbreite in vw, NICHT %: flex-basis in Prozent misst gegen die
+   padding-reduzierte Rail-Breite und macht die Zentrierung inkonsistent
+   (scrollLeft wird geklemmt, der Globus sitzt daneben). vw ist viewport-fest,
+   damit stimmen Karte (70vw) und Rand (15vw je Seite) exakt zusammen. */
+.globe-card {
+  flex: 0 0 70vw; width: auto;
+  background: none; border: none; box-shadow: none;
+  padding: 8px 10px; gap: 9px;
+  opacity: 0.4; transform: scale(0.8);
+  transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.3, 1.1, 0.5, 1);
+}
+.globe-card.focus { opacity: 1; transform: scale(1); }     /* das aktuelle Kapitel */
+.globe-card:active { transform: scale(0.97); filter: brightness(1.1); }
 .globe-card.done { border: none; }
-.globe-wrap { width: min(62vw, 260px); }
-.globe-bar { width: min(62vw, 260px); }
+/* Globus + Balken kartenrelativ, damit sie nie über die Karte hinausragen */
+.globe-wrap { width: 82%; max-width: 240px; }
+.globe-bar { width: 78%; }
+/* Nachbar-Vorschau zeigt weniger Detail — Text erst beim Fokussieren voll da */
+.globe-card:not(.focus) .globe-bar,
+.globe-card:not(.focus) .globe-stars { opacity: 0; }
+
+/* Querformat: FESTE Kartenbreite + exakt passendes Rand-Padding (halbe Bildschirm-
+   breite minus halbe Karte). Nur so reicht der Scrollweg, um auch die letzte
+   Karte mittig zu zentrieren. Steht bewusst HIER (nach dem Peek-Block), damit es
+   ihn überschreibt. */
+@media (orientation: landscape) and (min-height: 601px) {
+  .globe-card { flex: 0 0 420px; }
+  .globe-rail { padding-inline: calc(50% - 210px); }
+}
 
 /* Sternenhimmel als gekacheltes Wallpaper hinter der Welt-Uebersicht */
 #bg-layer.stars {

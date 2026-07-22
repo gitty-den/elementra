@@ -34,6 +34,35 @@ Zielkurve = Rest-LP nach dem Sieg: S1–3 ≈ 72 %, S4–7 ≈ 58 %, S8–12 ≈
 S13–16 ≈ 40 %, S17–19 ≈ 33 %, Bosse ≈ 25 %. **Wer Kreaturen- oder Item-Werte
 ändert, muss den Tuner danach neu laufen lassen** — sonst driftet die Kampagne.
 
+## Runde 11 (22.07.2026) — UI-Feinschliff (Nutzer-Feedback vom iPad)
+
+- **Weltkarte = Peek-Carousel** (`renderWorld`): das aktuelle Kapitel steht groß
+  und MITTIG (vertikal + horizontal), die Nachbarn schauen klein (`scale .8`,
+  gedimmt) an den Rändern herein. Ein Scroll-Listener markiert die dem Zentrum
+  nächste Karte mit `.focus`. **WICHTIG zur Zentrierung:** Kartenbreite und
+  Rail-Padding sind in **vw**, nicht in %. `flex-basis` in Prozent misst gegen die
+  padding-reduzierte Rail-Breite, dadurch reicht der Scrollweg nicht und die
+  letzte Karte wird geklemmt (Globus sitzt daneben). Portrait: Karte `70vw`,
+  Rail-Padding `15vw`. Landscape: feste `420px` + `padding-inline: calc(50% -
+  210px)` — dieser Landscape-Block steht bewusst NACH dem Peek-Block im
+  Quelltext, sonst überschriebe der ihn (Media Query erhöht die Spezifität nicht).
+- **Kampf-Plakette färbt sich nach Seltenheit** (`buildUnitEl`, CSS-Var `--rar`
+  aus `RarityInfo`): Rahmen der Bars + Level-Badge + (bei Legendär) Ring-Glow.
+  **Der HP-Füllstand bleibt bewusst gesundheitsfarben** (grün→rot) — Seltenheit
+  auf den Füllstand zu legen, würde die wichtigste Kampf-Info zerstören. Zusätzlich
+  ein kleines **Element-Icon** rechts an der Plakette (`.unit-elem`).
+- **Team-Auswahl hat wieder Titel**: `.ts-head` „Gegner-Team" überm Band,
+  `.ts-head-own` „Dein Team"/„Arena-Team" über den Slots.
+- **iPad quer:** Content-Screens (`pvp/coll/fusion/bp`) sind auf `max-width:780px`
+  zentriert, `.pvp-team` auf 520px, Arena-Sprites auf 150px — vorher liefen sie
+  über die volle iPad-Breite und wurden riesig. `#screen` bleibt voll (Wallpaper).
+- **Fusion-Animation aufgewertet** (`playFusion` + `fusionBurst`): Phase 1 = die
+  Zutaten-Farben strömen zum Kern; Phase 2 (Erwachen) = Blitz + Schockwelle
+  (`.fa-wave`) + Pixel-Partikel-Explosion im Ergebnis-Ton + kurzer Shake.
+  Angelehnt an `spawnUltiBurst`.
+- **Ult-Titel rahmenlos** (`.ulti-flash`): nur noch leuchtender Text, keine
+  Pille/Box mehr. sw.js → v15.
+
 ## Navigation (seit 17.07.2026: Hub-and-Spoke, kein Bottom-Nav)
 
 - App startet mit **Splash** (nur rotierendes Ring-Logo, fliegt per FLIP auf die
