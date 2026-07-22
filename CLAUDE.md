@@ -34,6 +34,33 @@ Zielkurve = Rest-LP nach dem Sieg: S1–3 ≈ 72 %, S4–7 ≈ 58 %, S8–12 ≈
 S13–16 ≈ 40 %, S17–19 ≈ 33 %, Bosse ≈ 25 %. **Wer Kreaturen- oder Item-Werte
 ändert, muss den Tuner danach neu laufen lassen** — sonst driftet die Kampagne.
 
+## Runde 13 (22.07.2026) — Kampagne auf 10 Kapitel (Kapitel 3-5 gebaut)
+
+- **Zielstruktur: 10 Kapitel.** Kapitel 1-2 bleiben bei 10 Stages (S1-20,
+  Save-kompatibel), **Kapitel 3-10 sind 8 Stages** je. Diese Runde: Kapitel 3-5
+  gebaut (S21-44). CHAPTERS in stages.js hat jetzt 5 Einträge.
+- **Cadence entschärft:** Kapitel 1-2 verteilten 18 von 21 Basis-Kreaturen (zu
+  viel zu früh). 5 späte Unlocks (water_wolf/fire_geist/fire_wolf/water_phoenix/
+  nature_phoenix) nach Kapitel 3-5 verschoben; dort kommen sie + die 3 zuvor
+  unvergebenen (water_greif/nature_wyrm/nature_geist) langsam nach.
+- **3 neue Endboss-Kreaturen** (Runde-9-Prinzip): `boss_hydra` (Frosthydra, S28),
+  `boss_kraken` (Sturmkrake, S36), `boss_moloch` (Aschenmoloch, S44). Eigene
+  Archetypen in pixel.js (symmetrisch), Abilities in creatures.json, `unique:true`,
+  in KEINEM Fusions-Rezept. Sprites sind ROHFASSUNG — auf dem Gerät prüfen,
+  Feinschliff folgt. **8 Bosse sind das Ziel** (Titan/Schlange/Hydra/Kraken/Moloch
+  = 5, für Kapitel 6-10 fehlen noch 3).
+- **Fusion-Gate auf MAX_LEVEL angehoben** (war Level 3) — Fusion war „zu leicht".
+- **Tuner erweitert:** `targetMargin` deckt jetzt auch S21-44 ab (je Kapitel
+  Welle 46→32, Boss 25). **`bestTeam` shortlistet** die stärksten 9 Kandidaten
+  statt aller C(pool,3) — sonst hängt der Tuner bei den großen späten Pools
+  (auch in campaign.mjs). Ergebnis: alle 44 Stages schaffbar, Kurve trifft
+  (Ausnahme S24 ~100 %, ein zu leichter Mid-Stage — unkritisch).
+- **Zwei Tuner-Fallen dokumentiert (WICHTIG):** (1) Die Schreib-Regex `id: N,`
+  kollidierte mit den CHAPTERS-Einträgen `{ id: 1..5 }` und schrieb Foes in
+  falsche Stages — Anker ist jetzt `\n    id: N, name` (nur STAGES, 4 Leerzeichen).
+  (2) CRLF: Regex braucht `\r?\n`, sonst schreibt der Tuner still ins Leere.
+- sw.js → v17.
+
 ## Runde 11 (22.07.2026) — UI-Feinschliff (Nutzer-Feedback vom iPad)
 
 - **Weltkarte = Peek-Carousel** (`renderWorld`): das aktuelle Kapitel steht groß

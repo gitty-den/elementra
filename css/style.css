@@ -1215,6 +1215,12 @@ body::after {
 .unit.attacking.arch-sphinx .unit-body { animation: atkDive 0.44s cubic-bezier(0.35, 0, 0.4, 1); }
 .unit.attacking.arch-seraph .unit-body { animation: atkSwoop 0.48s cubic-bezier(0.3, 0, 0.35, 1); }
 .unit.attacking.arch-archon .unit-body { animation: atkPhase 0.46s ease-in-out; }
+/* Endboss-Archetypen (Runde 13): Titan/Kraken/Moloch stampfen, Hydra/Schlange peitschen */
+.unit.attacking.arch-titan .unit-body,
+.unit.attacking.arch-kraken .unit-body,
+.unit.attacking.arch-moloch .unit-body { animation: atkStomp 0.5s cubic-bezier(0.4, 0, 0.5, 1); }
+.unit.attacking.arch-weltenschlange .unit-body,
+.unit.attacking.arch-hydra .unit-body { animation: atkWhip 0.42s cubic-bezier(0.35, 0, 0.3, 1); }
 
 /* ===================================================================== */
 /* ===== Erweiterungen 19.07.2026 ====================================== */

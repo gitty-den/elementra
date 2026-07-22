@@ -21,6 +21,9 @@
 const CHAPTERS = [
   { id: 1, name: 'Erwachen',      range: [1, 10],  theme: 'nature', bossStage: 10 },
   { id: 2, name: 'Fusions-Ära',   range: [11, 20], theme: 'storm',  bossStage: 20 },
+  { id: 3, name: 'Ewiges Eis',    range: [21, 28], theme: 'frost',  bossStage: 28 },
+  { id: 4, name: 'Sturmreich',    range: [29, 36], theme: 'storm',  bossStage: 36 },
+  { id: 5, name: 'Aschenlande',   range: [37, 44], theme: 'ash',    bossStage: 44 },
 ];
 
 const STAGES = [
@@ -36,18 +39,18 @@ const STAGES = [
   {
     id: 2, name: 'Dornige Lichtung', theme: 'nature', desc: 'Ein Rudel verteidigt sein Revier.',
     enemies: [
-      { id: 'nature_wolf', level: 1 },
-      { id: 'nature_greif', level: 1 },
-      { id: 'nature_wyrm', level: 1 },
+      { id: 'nature_wolf', level: 1, mod: { hp: 0.03, atk: 0.15 } },
+      { id: 'nature_greif', level: 1, mod: { hp: 0.03, atk: 0.15 } },
+      { id: 'nature_wyrm', level: 1, mod: { hp: 0.03, atk: 0.15 } }
     ],
     gold: 30, firstClearBonus: 40, unlockCreature: 'fire_greif',
   },
   {
     id: 3, name: 'Flussfurt', theme: 'water', desc: 'Wasserkreaturen bewachen die Überquerung.',
     enemies: [
-      { id: 'water_wolf', level: 2, mod: { hp: 0.03, atk: 0.15 } },
-      { id: 'water_greif', level: 2, mod: { hp: 0.03, atk: 0.15 } },
-      { id: 'water_wyrm', level: 3, mod: { hp: 0.03, atk: 0.15 } }
+      { id: 'water_wolf', level: 1, mod: { hp: 0.06, atk: 0.3 } },
+      { id: 'water_greif', level: 1, mod: { hp: 0.06, atk: 0.3 } },
+      { id: 'water_wyrm', level: 1, mod: { hp: 0.06, atk: 0.3 } }
     ],
     gold: 35, firstClearBonus: 45, unlockCreature: 'water_wyrm',
   },
@@ -140,56 +143,56 @@ const STAGES = [
   {
     id: 13, name: 'Dornenwald', theme: 'nature', desc: 'Der Wald selbst stellt sich dir entgegen.',
     enemies: [
-      { id: 'nature_drache', level: 5, item: 'steinherz', mod: { hp: 0.3, atk: 0.21 } },
-      { id: 'nature_wolf', level: 5, mod: { hp: 0.3, atk: 0.21 } },
-      { id: 'nature_geist', level: 5, mod: { hp: 0.3, atk: 0.21 } }
+      { id: 'nature_drache', level: 5, item: 'steinherz', mod: { hp: 0.06, atk: 0.3 } },
+      { id: 'nature_wolf', level: 5, mod: { hp: 0.06, atk: 0.3 } },
+      { id: 'nature_geist', level: 5, mod: { hp: 0.06, atk: 0.3 } }
     ],
     gold: 90, firstClearBonus: 110, unlockCreature: 'fire_wyrm',
   },
   {
     id: 14, name: 'Aschensturm', theme: 'ash', desc: 'Ein Geisterwolf jagt im Aschenregen.',
     enemies: [
-      { id: 'fx_barghest_ash', level: 1, mod: { hp: 0.03, atk: 0.15 } },
-      { id: 'fire_drache', level: 5, mod: { hp: 0.03, atk: 0.15 } },
-      { id: 'fire_greif', level: 4, mod: { hp: 0.03, atk: 0.15 } }
+      { id: 'fx_barghest_ash', level: 1 },
+      { id: 'fire_drache', level: 5 },
+      { id: 'fire_greif', level: 4 }
     ],
     gold: 95, firstClearBonus: 115, unlockCreature: 'nature_drache',
   },
   {
     id: 15, name: 'Eistiefe', theme: 'frost', desc: 'Unter dem Eis wartet der Basilisk.',
     enemies: [
-      { id: 'fx_basilisk_frost', level: 4, mod: { hp: 0.15, atk: 0.75 } },
-      { id: 'water_golem', level: 5, mod: { hp: 0.15, atk: 0.75 } },
-      { id: 'water_geist', level: 5, mod: { hp: 0.15, atk: 0.75 } }
+      { id: 'fx_basilisk_frost', level: 4, mod: { hp: 0.1, atk: 0.5 } },
+      { id: 'water_golem', level: 5, mod: { hp: 0.1, atk: 0.5 } },
+      { id: 'water_geist', level: 5, mod: { hp: 0.1, atk: 0.5 } }
     ],
     gold: 100, firstClearBonus: 120, unlockCreature: 'fire_golem', drop: true,
   },
   {
     id: 16, name: 'Himmelspass', theme: 'storm', desc: 'Die Sphinx bewacht den Aufstieg.',
     enemies: [
-      { id: 'fx_sphinx_steam', level: 2, item: 'steinherz', mod: { hp: 0.15, atk: 0.105 } },
-      { id: 'nature_greif', level: 4, item: 'scharfzahn', mod: { hp: 0.15, atk: 0.105 } },
-      { id: 'fire_greif', level: 4, mod: { hp: 0.15, atk: 0.105 } }
+      { id: 'fx_sphinx_steam', level: 1, item: 'steinherz', mod: { hp: 0.06, atk: 0.3 } },
+      { id: 'nature_greif', level: 3, item: 'scharfzahn', mod: { hp: 0.06, atk: 0.3 } },
+      { id: 'fire_greif', level: 3, mod: { hp: 0.06, atk: 0.3 } }
     ],
-    gold: 105, firstClearBonus: 125, unlockCreature: 'water_wolf',
+    gold: 105, firstClearBonus: 125, unlockCreature: null,
   },
   {
     id: 17, name: 'Seelenmoor', theme: 'nature', desc: 'Irrlichter führen dich vom Weg ab.',
     enemies: [
-      { id: 'fx_barghest_frost', level: 3, item: 'steinherz', mod: { hp: 0.1, atk: 0.5 } },
-      { id: 'nature_geist', level: 5, mod: { hp: 0.1, atk: 0.5 } },
-      { id: 'nature_wolf', level: 5, mod: { hp: 0.1, atk: 0.5 } }
+      { id: 'fx_barghest_frost', level: 1, item: 'steinherz', mod: { hp: 0.75, atk: 0.525 } },
+      { id: 'nature_geist', level: 3, mod: { hp: 0.75, atk: 0.525 } },
+      { id: 'nature_wolf', level: 3, mod: { hp: 0.75, atk: 0.525 } }
     ],
-    gold: 110, firstClearBonus: 130, unlockCreature: 'fire_geist',
+    gold: 110, firstClearBonus: 130, unlockCreature: null,
   },
   {
     id: 18, name: 'Obsidianfeste', theme: 'fire', desc: 'Der Koloss hält die schwarzen Tore.',
     enemies: [
-      { id: 'fx_ouroboros_ash', level: 3, item: 'steinherz' },
-      { id: 'fire_wolf', level: 5, item: 'scharfzahn' },
-      { id: 'fire_drache', level: 5, item: 'titanenmark' }
+      { id: 'fx_ouroboros_ash', level: 1, item: 'steinherz', mod: { hp: 0.3, atk: 0.21 } },
+      { id: 'fire_wolf', level: 2, item: 'scharfzahn', mod: { hp: 0.3, atk: 0.21 } },
+      { id: 'fire_drache', level: 2, item: 'titanenmark', mod: { hp: 0.3, atk: 0.21 } }
     ],
-    gold: 115, firstClearBonus: 140, unlockCreature: 'fire_wolf',
+    gold: 115, firstClearBonus: 140, unlockCreature: null,
   },
   {
     id: 19, name: 'Frostthron', theme: 'frost', desc: 'Gargoyle und Ouroboros — Eis ohne Ende.',
@@ -198,17 +201,236 @@ const STAGES = [
       { id: 'fx_ouroboros_frost', level: 1, mod: { hp: 0.15, atk: 0.75 } },
       { id: 'water_drache', level: 4, mod: { hp: 0.15, atk: 0.75 } }
     ],
-    gold: 120, firstClearBonus: 150, unlockCreature: 'water_phoenix',
+    gold: 120, firstClearBonus: 150, unlockCreature: null,
   },
   {
     id: 20, name: 'Herz der Elemente', theme: 'storm', boss: true,
     desc: 'Drei Fusionen. Keine Gnade.',
     enemies: [
-      { id: 'fx_seraph_steam', level: 2, item: 'steinherz', mod: { hp: 0.3, atk: 0.21 } },
-      { id: 'fx_leviathan_ash', level: 2, item: 'scharfzahn', mod: { hp: 0.3, atk: 0.21 } },
-      { id: 'fx_archon_frost', level: 2, mod: { hp: 0.3, atk: 0.21 } }
+      { id: 'fx_seraph_steam', level: 4, item: 'steinherz' },
+      { id: 'fx_leviathan_ash', level: 4, item: 'scharfzahn' },
+      { id: 'fx_archon_frost', level: 4 }
     ],
-    gold: 150, firstClearBonus: 200, unlockCreature: 'nature_phoenix', drop: true,
+    gold: 150, firstClearBonus: 200, unlockCreature: null, drop: true,
     bossCreature: 'boss_schlange',
+  },
+  {
+    id: 21, name: 'Gletschertor', theme: 'frost', desc: 'Das Eis knackt unter jedem Schritt.',
+    enemies: [
+      { id: 'water_wolf', level: 5, mod: { hp: 0.5, atk: 0.35 } },
+      { id: 'water_greif', level: 5, mod: { hp: 0.5, atk: 0.35 } },
+      { id: 'water_wyrm', level: 5, mod: { hp: 0.5, atk: 0.35 } }
+    ],
+    gold: 125, firstClearBonus: 185, unlockCreature: null,
+  },
+  {
+    id: 22, name: 'Frostkamm', theme: 'frost', desc: 'Wächter aus Stein und Eis.',
+    enemies: [
+      { id: 'water_golem', level: 4, item: 'steinherz', mod: { hp: 0.15, atk: 0.75 } },
+      { id: 'water_geist', level: 4, item: 'scharfzahn', mod: { hp: 0.15, atk: 0.75 } },
+      { id: 'water_greif', level: 4, item: 'titanenmark', mod: { hp: 0.15, atk: 0.75 } }
+    ],
+    gold: 130, firstClearBonus: 190, unlockCreature: 'water_greif',
+  },
+  {
+    id: 23, name: 'Eisspalte', theme: 'frost', desc: 'Etwas windet sich in der Tiefe.',
+    enemies: [
+      { id: 'fx_basilisk_frost', level: 2, mod: { hp: 0.2, atk: 1 } },
+      { id: 'water_drache', level: 2, mod: { hp: 0.2, atk: 1 } },
+      { id: 'water_wolf', level: 2, mod: { hp: 0.2, atk: 1 } }
+    ],
+    gold: 135, firstClearBonus: 195, unlockCreature: null,
+  },
+  {
+    id: 24, name: 'Erfrorene Halle', theme: 'frost', desc: 'Gargoyles bewachen den Frostthron.',
+    enemies: [
+      { id: 'fx_gargoyle_frost', level: 3 },
+      { id: 'water_golem', level: 3 },
+      { id: 'water_geist', level: 3 }
+    ],
+    gold: 140, firstClearBonus: 200, unlockCreature: null, drop: true,
+  },
+  {
+    id: 25, name: 'Weiße Tiefe', theme: 'frost', desc: 'Der Ouroboros beißt sich in den Schwanz.',
+    enemies: [
+      { id: 'water_drache', level: 3, mod: { hp: 1, atk: 0.7 } },
+      { id: 'water_wyrm', level: 3, mod: { hp: 1, atk: 0.7 } },
+      { id: 'fx_ouroboros_frost', level: 3, mod: { hp: 1, atk: 0.7 } }
+    ],
+    gold: 145, firstClearBonus: 205, unlockCreature: 'nature_wyrm',
+  },
+  {
+    id: 26, name: 'Nebelfjord', theme: 'frost', desc: 'Ein Leviathan zieht seine Bahn.',
+    enemies: [
+      { id: 'fx_leviathan_frost', level: 3, mod: { hp: 0.2, atk: 1 } },
+      { id: 'water_greif', level: 3, mod: { hp: 0.2, atk: 1 } },
+      { id: 'water_wolf', level: 3, mod: { hp: 0.2, atk: 1 } }
+    ],
+    gold: 150, firstClearBonus: 210, unlockCreature: null,
+  },
+  {
+    id: 27, name: 'Firngrat', theme: 'frost', desc: 'Der Koloss versperrt den Pass.',
+    enemies: [
+      { id: 'fx_koloss_frost', level: 5, item: 'steinherz', mod: { hp: 0.06, atk: 0.3 } },
+      { id: 'water_golem', level: 5, item: 'scharfzahn', mod: { hp: 0.06, atk: 0.3 } },
+      { id: 'water_drache', level: 5, item: 'titanenmark', mod: { hp: 0.06, atk: 0.3 } }
+    ],
+    gold: 155, firstClearBonus: 215, unlockCreature: 'fire_wolf',
+  },
+  {
+    id: 28, name: 'Herz des Eises', theme: 'frost', boss: true, desc: 'Drei Köpfe, ein Wille.',
+    enemies: [
+      { id: 'boss_hydra', level: 2, item: 'steinherz', mod: { hp: 0.2, atk: 1 } },
+      { id: 'fx_basilisk_frost', level: 2, mod: { hp: 0.2, atk: 1 } },
+      { id: 'water_geist', level: 2, mod: { hp: 0.2, atk: 1 } }
+    ],
+    gold: 160, firstClearBonus: 220, unlockCreature: null, drop: true,
+    bossCreature: 'boss_hydra',
+  },
+  {
+    id: 29, name: 'Sturmtor', theme: 'storm', desc: 'Greifen kreisen über dem Tor.',
+    enemies: [
+      { id: 'nature_greif', level: 4, item: 'steinherz', mod: { hp: 0.15, atk: 0.75 } },
+      { id: 'fire_greif', level: 4, mod: { hp: 0.15, atk: 0.75 } },
+      { id: 'water_greif', level: 4, mod: { hp: 0.15, atk: 0.75 } }
+    ],
+    gold: 165, firstClearBonus: 225, unlockCreature: null,
+  },
+  {
+    id: 30, name: 'Windbruch', theme: 'storm', desc: 'Die Sphinx stellt ihre Frage.',
+    enemies: [
+      { id: 'fx_sphinx_steam', level: 5, mod: { hp: 0.5, atk: 0.35 } },
+      { id: 'nature_greif', level: 5, mod: { hp: 0.5, atk: 0.35 } },
+      { id: 'water_geist', level: 5, mod: { hp: 0.5, atk: 0.35 } }
+    ],
+    gold: 170, firstClearBonus: 230, unlockCreature: 'nature_geist',
+  },
+  {
+    id: 31, name: 'Blitzgrat', theme: 'storm', desc: 'Der Grat singt im Sturm.',
+    enemies: [
+      { id: 'fire_greif', level: 4, mod: { hp: 0.3, atk: 0.21 } },
+      { id: 'water_greif', level: 4, mod: { hp: 0.3, atk: 0.21 } },
+      { id: 'fx_chimaera_steam', level: 4, mod: { hp: 0.3, atk: 0.21 } }
+    ],
+    gold: 175, firstClearBonus: 235, unlockCreature: null,
+  },
+  {
+    id: 32, name: 'Donnerhalle', theme: 'storm', desc: 'Ein Seraph steigt aus den Wolken.',
+    enemies: [
+      { id: 'fx_seraph_steam', level: 4, item: 'steinherz', mod: { hp: 0.1, atk: 0.5 } },
+      { id: 'nature_greif', level: 4, mod: { hp: 0.1, atk: 0.5 } },
+      { id: 'fire_geist', level: 4, mod: { hp: 0.1, atk: 0.5 } }
+    ],
+    gold: 180, firstClearBonus: 240, unlockCreature: null, drop: true,
+  },
+  {
+    id: 33, name: 'Wolkenmeer', theme: 'storm', desc: 'Der Leviathan schwimmt im Himmel.',
+    enemies: [
+      { id: 'fx_leviathan_steam', level: 4, item: 'steinherz', mod: { hp: 0.5, atk: 0.35 } },
+      { id: 'water_wolf', level: 4, mod: { hp: 0.5, atk: 0.35 } },
+      { id: 'water_greif', level: 4, mod: { hp: 0.5, atk: 0.35 } }
+    ],
+    gold: 185, firstClearBonus: 245, unlockCreature: 'water_wolf',
+  },
+  {
+    id: 34, name: 'Orkanauge', theme: 'storm', desc: 'Im Auge ist es still — zu still.',
+    enemies: [
+      { id: 'fx_sphinx_steam', level: 5, mod: { hp: 0.5, atk: 0.35 } },
+      { id: 'fire_greif', level: 5, mod: { hp: 0.5, atk: 0.35 } },
+      { id: 'nature_greif', level: 5, mod: { hp: 0.5, atk: 0.35 } }
+    ],
+    gold: 190, firstClearBonus: 250, unlockCreature: null,
+  },
+  {
+    id: 35, name: 'Gewitterfront', theme: 'storm', desc: 'Die Chimära hetzt durch den Regen.',
+    enemies: [
+      { id: 'fx_chimaera_steam', level: 5, mod: { hp: 0.15, atk: 0.75 } },
+      { id: 'water_greif', level: 5, mod: { hp: 0.15, atk: 0.75 } },
+      { id: 'fire_geist', level: 5, mod: { hp: 0.15, atk: 0.75 } }
+    ],
+    gold: 195, firstClearBonus: 255, unlockCreature: 'fire_geist',
+  },
+  {
+    id: 36, name: 'Auge des Sturms', theme: 'storm', boss: true, desc: 'Aus der Tiefe steigt die Krake.',
+    enemies: [
+      { id: 'boss_kraken', level: 3, mod: { hp: 0.15, atk: 0.105 } },
+      { id: 'fx_leviathan_steam', level: 3, mod: { hp: 0.15, atk: 0.105 } },
+      { id: 'fx_sphinx_steam', level: 3, mod: { hp: 0.15, atk: 0.105 } }
+    ],
+    gold: 200, firstClearBonus: 260, unlockCreature: null, drop: true,
+    bossCreature: 'boss_kraken',
+  },
+  {
+    id: 37, name: 'Glutpforte', theme: 'fire', desc: 'Asche rieselt vom schwarzen Himmel.',
+    enemies: [
+      { id: 'fire_wolf', level: 3, mod: { hp: 0.15, atk: 0.75 } },
+      { id: 'fire_wyrm', level: 3, mod: { hp: 0.15, atk: 0.75 } },
+      { id: 'fire_greif', level: 3, mod: { hp: 0.15, atk: 0.75 } }
+    ],
+    gold: 205, firstClearBonus: 265, unlockCreature: null,
+  },
+  {
+    id: 38, name: 'Rauchtal', theme: 'fire', desc: 'Golems glühen im Qualm.',
+    enemies: [
+      { id: 'fire_golem', level: 5, item: 'steinherz', mod: { hp: 0.1, atk: 0.5 } },
+      { id: 'fire_drache', level: 5, mod: { hp: 0.1, atk: 0.5 } },
+      { id: 'fire_geist', level: 5, mod: { hp: 0.1, atk: 0.5 } }
+    ],
+    gold: 210, firstClearBonus: 270, unlockCreature: 'water_phoenix',
+  },
+  {
+    id: 39, name: 'Aschenfeld', theme: 'ash', desc: 'Ein Barghest jagt im Aschenregen.',
+    enemies: [
+      { id: 'fx_barghest_ash', level: 4, mod: { hp: 0.1, atk: 0.5 } },
+      { id: 'fire_wolf', level: 4, mod: { hp: 0.1, atk: 0.5 } },
+      { id: 'fire_wyrm', level: 4, mod: { hp: 0.1, atk: 0.5 } }
+    ],
+    gold: 215, firstClearBonus: 275, unlockCreature: null,
+  },
+  {
+    id: 40, name: 'Schwelende Ruine', theme: 'ash', desc: 'Die Chimära lauert im Rauch.',
+    enemies: [
+      { id: 'fx_chimaera_ash', level: 5, item: 'steinherz', mod: { hp: 0.06, atk: 0.3 } },
+      { id: 'fire_golem', level: 5, item: 'scharfzahn', mod: { hp: 0.06, atk: 0.3 } },
+      { id: 'fire_drache', level: 5, mod: { hp: 0.06, atk: 0.3 } }
+    ],
+    gold: 220, firstClearBonus: 280, unlockCreature: null, drop: true,
+  },
+  {
+    id: 41, name: 'Magmastrom', theme: 'fire', desc: 'Der Koloss watet durch flüssiges Feuer.',
+    enemies: [
+      { id: 'fx_koloss_ash', level: 4, mod: { hp: 0.1, atk: 0.5 } },
+      { id: 'fire_wolf', level: 4, mod: { hp: 0.1, atk: 0.5 } },
+      { id: 'fire_geist', level: 4, mod: { hp: 0.1, atk: 0.5 } }
+    ],
+    gold: 225, firstClearBonus: 285, unlockCreature: 'nature_phoenix',
+  },
+  {
+    id: 42, name: 'Feuermeer', theme: 'fire', desc: 'Der Ouroboros brennt und heilt zugleich.',
+    enemies: [
+      { id: 'fx_ouroboros_ash', level: 5, item: 'steinherz', mod: { hp: 0.1, atk: 0.5 } },
+      { id: 'fire_drache', level: 5, mod: { hp: 0.1, atk: 0.5 } },
+      { id: 'fire_wyrm', level: 5, mod: { hp: 0.1, atk: 0.5 } }
+    ],
+    gold: 230, firstClearBonus: 290, unlockCreature: null,
+  },
+  {
+    id: 43, name: 'Verkohlter Thron', theme: 'ash', desc: 'Ein Seraph aus Glut und Asche.',
+    enemies: [
+      { id: 'fx_seraph_ash', level: 5, item: 'steinherz', mod: { hp: 0.06, atk: 0.3 } },
+      { id: 'fire_golem', level: 5, item: 'scharfzahn', mod: { hp: 0.06, atk: 0.3 } },
+      { id: 'fire_greif', level: 5, item: 'titanenmark', mod: { hp: 0.06, atk: 0.3 } }
+    ],
+    gold: 235, firstClearBonus: 295, unlockCreature: null,
+  },
+  {
+    id: 44, name: 'Schlund der Asche', theme: 'ash', boss: true, desc: 'Der Moloch erwacht.',
+    enemies: [
+      { id: 'boss_moloch', level: 2, mod: { hp: 0.2, atk: 1 } },
+      { id: 'fx_koloss_ash', level: 2, mod: { hp: 0.2, atk: 1 } },
+      { id: 'fx_barghest_ash', level: 2, mod: { hp: 0.2, atk: 1 } }
+    ],
+    gold: 240, firstClearBonus: 300, unlockCreature: null, drop: true,
+    bossCreature: 'boss_moloch',
   },
 ];

@@ -54,6 +54,17 @@ Rauschen, und zwei Drittel aller Fusionen löschten das Element-System. Behoben:
    Einschätzung gezeigt — möglich, weil die Engine deterministisch ist.
 6. **Onboarding.** Sechs Hinweise, je einmal, am richtigen Ort.
 
+### Kampagne-Ausbau auf 10 Kapitel (Entscheidung 22.07.2026)
+8 Stages je Kapitel, je ein einzigartiger Endboss (8 neue Boss-Kreaturen Ziel).
+Kapitel 1-2 bleiben bei 10 Stages (Save-Kompatibilität).
+- [x] **Kapitel 3-5 gebaut** (S21-44): Ewiges Eis / Sturmreich / Aschenlande,
+      3 neue Bosse (Frosthydra/Sturmkrake/Aschenmoloch), Cadence entschärft,
+      per Tuner auf die Kurve gebracht, komplett schaffbar (Sim-verifiziert).
+      **Boss-Sprites sind Rohfassung** — auf dem Gerät ansehen, Feinschliff-Runde
+      einplanen. S24 ist etwas zu leicht (~100 %).
+- [ ] **Kapitel 6-10** (S45-84) — nach dem Gerätetest von 3-5. Brauchen 3 weitere
+      Boss-Kreaturen (Sprites) und die restlichen Fusions-Rezepte als Anreize.
+
 ### Offen — in dieser Reihenfolge
 1. **Auf echten Geräten spielen.** iPhone 13 + iPad, Safari, „Zum Home-Bildschirm".
    Die Kurve ist simuliert, nicht gefühlt. Erst danach weiter balancieren.

@@ -8,7 +8,7 @@
 //
 // Aufruf: node tools/tune.mjs          (nur Vorschlag, schreibt nichts)
 //         node tools/tune.mjs --write  (schreibt js/stages.js)
-import { run, Creatures } from './sim.mjs';
+import { run, Creatures, statsAtLevel } from './sim.mjs';
 import fs from 'fs';
 
 const MAX_LEVEL = 5;
@@ -21,11 +21,17 @@ const FOE_ITEMS = ['steinherz', 'scharfzahn', 'titanenmark'];
 function targetMargin(stage) {
   const n = stage.id;
   if (stage.boss) return 25;
+  // Kapitel 1-2 (S1-20): bestehende Kurve.
   if (n <= 3) return 72;
   if (n <= 7) return 58;
   if (n <= 12) return 48;
   if (n <= 16) return 40;
-  return 33;
+  if (n <= 20) return 33;
+  // Kapitel 3-5 (S21-44, je 8 Stages): pro Kapitel eine kleine Welle — Anfang
+  // luftiger, Ende enger, Boss am haertesten (25 oben). Bleibt fordernd, aber
+  // nicht durchgaengig auf Anschlag.
+  const inCh = (n - 21) % 8;                    // 0..7 innerhalb eines Kapitels
+  return [46, 44, 42, 40, 38, 36, 34, 32][inCh];
 }
 
 function levelFromXp(xp) {
@@ -34,12 +40,26 @@ function levelFromXp(xp) {
   return lv;
 }
 
+// Grober Stärke-Index einer Kreatur auf ihrem aktuellen Level (fürs Shortlisten).
+function creaturePower(id, level) {
+  const c = Creatures[id];
+  if (!c) return 0;
+  const s = statsAtLevel(c, level);
+  return s.hp + s.atk * 4 + s.def * 2 + s.spd * 2;
+}
+
 function bestTeam(pool, lvl, enemies) {
+  // Shortlist statt aller C(pool,3)-Kombinationen: bei einem Pool von 20+
+  // Kreaturen (späte Kapitel) explodiert die Vollsuche und der Tuner hängt.
+  // Ein Spieler stellt ohnehin seine STÄRKSTEN auf — also nur die Top-Kandidaten
+  // testen (nach Stärke), Starter immer dabei. C(9,3)=84 statt C(21,3)=1330.
+  const ranked = [...new Set(pool)].sort((a, b) => creaturePower(b, lvl(b)) - creaturePower(a, lvl(a)));
+  const shortlist = [...new Set([...STARTERS.filter(id => pool.includes(id)), ...ranked])].slice(0, 9);
   let best = null;
-  for (let i = 0; i < pool.length; i++)
-    for (let j = i + 1; j < pool.length; j++)
-      for (let k = j + 1; k < pool.length; k++) {
-        const ids = [pool[i], pool[j], pool[k]]
+  for (let i = 0; i < shortlist.length; i++)
+    for (let j = i + 1; j < shortlist.length; j++)
+      for (let k = j + 1; k < shortlist.length; k++) {
+        const ids = [shortlist[i], shortlist[j], shortlist[k]]
           .sort((a, b) => ROLE_ORDER[Creatures[a].role] - ROLE_ORDER[Creatures[b].role]);
         const r = run(ids.map((id, s) => ({ id, level: lvl(id), slot: s })), enemies);
         const score = r.win ? 1000 + r.allyHp / r.allyMax * 100 : -1000 + r.allyHp;
@@ -147,8 +167,11 @@ if (process.argv.includes('--write')) {
       `${e.item ? `, item: '${e.item}'` : ''}` +
       `${e.mod ? `, mod: { hp: ${+e.mod.hp.toFixed(3)}, atk: ${+e.mod.atk.toFixed(3)} }` : ''} },`
     ).join(nl);
-    // Genau den enemies-Block DIESER Stage ersetzen (id-Anker davor).
-    const re = new RegExp(`(id: ${r.stage.id},[\\s\\S]*?enemies: \\[\\r?\\n)([\\s\\S]*?)(\\r?\\n    \\],)`);
+    // Genau den enemies-Block DIESER Stage ersetzen. Anker `\n    id: N, name`
+    // (Zeilenanfang + 4 Leerzeichen) trifft NUR STAGES-Eintraege — die CHAPTERS
+    // stehen als `  { id: N, name` (2 Leerzeichen, gleiche Zeile) und wuerden mit
+    // nacktem `id: N,` frueher matchen und den falschen enemies-Block treffen.
+    const re = new RegExp(`(\\n    id: ${r.stage.id}, name[\\s\\S]*?enemies: \\[\\r?\\n)([\\s\\S]*?)(\\r?\\n    \\],)`);
     if (!re.test(text)) { console.log('WARNUNG: Stage ' + r.stage.id + ' nicht gefunden'); return; }
     text = text.replace(re, (m, a, b, c) => a + enemiesText.replace(/,$/, '') + c);
     written++;

@@ -504,6 +504,78 @@ const PixelArchetypes = {
     '...#dddddddddddd',
     '....############',
   ] },
+
+  // ===== Kapitel-3/4/5-Endbosse (22.07.2026, Runde 13) =====
+  // Eigene Archetypen, in KEINEM Fusions-Rezept — nur über den jeweiligen
+  // Endboss-Sieg zu bekommen. Rohfassung; Feinschliff der Pixel bei Bedarf nach
+  // dem Gerätetest.
+  // symmetric = nur LINKE Hälfte (Spalte 15 = Mittelachse), rechte wird gespiegelt.
+  // Frosthydra: mittlerer Kopf + linker Kopf (gespiegelt = rechter), Körper unten.
+  hydra: { symmetric: true, top: 4, rows: [
+    '...#l#....#lll..',
+    '..#lep#..#llll..',
+    '..#lll#..#llll..',
+    '..#lll#..#llll..',
+    '...#l#...#lll...',
+    '...#l#....#ll...',
+    '...#ll#...#ll...',
+    '....#ll#.#lll...',
+    '.....#lll#llll..',
+    '......#lllllllll',
+    '.....#mmmmmmmmmm',
+    '....#mmmmmmmmmmm',
+    '....#mmmmmmmmmmm',
+    '...#mmmmmmmmmmmm',
+    '...#dmmmmmmmmmmm',
+    '...#dddddddddddd',
+    '....#ddddddddddd',
+    '.....###########',
+  ] },
+  // Sturmkrake: breite Mantel-Kuppel, zwei Augen, Tentakel-Stränge unten.
+  kraken: { symmetric: true, top: 3, rows: [
+    '......##########',
+    '....#lllllllllll',
+    '...#llllllllllll',
+    '..#lllllllllllll',
+    '..#llmmmmmmmmmmm',
+    '..#lmmmmmmmmmmmm',
+    '..#lmeepmmmmmmmm',
+    '..#lmmmmmmmmmmmm',
+    '...#mmmmmmmmmmmm',
+    '....#mmmmmmmmmmm',
+    '.....#mmmmmmmmmm',
+    '....#mmm#mmmm#mm',
+    '...#mm#.#mmm#mmm',
+    '..#mm#..#mm#mmm.',
+    '..#m#...#m#mm...',
+    '..##....#m#m....',
+    '........#m#.....',
+    '........###.....',
+  ] },
+  // Aschenmoloch: zwei Hörner, zentrierter Kopf, Panzer, EIN zentrierter Glutkern.
+  moloch: { symmetric: true, top: 4, rows: [
+    '..##............',
+    '.#ll#...........',
+    '.#ll#...........',
+    '..#ll##lllllllll',
+    '...#llllllllllll',
+    '...#leemmmmmmmmm',
+    '...#lmmmmmmmmmmm',
+    '..##lmmmmmmmmmmm',
+    '.#llmmmmmmmmmmmm',
+    '.#lmmmmmmmmmmmmm',
+    '.#mmmmmmmmmmmmmm',
+    '.#mmmmmmmmmmm#gg',
+    '.#mmmmmmmmmmm#gg',
+    '.#mmmmmmmmmmmmmm',
+    '.#dmmmmmmmmmmmmm',
+    '..#ddmmmmmmmmmmm',
+    '...#ddddddddddd.',
+    '...#ddddddddddd.',
+    '...#dd#ddd......',
+    '...#dd#.........',
+    '...###..........',
+  ] },
 };
 
 const pixelURICache = {};

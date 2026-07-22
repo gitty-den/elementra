@@ -2,7 +2,7 @@
 // verfuegbarer Pool waechst mit den Unlocks, das Spiel waehlt das beste Team
 // aus diesem Pool. Ausgabe = Schwierigkeitskurve.
 //   node tools/campaign.mjs
-import { run, Creatures } from './sim.mjs';
+import { run, Creatures, statsAtLevel } from './sim.mjs';
 import fs from 'fs';
 
 const src = fs.readFileSync(new URL('../js/stages.js', import.meta.url), 'utf8');
@@ -14,13 +14,25 @@ const STARTERS = ['fire_drache', 'nature_golem', 'water_geist'];
 // waere zu teuer — wir testen alle Kombinationen, Reihenfolge nach Rolle
 // (Tank zuerst), das entspricht dem, was ein Spieler tut.
 const ROLE_ORDER = { tank: 0, bruiser: 1, sustain: 2, dps: 3, dot: 4, speed: 5, support: 6 };
+const STARTERS_SL = ['fire_drache', 'nature_golem', 'water_geist'];
+
+function creaturePower(id, level) {
+  const c = Creatures[id];
+  if (!c) return 0;
+  const s = statsAtLevel(c, level);
+  return s.hp + s.atk * 4 + s.def * 2 + s.spd * 2;
+}
 
 function bestTeam(pool, level, enemies) {
+  // Shortlist wie im Tuner: nur die stärksten 9 Kandidaten testen, sonst
+  // explodiert C(pool,3) bei den späten Kapiteln (großer Pool).
+  const ranked = [...new Set(pool)].sort((a, b) => creaturePower(b, level(b)) - creaturePower(a, level(a)));
+  const sl = [...new Set([...STARTERS_SL.filter(id => pool.includes(id)), ...ranked])].slice(0, 9);
   let best = null;
-  for (let i = 0; i < pool.length; i++)
-    for (let j = i + 1; j < pool.length; j++)
-      for (let k = j + 1; k < pool.length; k++) {
-        const ids = [pool[i], pool[j], pool[k]]
+  for (let i = 0; i < sl.length; i++)
+    for (let j = i + 1; j < sl.length; j++)
+      for (let k = j + 1; k < sl.length; k++) {
+        const ids = [sl[i], sl[j], sl[k]]
           .sort((a, b) => ROLE_ORDER[Creatures[a].role] - ROLE_ORDER[Creatures[b].role]);
         const defs = ids.map((id, s) => ({ id, level: level(id), slot: s }));
         const r = run(defs, enemies);

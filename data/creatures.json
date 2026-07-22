@@ -408,6 +408,67 @@
         "durationSec": 6,
         "defDown": 0.22
       }
+    },
+    "hydra_passive": {
+      "name": "Vielkopf",
+      "trigger": "onAttack",
+      "energyGain": 7,
+      "effect": "applyPoison",
+      "params": {
+        "stackPct": 0.07,
+        "maxStacks": 6
+      }
+    },
+    "hydra_active": {
+      "name": "Seuchenhauch",
+      "energyCost": 100,
+      "target": "allEnemies",
+      "effect": "spreadDotDebuff",
+      "params": {
+        "dotPct": 0.12,
+        "durationSec": 6,
+        "defDown": 0.2
+      }
+    },
+    "kraken_passive": {
+      "name": "Tiefenpanzer",
+      "trigger": "onHit",
+      "energyGain": 7,
+      "effect": "damageReduction",
+      "params": {
+        "flatReduce": 4
+      }
+    },
+    "kraken_active": {
+      "name": "Mahlstrom",
+      "energyCost": 100,
+      "target": "allAllies",
+      "effect": "teamShield",
+      "params": {
+        "shieldPctMaxHp": 0.28,
+        "durationSec": 6,
+        "taunt": true
+      }
+    },
+    "moloch_passive": {
+      "name": "Blutglut",
+      "trigger": "onAttack",
+      "energyGain": 7,
+      "effect": "lifesteal",
+      "params": {
+        "pctOfDamage": 0.18
+      }
+    },
+    "moloch_active": {
+      "name": "Aschenschlag",
+      "energyCost": 100,
+      "target": "enemyHighestHp",
+      "effect": "hitPlusBleed",
+      "params": {
+        "atkMultiplier": 2.6,
+        "bleedPct": 0.12,
+        "bleedTicks": 3
+      }
     }
   },
   "creatures": [
@@ -824,6 +885,63 @@
       },
       "passive": "schlange_passive",
       "active": "schlange_active",
+      "unique": true,
+      "mvp": false
+    },
+    {
+      "id": "boss_hydra",
+      "name": "Frosthydra",
+      "archetype": "hydra",
+      "role": "dot",
+      "element": "frost",
+      "rarity": "legendary",
+      "tier": 3,
+      "baseStats": {
+        "hp": 175,
+        "atk": 26,
+        "def": 15,
+        "spd": 13
+      },
+      "passive": "hydra_passive",
+      "active": "hydra_active",
+      "unique": true,
+      "mvp": false
+    },
+    {
+      "id": "boss_kraken",
+      "name": "Sturmkrake",
+      "archetype": "kraken",
+      "role": "tank",
+      "element": "steam",
+      "rarity": "legendary",
+      "tier": 3,
+      "baseStats": {
+        "hp": 230,
+        "atk": 20,
+        "def": 22,
+        "spd": 8
+      },
+      "passive": "kraken_passive",
+      "active": "kraken_active",
+      "unique": true,
+      "mvp": false
+    },
+    {
+      "id": "boss_moloch",
+      "name": "Aschenmoloch",
+      "archetype": "moloch",
+      "role": "bruiser",
+      "element": "ash",
+      "rarity": "legendary",
+      "tier": 3,
+      "baseStats": {
+        "hp": 200,
+        "atk": 27,
+        "def": 16,
+        "spd": 12
+      },
+      "passive": "moloch_passive",
+      "active": "moloch_active",
       "unique": true,
       "mvp": false
     }
